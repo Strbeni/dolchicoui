@@ -449,7 +449,7 @@ export const Navbar5 = () => {
               alt="Shadcn UI Navbar"
             /> */}
             <span className="text-lg font-semibold tracking-tighter">
-              modimal
+              DolchiCo
             </span>
           </a>
           <NavigationMenu className="hidden lg:block">
@@ -637,7 +637,7 @@ export const Navbar5 = () => {
                       alt="Shadcnblocks"
                     /> */}
                     <span className="text-lg font-semibold tracking-tighter">
-                      modimal
+                      DolchiCo
                     </span>
                   </a>
                 </SheetTitle>

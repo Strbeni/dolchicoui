@@ -52,7 +52,7 @@ const Navbar = () => {
       {/* <nav className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
         
         <div className="text-xl font-bold tracking-wide">
-          <span className="text-[#2f2f2f]">modimal</span><span className="text-green-600">●</span>
+          <span className="text-[#2f2f2f]">DolchiCo</span><span className="text-green-600">●</span>
           <p className="text-xs font-normal text-gray-500 -mt-1">women clothing</p>
         </div>
 
