@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, MenuIcon, Search, ShoppingCart, User } from "lucide-react";
+import { Heart, MenuIcon, ShoppingCart, User } from "lucide-react";
 
 import {
   Accordion,
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/sheet";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { SearchBar } from "./search-bar";
 // import Men from "@/components/men"
 
 export const Navbar5 = () => {
@@ -38,7 +39,7 @@ export const Navbar5 = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true'
   const dropdownRef = useRef<HTMLDivElement | null>(null)
-    const router = useRouter()
+  const router = useRouter()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -571,7 +572,13 @@ export const Navbar5 = () => {
             <Button>Start for free</Button>
           </div> */}
           <div className="hidden items-center gap-4 lg:flex">
-            <Search className="w-5 h-5 cursor-pointer" />
+            {/* <Search className="w-5 h-5 cursor-pointer" /> */}
+            <div className="flex flex-col items-center justify-center ">
+              <SearchBar
+                onSearch={(query) => router.push(`/productlist?q=${encodeURIComponent(query)}`)}
+              />
+
+            </div>
             <div className="relative" ref={dropdownRef}>
               <User
                 className="w-5 h-5 cursor-pointer"
