@@ -40,8 +40,6 @@ export default function Logout() {
         <div className="max-w-md w-full mx-auto space-y-8 text-center">
           <h2 className="text-4xl font-bold text-gray-800">ARE YOU SURE?</h2>
           <p className="text-sm text-gray-600">You&apos;re about to sign out of your account.</p>
-
-
           <Button
             onClick={handleLogout}
             className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white text-sm tracking-widest"

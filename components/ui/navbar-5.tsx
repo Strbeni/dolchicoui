@@ -42,7 +42,7 @@ export const Navbar5 = () => {
   const dropdownRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
-    useEffect(() => {
+  useEffect(() => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     setIsLoggedIn(!!token);
   }, []);
@@ -64,7 +64,7 @@ export const Navbar5 = () => {
   //   router.push('/login')
   // }
 
-   const handleLogout = () => {
+  const handleLogout = () => {
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     setIsLoggedIn(false); // update UI
@@ -72,7 +72,7 @@ export const Navbar5 = () => {
     router.push('/login');
   };
 
-    useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
@@ -466,7 +466,7 @@ export const Navbar5 = () => {
       <div className="container">
         <nav className="flex items-center justify-between">
           <a
-            href="https://famefash-frontend.vercel.app/"
+            // href="https://famefash-frontend.vercel.app/"
             className="flex items-center gap-2"
           >
             {/* <img
@@ -643,42 +643,42 @@ export const Navbar5 = () => {
                 </div>
               )}
                */}
-               {userMenuOpen && (
-        <div
-          ref={dropdownRef}
-          className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50"
-        >
-          {isLoggedIn ? (
-            <>
-              <button
-                onClick={() => {
-                  setUserMenuOpen(false);
-                  router.push('/profile');
-                }}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Go to Profile
-              </button>
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => {
-                setUserMenuOpen(false);
-                router.push('/login');
-              }}
-              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-            >
-              Login
-            </button>
-          )}
-        </div>
-      )}
+              {userMenuOpen && (
+                <div
+                  ref={dropdownRef}
+                  className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50"
+                >
+                  {isLoggedIn ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          router.push('/profile');
+                        }}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                      >
+                        Go to Profile
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        router.push('/login');
+                      }}
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                    >
+                      Login
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <Heart className="w-5 h-5 cursor-pointer" />
@@ -715,23 +715,28 @@ export const Navbar5 = () => {
                 <Accordion type="single" collapsible className="mt-4 mb-2">
                   <AccordionItem value="solutions" className="border-none">
                     <AccordionTrigger className="text-base hover:no-underline">
-                      Features
+                      Men
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="grid md:grid-cols-2">
-                        {features.map((feature, index) => (
+                        {men.map((men, index) => (
                           <a
-                            href={feature.href}
+                            // href={men.href}
                             key={index}
                             className="rounded-md p-3 transition-colors hover:bg-muted/70"
                           >
-                            <div key={feature.title}>
+                            <div key={men.title}>
                               <p className="mb-1 font-semibold text-foreground">
-                                {feature.title}
+                                {men.title}
                               </p>
-                              <p className="text-sm text-muted-foreground">
-                                {feature.description}
-                              </p>
+                              {/* <p className="text-sm text-muted-foreground">
+                                {men.description}
+                              </p> */}
+                              <ul className="text-sm text-muted-foreground list-none space-y-1">
+                                {men.items.map((item, itemIndex) => (
+                                  <li key={itemIndex}>{item}</li>
+                                ))}
+                              </ul>
                             </div>
                           </a>
                         ))}
@@ -739,20 +744,118 @@ export const Navbar5 = () => {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-                <div className="flex flex-col gap-6">
-                  <a href="#" className="font-medium">
-                    Templates
-                  </a>
-                  <a href="#" className="font-medium">
+                {/* <div className="flex flex-col gap-6"> */}
+                  {/* <a href="#" className="font-medium">
+                    Women
+                  </a> */}
+                  <Accordion type="single" collapsible className="mt-4 mb-2">
+                    <AccordionItem value="solutions" className="border-none">
+                      <AccordionTrigger className="text-base hover:no-underline">
+                        Women
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid md:grid-cols-2">
+                          {women.map((women, index) => (
+                            <a
+                              // href={men.href}
+                              key={index}
+                              className="rounded-md p-3 transition-colors hover:bg-muted/70"
+                            >
+                              <div key={women.title}>
+                                <p className="mb-1 font-semibold text-foreground">
+                                  {women.title}
+                                </p>
+                                {/* <p className="text-sm text-muted-foreground">
+                                {men.description}
+                              </p> */}
+                                <ul className="text-sm text-muted-foreground list-none space-y-1">
+                                  {women.items.map((item, itemIndex) => (
+                                    <li key={itemIndex}>{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                  {/* <a href="#" className="font-medium">
                     Blog
-                  </a>
-                  <a href="#" className="font-medium">
+                  </a> */}
+                  <Accordion type="single" collapsible className="mt-4 mb-2">
+                    <AccordionItem value="solutions" className="border-none">
+                      <AccordionTrigger className="text-base hover:no-underline">
+                        Kids
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid md:grid-cols-2">
+                          {kids.map((kids, index) => (
+                            <a
+                              // href={men.href}
+                              key={index}
+                              className="rounded-md p-3 transition-colors hover:bg-muted/70"
+                            >
+                              <div key={kids.title}>
+                                <p className="mb-1 font-semibold text-foreground">
+                                  {kids.title}
+                                </p>
+                                {/* <p className="text-sm text-muted-foreground">
+                                {men.description}
+                              </p> */}
+                                <ul className="text-sm text-muted-foreground list-none space-y-1">
+                                  {kids.items.map((item, itemIndex) => (
+                                    <li key={itemIndex}>{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                  {/* <a href="#" className="font-medium">
                     Pricing
-                  </a>
-                </div>
+                  </a> */}
+                  <Accordion type="single" collapsible className="mt-4 mb-2">
+                    <AccordionItem value="solutions" className="border-none">
+                      <AccordionTrigger className="text-base hover:no-underline">
+                        Homes
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid md:grid-cols-2">
+                          {homes.map((homes, index) => (
+                            <a
+                              // href={men.href}
+                              key={index}
+                              className="rounded-md p-3 transition-colors hover:bg-muted/70"
+                            >
+                              <div key={homes.title}>
+                                <p className="mb-1 font-semibold text-foreground">
+                                  {homes.title}
+                                </p>
+                                {/* <p className="text-sm text-muted-foreground">
+                                {men.description}
+                              </p> */}
+                                <ul className="text-sm text-muted-foreground list-none space-y-1">
+                                  {homes.items.map((item, itemIndex) => (
+                                    <li key={itemIndex}>{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                {/* </div> */}
                 <div className="mt-6 flex flex-col gap-4">
-                  <Button variant="outline">Sign in</Button>
-                  <Button>Start for free</Button>
+                  <Link href="/login" className="text-sm text-muted-foreground hover:underline">
+                    <Button variant="outline">Sign in</Button>
+                  </Link>
+                  {/* <Button>Start for free</Button> */}
                 </div>
               </div>
             </SheetContent>

@@ -19,41 +19,41 @@ export default function Login() {
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+        e.preventDefault();
+        setError('');
+        setLoading(true);
 
-    try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
 
-        const data = await res.json();
+            const data = await res.json();
 
-        if (!res.ok) {
-            throw new Error(data?.message || 'Login failed');
+            if (!res.ok) {
+                throw new Error(data?.message || 'Login failed');
+            }
+
+            // Store token in localStorage and sessionStorage
+            localStorage.setItem('token', data.token);
+            sessionStorage.setItem('token', data.token);
+
+            // Redirect to home
+            router.push('/home');
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('An unexpected error occurred');
+            }
+        } finally {
+            setLoading(false);
         }
-
-        // Store token in localStorage and sessionStorage
-        localStorage.setItem('token', data.token);
-        sessionStorage.setItem('token', data.token);
-
-        // Redirect to home
-        router.push('/home');
-    } catch (err) {
-        if (err instanceof Error) {
-            setError(err.message);
-        } else {
-            setError('An unexpected error occurred');
-        }
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
 
     return (
@@ -140,30 +140,45 @@ export default function Login() {
                         <hr className="flex-grow border-gray-300" />
                     </div>
 
-                    {/* Social Login Buttons */}
-                    <div className="space-y-3">
-                        <Button className="w-full border border-gray-300 bg-white text-gray-800 flex items-center justify-center gap-2 hover:bg-white hover:text-gray-800">
+
+
+
+
+
+
+
+                </form>
+                {/* Social Login Buttons */}
+                <div className="flex flex-col items-center justify-center mt-6 space-y-4 w-full">
+                    <div className="w-[400px]">
+                        <Button
+                            type="button"
+                            className="w-full border border-gray-300 bg-white text-gray-800 flex items-center justify-center gap-2 hover:bg-white hover:text-gray-800"
+                        >
                             <Image src="/google.svg" alt="Google" width={20} height={20} />
                             Login with Google
                         </Button>
-                        <Button className="w-full border border-gray-300 bg-white text-gray-800 flex items-center justify-center gap-2 hover:bg-white hover:text-gray-800">
+                    </div>
+
+                    <div className="w-[400px]">
+                        <Button
+                            type="button"
+                            className="w-full border border-gray-300 bg-white text-gray-800 flex items-center justify-center gap-2 hover:bg-white hover:text-gray-800"
+                        >
                             <Image src="/facebook.svg" alt="Facebook" width={20} height={20} />
                             Login with Facebook
                         </Button>
                     </div>
+                </div>
 
-                    
 
-                    {/* Register Link */}
-                    <p className="text-sm text-center">
-                        Don’t have an account?{' '}
-                        <Link href="/register" className="underline font-semibold">
-                            Register here
-                        </Link>
-                    </p>
-                    
-
-                </form>
+                {/* Register Link */}
+                <p className="text-sm py-4 text-center">
+                    Don’t have an account?{' '}
+                    <Link href="/register" className="underline font-semibold">
+                        Register here
+                    </Link>
+                </p>
             </div>
         </div>
     );
