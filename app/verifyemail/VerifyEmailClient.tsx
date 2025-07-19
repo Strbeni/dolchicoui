@@ -1,11 +1,11 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-function VerifyEmailClient() {
+export default function VerifyEmailClient() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -21,7 +21,6 @@ function VerifyEmailClient() {
       return;
     }
 
-    // Move function inside to avoid useEffect dependency warning
     const verifyToken = async () => {
       setLoading(true);
       setError('');
@@ -72,7 +71,6 @@ function VerifyEmailClient() {
       {!success && (
         <Button
           type="button"
-          onClick={() => {}} // no longer needed since verification runs automatically
           disabled
           className="w-full bg-[#d9673f] text-white text-sm tracking-widest opacity-70 cursor-not-allowed"
         >
@@ -83,12 +81,3 @@ function VerifyEmailClient() {
     </div>
   );
 }
-
-export default function Page() {
-  return (
-    <Suspense>
-      <VerifyEmailClient />
-    </Suspense>
-  );
-}
-
