@@ -20,7 +20,8 @@ export default function ForgotPassword() {
   const [resendCooldown, setResendCooldown] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  const API_BASE = 'https://famefash-backend.onrender.com/api/login'
+  // const API_BASE = 'https://valyris-i.onrender.com/api/auth'
+  const API_BASE="https://valyris-i.onrender.com/api/auth"
 
   const resendOtp = async () => {
     setLoading(true)
@@ -61,8 +62,8 @@ export default function ForgotPassword() {
     setError(null)
 
     try {
-      const res = await fetch(`${API_BASE}/request-otp`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE}/forgot-password`, {
+        method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(method === 'email' ? { email } : { phone: mobile }),
       })
