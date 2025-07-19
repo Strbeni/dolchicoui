@@ -37,26 +37,51 @@ export const Navbar5 = () => {
   // const [showKids, setShowKids] = useState(false)
   // const [home, setHome] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true'
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true'
   const dropdownRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
 
-  useEffect(() => {
+    useEffect(() => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
+
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+  //       setUserMenuOpen(false)
+  //     }
+  //   }
+
+  //   document.addEventListener("mousedown", handleClickOutside)
+  //   return () => document.removeEventListener("mousedown", handleClickOutside)
+  // }, [])
+
+  // const handleLogout = () => {
+  //   localStorage.removeItem('isLoggedIn')
+  //   setUserMenuOpen(false)
+  //   router.push('/login')
+  // }
+
+   const handleLogout = () => {
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    setIsLoggedIn(false); // update UI
+    setUserMenuOpen(false);
+    router.push('/login');
+  };
+
+    useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false)
+        setUserMenuOpen(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn')
-    setUserMenuOpen(false)
-    router.push('/login')
-  }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const features = [
     {
       title: "Dashboard",
@@ -450,7 +475,7 @@ export const Navbar5 = () => {
               alt="Shadcn UI Navbar"
             /> */}
             <span className="text-lg font-semibold tracking-tighter">
-              modimal
+              DolchiCo
             </span>
           </a>
           <NavigationMenu className="hidden lg:block">
@@ -584,7 +609,7 @@ export const Navbar5 = () => {
                 className="w-5 h-5 cursor-pointer"
                 onClick={() => setUserMenuOpen((prev) => !prev)}
               />
-              {userMenuOpen && (
+              {/* {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50">
                   {isLoggedIn ? (
                     <>
@@ -617,6 +642,43 @@ export const Navbar5 = () => {
                   )}
                 </div>
               )}
+               */}
+               {userMenuOpen && (
+        <div
+          ref={dropdownRef}
+          className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50"
+        >
+          {isLoggedIn ? (
+            <>
+              <button
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  router.push('/profile');
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
+                Go to Profile
+              </button>
+              <button
+                onClick={handleLogout}
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                setUserMenuOpen(false);
+                router.push('/login');
+              }}
+              className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+            >
+              Login
+            </button>
+          )}
+        </div>
+      )}
             </div>
 
             <Heart className="w-5 h-5 cursor-pointer" />
@@ -644,7 +706,7 @@ export const Navbar5 = () => {
                       alt="Shadcnblocks"
                     /> */}
                     <span className="text-lg font-semibold tracking-tighter">
-                      modimal
+                      DolchiCo
                     </span>
                   </a>
                 </SheetTitle>

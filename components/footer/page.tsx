@@ -7,9 +7,9 @@ const Footer = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Logo and Contact Info */}
         <div>
-          <div className="text-3xl font-serif font-bold mb-4">MODEVA</div>
+          <div className="text-3xl font-serif font-bold mb-4">DOLCHICO</div>
           <p className="mb-1"><span className="font-medium">WhatsApp</span> : +62 859 9999 999</p>
-          <p className="mb-1"><span className="font-medium">Email</span> : hello@modeva.com</p>
+          <p className="mb-1"><span className="font-medium">Email</span> : hello@dolchico.com</p>
           <p>
             <span className="font-medium">Address</span> : Lorem ipsum street Block B Number 08,<br />
             Jakarta, Indonesia, 12345
@@ -55,7 +55,7 @@ const Footer = () => {
       {/* Footer Bottom */}
       <div className="text-center mt-10 text-gray-200 text-xs">
         <p>All rights reserved</p>
-        <p>Copyright 2025 By Modeva Fashion</p>
+        <p>Copyright 2025 By DolchiCo Fashion</p>
       </div>
     </footer>
   );
