@@ -19,41 +19,42 @@ export default function Login() {
     const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-            });
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+        });
 
-            const data = await res.json();
+        const data = await res.json();
 
-            if (!res.ok) {
-                throw new Error(data?.message || 'Login failed');
-            }
-
-            // Save token or user data (optional)
-            localStorage.setItem('token', data.token);
-
-            // Redirect to home
-            router.push('/home');
-        } catch (err) {
-            if (err instanceof Error) {
-                setError(err.message);
-            } else {
-                setError('An unexpected error occurred');
-            }
+        if (!res.ok) {
+            throw new Error(data?.message || 'Login failed');
         }
-        finally {
-            setLoading(false);
+
+        // Store token in localStorage and sessionStorage
+        localStorage.setItem('token', data.token);
+        sessionStorage.setItem('token', data.token);
+
+        // Redirect to home
+        router.push('/home');
+    } catch (err) {
+        if (err instanceof Error) {
+            setError(err.message);
+        } else {
+            setError('An unexpected error occurred');
         }
-    };
+    } finally {
+        setLoading(false);
+    }
+};
+
 
     return (
         <div className="flex h-screen overflow-hidden">

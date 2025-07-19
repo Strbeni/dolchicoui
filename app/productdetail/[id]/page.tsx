@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Minus, Plus, ShoppingCart, Heart, Badge, Truck, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import Link from 'next/link';
-import MultiSelect from '@/components/ui/multi-select';
+// import MultiSelect from '@/components/ui/multi-select';
+import Zoom from 'react-medium-image-zoom'
+import 'react-medium-image-zoom/dist/styles.css'
+
 
 interface Product {
   id: number;
@@ -31,13 +34,13 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState('M');
   const [activeTab, setActiveTab] = useState('details');
   const [error, setError] = useState('');
-  const [selected, setSelected] = useState<string[]>([]);
-  const [isLoading,] = useState(false);
-  const frameworks = [
-    { label: "Next.js", value: "nextjs" },
-    { label: "React", value: "react" },
-    { label: "Vue.js", value: "vue" }
-  ];
+  // const [selected, setSelected] = useState<string[]>([]);
+  // const [isLoading,] = useState(false);
+  // const frameworks = [
+  //   { label: "Next.js", value: "nextjs" },
+  //   { label: "React", value: "react" },
+  //   { label: "Vue.js", value: "vue" }
+  // ];
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -74,25 +77,29 @@ export default function ProductDetail() {
 
   return (
     <>
-      <MultiSelect
-        options={frameworks}
-        value={selected}
-        onChange={setSelected}
-        placeholder="Select frameworks..."
-        isLoading={isLoading}
-      />
+      
 
       <div className="px-6 lg:px-20 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {/* Images */}
           <div>
-            <Image
+            {/* <Image
               src={product.image?.[0] || '/placeholder.png'}
               alt={product.name}
               width={600}
               height={600}
               className="rounded object-cover"
-            />
+            /> */}
+            <Zoom>
+              <Image
+                src={product.image?.[0] || '/placeholder.png'}
+                alt={product.name}
+                width={600}
+                height={600}
+                className="rounded object-cover"
+              />
+            </Zoom>
+
             <div className="flex gap-2 mt-4">
               {product.image?.slice(0, 4).map((src, idx) => (
                 <Image
