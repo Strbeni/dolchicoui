@@ -4,7 +4,6 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 const cartItems = [
@@ -51,14 +50,14 @@ export default function CartPage() {
   }
   const router = useRouter();
 
-const handleCheckout = () => {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  if (token) {
-    router.push('/checkout');
-  } else {
-    router.push('/login');
-  }
-};
+  const handleCheckout = () => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) {
+      router.push('/checkout');
+    } else {
+      router.push('/login');
+    }
+  };
 
 
 
@@ -137,11 +136,11 @@ const handleCheckout = () => {
           </Button>
         </Link> */}
         <Button
-  className="w-full bg-[#d46331] hover:bg-[#b75121] text-white text-sm py-3"
-  onClick={handleCheckout}
->
-  PROCEED TO CHECKOUT
-</Button>
+          className="w-full bg-[#d46331] hover:bg-[#b75121] text-white text-sm py-3"
+          onClick={handleCheckout}
+        >
+          PROCEED TO CHECKOUT
+        </Button>
 
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+// import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,8 @@ export default function Logout() {
       <div className="w-full md:w-1/2 flex flex-col justify-center px-8 lg:px-20 h-full">
         <div className="max-w-md w-full mx-auto space-y-8 text-center">
           <h2 className="text-4xl font-bold text-gray-800">ARE YOU SURE?</h2>
-          <p className="text-sm text-gray-600">You're about to sign out of your account.</p>
+          <p className="text-sm text-gray-600">You&apos;re about to sign out of your account.</p>
+
 
           <Button
             onClick={handleLogout}
