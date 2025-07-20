@@ -86,38 +86,6 @@ export const Navbar5 = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  // const features = [
-  //   {
-  //     title: "Dashboard",
-  //     description: "Overview of your activity",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Analytics",
-  //     description: "Track your performance",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Settings",
-  //     description: "Configure your preferences",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Integrations",
-  //     description: "Connect with other tools",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Storage",
-  //     description: "Manage your files",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Support",
-  //     description: "Get help when needed",
-  //     href: "#",
-  //   },
-  // ];
   const men = [
     {
       title: 'Topwear',
@@ -470,7 +438,7 @@ export const Navbar5 = () => {
       <div className="container">
         <nav className="flex items-center justify-between">
           <a
-            // href="https://famefash-frontend.vercel.app/"
+             href="/home"
             className="flex items-center gap-2"
           >
             {/* <img
@@ -717,7 +685,7 @@ export const Navbar5 = () => {
               <SheetHeader>
                 <SheetTitle>
                   <a
-                    href="https://famefash-frontend.vercel.app/"
+                    href="https://dolchico.com"
                     className="flex items-center gap-2"
                   >
                     {/* <img
