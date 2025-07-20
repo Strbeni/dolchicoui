@@ -28,12 +28,11 @@ function VerifyEmailClient() {
 
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-        const res = await fetch(`${API_BASE_URL}/api/user/verify-email`, {
-          method: 'POST',
+        const res = await fetch(`${API_BASE_URL}/api/user/verify-email?token=${urlToken}`, {
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ token: urlToken }),
+          }
         });
 
         const data = await res.json();

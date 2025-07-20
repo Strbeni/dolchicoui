@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -22,7 +22,9 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showModal, setShowModal] = useState(false)
 
   const router = useRouter()
 
@@ -53,6 +55,7 @@ export default function RegisterPage() {
 
   const handleRegister = async () => {
     setError('')
+    setSuccessMsg('')
     if (password !== confirm) return setError('Passwords do not match.')
     if (!passwordRules.every(rule => rule.valid)) return setError('Password does not meet all rules.')
 
@@ -72,35 +75,31 @@ export default function RegisterPage() {
       })
 
       const data = await res.json()
-  //     if (!res.ok) throw new Error(data.message || 'Registration failed')
-  //     // router.push('/login')
-  //     router.push('/verifyemail?token=' + data.token)
-  //   } catch (err: unknown) {
-  //     if (err instanceof Error) {
-  //       setError(err.message || 'Something went wrong.')
-  //     } else {
-  //       setError('Something went wrong.')
-  //     }
-  //   }
-  //   finally {
-  //     setLoading(false)
-  //   }
-  // }
-  if (data.token) {
-      router.push(`/verifyemail?token=${data.token}`)
-    } else {
-      throw new Error('Verification token not received.')
+      if (data.success === false && data.message) {
+        setError(data.message)
+        setLoading(false)
+        return
+      }
+      if (data.token) {
+        router.push(`/verifyemail?token=${data.token}`)
+      } else {
+        setShowModal(true)
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Something went wrong.')
+      } else {
+        setError('Something went wrong.')
+      }
+    } finally {
+      setLoading(false)
     }
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      setError(err.message || 'Something went wrong.')
-    } else {
-      setError('Something went wrong.')
-    }
-  } finally {
-    setLoading(false)
   }
-}
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+    router.push('/login')
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -130,6 +129,23 @@ export default function RegisterPage() {
           </div>
 
           {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+          {successMsg && <p className="text-sm text-green-600 font-medium">{successMsg}</p>}
+
+          {/* Modal for registration success */}
+          {showModal && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+              <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
+                <h3 className="text-xl font-bold mb-4 text-green-700">Registration Successfully</h3>
+                <p className="mb-6 text-gray-700">Please check your mail to verify your account.</p>
+                <Button
+                  onClick={handleCloseModal}
+                  className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white"
+                >
+                  Go to Login
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Step 1: Name */}
           {step === 1 && (
