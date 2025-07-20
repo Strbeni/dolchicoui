@@ -1,6 +1,7 @@
 "use client";
 
 import { Heart, MenuIcon, ShoppingCart, User } from "lucide-react";
+import { useCart } from '@/contexts/CartContext';
 
 import {
   Accordion,
@@ -29,6 +30,7 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { SearchBar } from "./search-bar";
+import { useWishlist } from "@/contexts/WishlistContext";
 // import Men from "@/components/men"
 
 export const Navbar5 = () => {
@@ -41,6 +43,8 @@ export const Navbar5 = () => {
   // const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true'
   const dropdownRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
+  const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
 
   useEffect(() => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -681,9 +685,25 @@ export const Navbar5 = () => {
               )}
             </div>
 
-            <Heart className="w-5 h-5 cursor-pointer" />
-            <Link href="/cartpage">
+            {/* <Heart className="w-5 h-5 cursor-pointer" /> */}
+            <Link href="/wishlistpage" className="relative">
+              <Heart className="w-6 h-6" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-pink-600 text-white rounded-full text-xs px-1">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+            {/* <Link href="/cartpage">
               <ShoppingCart className="w-5 h-5 cursor-pointer" />
+            </Link> */}
+            <Link href="/cartpage" className="relative">
+              <ShoppingCart className="w-5 h-5 cursor-pointer" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                  {cartCount}
+                </span>
+              )}
             </Link>
           </div>
 
@@ -745,111 +765,111 @@ export const Navbar5 = () => {
                   </AccordionItem>
                 </Accordion>
                 {/* <div className="flex flex-col gap-6"> */}
-                  {/* <a href="#" className="font-medium">
+                {/* <a href="#" className="font-medium">
                     Women
                   </a> */}
-                  <Accordion type="single" collapsible className="mt-4 mb-2">
-                    <AccordionItem value="solutions" className="border-none">
-                      <AccordionTrigger className="text-base hover:no-underline">
-                        Women
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="grid md:grid-cols-2">
-                          {women.map((women, index) => (
-                            <a
-                              // href={men.href}
-                              key={index}
-                              className="rounded-md p-3 transition-colors hover:bg-muted/70"
-                            >
-                              <div key={women.title}>
-                                <p className="mb-1 font-semibold text-foreground">
-                                  {women.title}
-                                </p>
-                                {/* <p className="text-sm text-muted-foreground">
+                <Accordion type="single" collapsible className="mt-4 mb-2">
+                  <AccordionItem value="solutions" className="border-none">
+                    <AccordionTrigger className="text-base hover:no-underline">
+                      Women
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid md:grid-cols-2">
+                        {women.map((women, index) => (
+                          <a
+                            // href={men.href}
+                            key={index}
+                            className="rounded-md p-3 transition-colors hover:bg-muted/70"
+                          >
+                            <div key={women.title}>
+                              <p className="mb-1 font-semibold text-foreground">
+                                {women.title}
+                              </p>
+                              {/* <p className="text-sm text-muted-foreground">
                                 {men.description}
                               </p> */}
-                                <ul className="text-sm text-muted-foreground list-none space-y-1">
-                                  {women.items.map((item, itemIndex) => (
-                                    <li key={itemIndex}>{item}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                  {/* <a href="#" className="font-medium">
+                              <ul className="text-sm text-muted-foreground list-none space-y-1">
+                                {women.items.map((item, itemIndex) => (
+                                  <li key={itemIndex}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+                {/* <a href="#" className="font-medium">
                     Blog
                   </a> */}
-                  <Accordion type="single" collapsible className="mt-4 mb-2">
-                    <AccordionItem value="solutions" className="border-none">
-                      <AccordionTrigger className="text-base hover:no-underline">
-                        Kids
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="grid md:grid-cols-2">
-                          {kids.map((kids, index) => (
-                            <a
-                              // href={men.href}
-                              key={index}
-                              className="rounded-md p-3 transition-colors hover:bg-muted/70"
-                            >
-                              <div key={kids.title}>
-                                <p className="mb-1 font-semibold text-foreground">
-                                  {kids.title}
-                                </p>
-                                {/* <p className="text-sm text-muted-foreground">
+                <Accordion type="single" collapsible className="mt-4 mb-2">
+                  <AccordionItem value="solutions" className="border-none">
+                    <AccordionTrigger className="text-base hover:no-underline">
+                      Kids
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid md:grid-cols-2">
+                        {kids.map((kids, index) => (
+                          <a
+                            // href={men.href}
+                            key={index}
+                            className="rounded-md p-3 transition-colors hover:bg-muted/70"
+                          >
+                            <div key={kids.title}>
+                              <p className="mb-1 font-semibold text-foreground">
+                                {kids.title}
+                              </p>
+                              {/* <p className="text-sm text-muted-foreground">
                                 {men.description}
                               </p> */}
-                                <ul className="text-sm text-muted-foreground list-none space-y-1">
-                                  {kids.items.map((item, itemIndex) => (
-                                    <li key={itemIndex}>{item}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                  {/* <a href="#" className="font-medium">
+                              <ul className="text-sm text-muted-foreground list-none space-y-1">
+                                {kids.items.map((item, itemIndex) => (
+                                  <li key={itemIndex}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+                {/* <a href="#" className="font-medium">
                     Pricing
                   </a> */}
-                  <Accordion type="single" collapsible className="mt-4 mb-2">
-                    <AccordionItem value="solutions" className="border-none">
-                      <AccordionTrigger className="text-base hover:no-underline">
-                        Homes
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="grid md:grid-cols-2">
-                          {homes.map((homes, index) => (
-                            <a
-                              // href={men.href}
-                              key={index}
-                              className="rounded-md p-3 transition-colors hover:bg-muted/70"
-                            >
-                              <div key={homes.title}>
-                                <p className="mb-1 font-semibold text-foreground">
-                                  {homes.title}
-                                </p>
-                                {/* <p className="text-sm text-muted-foreground">
+                <Accordion type="single" collapsible className="mt-4 mb-2">
+                  <AccordionItem value="solutions" className="border-none">
+                    <AccordionTrigger className="text-base hover:no-underline">
+                      Homes
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid md:grid-cols-2">
+                        {homes.map((homes, index) => (
+                          <a
+                            // href={men.href}
+                            key={index}
+                            className="rounded-md p-3 transition-colors hover:bg-muted/70"
+                          >
+                            <div key={homes.title}>
+                              <p className="mb-1 font-semibold text-foreground">
+                                {homes.title}
+                              </p>
+                              {/* <p className="text-sm text-muted-foreground">
                                 {men.description}
                               </p> */}
-                                <ul className="text-sm text-muted-foreground list-none space-y-1">
-                                  {homes.items.map((item, itemIndex) => (
-                                    <li key={itemIndex}>{item}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
+                              <ul className="text-sm text-muted-foreground list-none space-y-1">
+                                {homes.items.map((item, itemIndex) => (
+                                  <li key={itemIndex}>{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
                 {/* </div> */}
                 <div className="mt-6 flex flex-col gap-4">
                   <Link href="/login" className="text-sm text-muted-foreground hover:underline">

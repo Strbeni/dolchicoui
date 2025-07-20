@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-// import Navbar from "@/components/navbar";
-// import Footer from "@/components/footer/page";
 import { ReactNode } from "react";
-// import { usePathname } from "next/navigation"; 
-import { ClientLayoutWrapper } from "@/components/ClientLayoutWrapper" 
+import { ClientLayoutWrapper } from "@/components/ClientLayoutWrapper";
+import { CartProvider } from "@/contexts/CartContext";
+import { WishlistProvider } from "@/contexts/WishlistContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +27,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} px-4 sm:px-6 lg:px-20`}
       >
-        <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+        <CartProvider>
+          <WishlistProvider>
+          <ClientLayoutWrapper>
+            {children}
+          </ClientLayoutWrapper>
+          </WishlistProvider>
+        </CartProvider>
       </body>
     </html>
   );
