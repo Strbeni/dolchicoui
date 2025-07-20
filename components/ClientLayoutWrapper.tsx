@@ -7,7 +7,7 @@ import Footer from './footer/page'
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
-  const hideLayout = ['/login', '/register', '/forgotpassword']
+  const hideLayout = ['/login', '/register', '/forgotpassword', '/verifyemail']
   const shouldHide = hideLayout.includes(pathname)
 
   return (

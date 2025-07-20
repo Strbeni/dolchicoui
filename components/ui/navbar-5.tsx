@@ -466,7 +466,7 @@ export const Navbar5 = () => {
       <div className="container">
         <nav className="flex items-center justify-between">
           <a
-            // href="https://famefash-frontend.vercel.app/"
+             href="/home"
             className="flex items-center gap-2"
           >
             {/* <img
@@ -697,7 +697,7 @@ export const Navbar5 = () => {
               <SheetHeader>
                 <SheetTitle>
                   <a
-                    href="https://famefash-frontend.vercel.app/"
+                    href="https://dolchico.com"
                     className="flex items-center gap-2"
                   >
                     {/* <img

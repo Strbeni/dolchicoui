@@ -218,7 +218,7 @@ export default function ProductDetail() {
               <div>
                 <h3 className="font-semibold">General</h3>
                 <ul className="list-disc ml-5 text-gray-700">
-                  <li>Brand: FameFash</li>
+                  <li>Brand: DolchiCo</li>
                   <li>Gender: Men</li>
                   <li>Occasion: Casual</li>
                   <li>Fit: Regular Fit</li>
