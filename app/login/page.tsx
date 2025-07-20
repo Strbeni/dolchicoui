@@ -47,7 +47,7 @@ export default function Login() {
         throw new Error(data?.message || "Login failed");
       }
 
-    e
+    
       localStorage.setItem("token", data.token);
       sessionStorage.setItem("token", data.token);
 
