@@ -1,14 +1,15 @@
-'use client'
+'use client';
 
-import { usePathname } from 'next/navigation'
-import Navbar from './navbar'
-import Footer from './footer/page'
+import { usePathname } from 'next/navigation';
+import Navbar from './navbar';
+import Footer from './footer/page';
 
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
-  const hideLayout = ['/login', '/register', '/forgotpassword', '/verifyemail']
-  const shouldHide = hideLayout.includes(pathname)
+  // List of routes that should NOT show Navbar and Footer
+  const hideLayout = ['/login', '/register', '/forgotpassword', '/verifyemail'];
+  const shouldHide = hideLayout.includes(pathname);
 
   return (
     <>
@@ -16,5 +17,5 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
       <main>{children}</main>
       {!shouldHide && <Footer />}
     </>
-  )
+  );
 }
