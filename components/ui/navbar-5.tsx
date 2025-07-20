@@ -82,38 +82,6 @@ export const Navbar5 = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  // const features = [
-  //   {
-  //     title: "Dashboard",
-  //     description: "Overview of your activity",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Analytics",
-  //     description: "Track your performance",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Settings",
-  //     description: "Configure your preferences",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Integrations",
-  //     description: "Connect with other tools",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Storage",
-  //     description: "Manage your files",
-  //     href: "#",
-  //   },
-  //   {
-  //     title: "Support",
-  //     description: "Get help when needed",
-  //     href: "#",
-  //   },
-  // ];
   const men = [
     {
       title: 'Topwear',
