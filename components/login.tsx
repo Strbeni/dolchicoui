@@ -82,7 +82,7 @@ export default function Login() {
 
           {/* Submit Button */}
           <Button className="w-full bg-[#844416] hover:bg-[#6f3612] text-white text-sm uppercase tracking-widest">
-            Sign In
+            
           </Button>
 
           {/* Register Link */}

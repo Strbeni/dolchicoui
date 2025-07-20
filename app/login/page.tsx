@@ -23,15 +23,21 @@ export default function Login() {
     setError("");
     setLoading(true);
 
+    const payload =
+      /^\d{10}$/.test(email)
+        ? { mobile: email, password }
+        : { email, password };
+
     try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user/login`,
+        `${API_BASE_URL}/api/user/login`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -41,7 +47,7 @@ export default function Login() {
         throw new Error(data?.message || "Login failed");
       }
 
-      // Store token in localStorage and sessionStorage
+    e
       localStorage.setItem("token", data.token);
       sessionStorage.setItem("token", data.token);
 
@@ -56,6 +62,11 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Google login handler
+  const handleGoogleLogin = () => {
+    window.location.href = "https://valyris-i.onrender.com/api/auth/google";
   };
 
   return (
@@ -91,7 +102,7 @@ export default function Login() {
             </Label>
             <Input
               id="email"
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -155,6 +166,7 @@ export default function Login() {
             <Button
               type="button"
               className="w-full border border-gray-300 bg-white text-gray-800 flex items-center justify-center gap-2 hover:bg-white hover:text-gray-800"
+              onClick={handleGoogleLogin}
             >
               <Image src="/google.svg" alt="Google" width={20} height={20} />
               Login with Google
