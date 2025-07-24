@@ -649,6 +649,15 @@ export const Navbar5 = () => {
                       Login
                     </button>
                   )}
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      router.push('/profile');
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                    Account Settings
+                  </button>
                 </div>
               )}
             </div>
