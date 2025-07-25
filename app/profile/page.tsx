@@ -26,6 +26,10 @@ export default function AccountSettings() {
   const [tempPhone, setTempPhone] = useState("");
   const [isEmailChanged, setIsEmailChanged] = useState(false);
   const [isPhoneChanged, setIsPhoneChanged] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -39,7 +43,6 @@ export default function AccountSettings() {
     setTempPhone("");
     setIsEmailChanged(false);
     setIsPhoneChanged(false);
-    // Reset to original values
     setUsername("demoUser");
     setEmail("demo@example.com");
     setPhone("+1-202-555-0118");
@@ -62,8 +65,7 @@ export default function AccountSettings() {
 
   const handleVerifyOtp = (e) => {
     e.preventDefault();
-    // Simulate OTP verification (in a real app, this would be an API call)
-    if (otp === "123456") { // Dummy OTP check
+    if (otp === "123456") {
       if (isEmailChanged) setEmail(tempEmail);
       if (isPhoneChanged) setPhone(tempPhone);
       setShowOtp(false);
@@ -87,6 +89,34 @@ export default function AccountSettings() {
   const handlePhoneChange = (e) => {
     setTempPhone(e.target.value);
     setIsPhoneChanged(e.target.value !== phone);
+  };
+
+  const validatePassword = (password) => {
+    const minLength = password.length >= 8;
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    if (!minLength) return "Password must be at least 8 characters long";
+    if (!hasNumber) return "Password must contain at least one number";
+    if (!hasSpecialChar) return "Password must contain at least one special character";
+    return "";
+  };
+
+  const handleChangePassword = (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+    const validationError = validatePassword(newPassword);
+    if (validationError) {
+      setPasswordError(validationError);
+      return;
+    }
+    setPasswordError("");
+    alert("Password changed successfully!");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   return (
@@ -288,51 +318,48 @@ export default function AccountSettings() {
             <Card className="shadow-md">
               <CardContent className="p-6">
                 <h2 className="text-lg font-semibold mb-4">Change Password</h2>
-                <form className="grid grid-cols-1 gap-6">
-                  <div className="relative">
+                <form className="grid grid-cols-1 gap-6" onSubmit={handleChangePassword}>
+                  <div>
                     <Label htmlFor="currentPassword">Current Password</Label>
-                    <Input id="currentPassword" type="password" className="pr-10" />
-                    <span className="absolute right-3 top-8 cursor-pointer text-gray-400">👁️</span>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                    />
                   </div>
-                  <div className="relative">
+                  <div>
                     <Label htmlFor="newPassword">New Password</Label>
-                    <Input id="newPassword" type="password" placeholder="8+ characters" className="pr-10" />
-                    <span className="absolute right-3 top-8 cursor-pointer text-gray-400">👁️</span>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="8+ characters, number, special character"
+                    />
                   </div>
-                  <div className="relative">
+                  <div>
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input id="confirmPassword" type="password" className="pr-10" />
-                    <span className="absolute right-3 top-8 cursor-pointer text-gray-400">👁️</span>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
                   </div>
+                  {passwordError && (
+                    <p className="text-red-500 text-sm">{passwordError}</p>
+                  )}
                   <div className="flex justify-end mt-4">
-                    <Button className="bg-red-400 hover:bg-red-500 text-white px-6 py-2 rounded">
-                      CHANGE PASSWORD
+                    <Button
+                      type="submit"
+                      className="bg-red-400 hover:bg-red-500 text-white px-6 py-2 rounded"
+                    >
+                      Change Password
                     </Button>
                   </div>
                 </form>
               </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Other Tab Contents */}
-          <TabsContent value="security">
-            <Card className="p-6 shadow-md">
-              <h2 className="text-xl font-semibold mb-2">Security Settings</h2>
-              <p className="text-muted-foreground">Coming soon...</p>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="billing">
-            <Card className="p-6 shadow-md">
-              <h2 className="text-xl font-semibold mb-2">Billing Info</h2>
-              <p className="text-muted-foreground">Coming soon...</p>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <Card className="p-6 shadow-md">
-              <h2 className="text-xl font-semibold mb-2">Settings</h2>
-              <p className="text-muted-foreground">Coming soon...</p>
             </Card>
           </TabsContent>
         </div>
