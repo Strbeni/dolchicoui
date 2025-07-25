@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 // Add these imports for the carousel
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-
 
 // Custom Arrow Components
 const Arrow = ({ className, style, onClick, direction }: any) => (
@@ -51,6 +53,7 @@ const Arrow = ({ className, style, onClick, direction }: any) => (
 );
 
 const PaymentMethodPage = () => {
+  const router = useRouter();
   const [cards, setCards] = useState([
     {
       bankName: "Bank of America",
@@ -84,11 +87,9 @@ const PaymentMethodPage = () => {
       name: "Kevin Gilbert",
       typeOfCard: "Debit Card",
     },
-
-
-    
   ]);
- const [upis, setUpis] = useState([
+
+  const [upis, setUpis] = useState([
     {
       bankName: "Bank of America",
       type: "UPI",
@@ -96,44 +97,39 @@ const PaymentMethodPage = () => {
       upiProvider: "Google Pay  (GPay)",
       bgColor: "bg-green-800",
       name: "Kevin Gilbert",
-    
     },
     {
       bankName: "HSBC",
-       type: "UPI",
+      type: "UPI",
       upiId: "Kartik@axis",
       upiProvider: "Google Pay  (GPay)",
       bgColor: "bg-blue-800",
       name: "Kevin Gilbert",
-    
     },
     {
       bankName: "HDFC",
-       type: "UPI",
+      type: "UPI",
       upiId: "Kartik@axis",
       upiProvider: "Google Pay  (GPay)",
       bgColor: "bg-blue-400",
       name: "Kevin Gilbert",
-    
     },
     {
       bankName: "Fedral Bank",
-       type: "UPI",
+      type: "UPI",
       upiId: "Kartik@axis",
       upiProvider: "Google Pay  (GPay)",
       bgColor: "bg-green-400",
       name: "Kevin Gilbert",
-    
     },
-
-
-    
   ]);
-
-
 
   const handleDelete = (index: number) => {
     setCards((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDeleteUpi = (index: number) => {
+    setUpis((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Carousel settings with custom arrows and no dots
@@ -158,176 +154,224 @@ const PaymentMethodPage = () => {
   };
 
   return (
-    <>
-      <div className="border rounded-md p-6 bg-white">
-        {/* <div className="flex justify-between items-center mb-6"> */}
-                <h2>Saved Cards</h2>
+    <div className="flex min-h-screen bg-gray-100 p-6">
+      {/* Sidebar Tabs */}
+      <Tabs defaultValue="payment" className="w-full flex">
+        <div className="w-1/4 pr-6">
+          <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Account
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Order History
+            </button>
+            <TabsTrigger value="payment">Saved Payment Method</TabsTrigger>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Address Book
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Security
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Billing
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Settings
+            </button>
+          </TabsList>
+        </div>
 
-        <button className="text-orange-600 font-medium flex items-center hover:underline">
-          Add Card <span className="ml-1">→</span>
-        </button>
-        {/* </div> */}
-
-        {/* Carousel Slider for Cards */}
-        <div className="mt-6 relative">
-          <Slider {...sliderSettings}>
-            {cards.map((card, index) => (
-              <div key={index} className="px-2">
-                <div className="relative group">
-                  {/* Card */}
-                  <div
-                    className={`rounded-lg text-white p-6 ${card.bgColor} shadow-md`}
-                  >
-                    <div className="-mt-3">
-                      <p className="tracking-widest text-lg">{card.bankName}</p>
-                    </div>
-                    <div className="mt-6 text-sm">
-                      <p className="text-gray-200">CARD NUMBER</p>
-                      <div className="flex items-center space-x-2">
-                        <p className="tracking-widest text-lg">
-                          **** **** **** {card.last4}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center mt-6">
-                      <div className="flex flex-row items-center gap-10">
-                        <div style={{ paddingTop: "2px" }}>
-                          {card.type === "visa" ? (
-                            <p className="font-bold text-white">VISA</p>
-                          ) : (
-                            <img
-                              src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png"
-                              alt="mastercard"
-                              className="h-5"
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-gray-200">{card.typeOfCard}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-semibold">{card.name}</p>
-                    </div>
-                  </div>
-                  {/* Delete icon outside the card */}
-                  <div className="flex justify-center mt-2">
-                    <button
-                      type="button"
-                      className="hover:bg-red-100 rounded-full p-2 transition"
-                      aria-label="Delete card"
-                      onClick={() => handleDelete(index)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-red-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h10"
-                        />
-                      </svg>
+        {/* Tab Content Area */}
+        <div className="w-3/4">
+          <TabsContent value="payment">
+            <Card className="shadow-md">
+              <CardContent className="p-6">
+                {/* Saved Cards Section */}
+                <div className="border rounded-md p-6 bg-white mb-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-semibold">Saved Cards</h2>
+                    <button className="text-orange-600 font-medium flex items-center hover:underline">
+                      Add Card <span className="ml-1">→</span>
                     </button>
                   </div>
-                </div>
-              </div>
-            ))}
-          </Slider>
-        </div>
-        {/* Upi */}
-      </div>
 
-      {/* Upi */}
-
-     <div className="border rounded-md p-6 bg-white mt-5">
-        {/* <div className="flex justify-between items-center mb-6"> */}
-
-        <h2>Saved UPI</h2>
-        <button className="text-orange-600 font-medium flex items-center hover:underline">
-          Add UPI <span className="ml-1">→</span>
-        </button>
-        {/* </div> */}
-
-        {/* Carousel Slider for Cards */}
-        <div className="mt-6 relative">
-          <Slider {...sliderSettings}>
-            {upis.map((upi, index) => (
-              <div key={index} className="px-2">
-                <div className="relative group">
-                  {/* Card */}
-                  <div
-                    className={`rounded-lg text-white p-6 ${upi.bgColor} shadow-md`}
-                  >
-                    <div className="-mt-3">
-                      <p className="tracking-widest text-lg">{upi.bankName}</p>
-                    </div>
-                    <div className="mt-6 text-sm">
-                      <div className="flex items-center space-x-2">
-                        <p className="tracking-widest text-lg">
-                           {upi.upiId}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center mt-6">
-                      <div className="flex flex-row items-center gap-10">
-                        <div style={{ paddingTop: "2px" }}>
-                          {upi.type === "visa" ? (
-                            <p className="font-bold text-white">VISA</p>
-                          ) : (
-                            <img
-                              src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png"
-                              alt="mastercard"
-                              className="h-5"
-                            />
-                          )}
+                  {/* Carousel Slider for Cards */}
+                  <div className="mt-6 relative">
+                    <Slider {...sliderSettings}>
+                      {cards.map((card, index) => (
+                        <div key={index} className="px-2">
+                          <div className="relative group">
+                            {/* Card */}
+                            <div
+                              className={`rounded-lg text-white p-6 ${card.bgColor} shadow-md`}
+                            >
+                              <div className="-mt-3">
+                                <p className="tracking-widest text-lg">{card.bankName}</p>
+                              </div>
+                              <div className="mt-6 text-sm">
+                                <p className="text-gray-200">CARD NUMBER</p>
+                                <div className="flex items-center space-x-2">
+                                  <p className="tracking-widest text-lg">
+                                    **** **** **** {card.last4}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex justify-between items-center mt-6">
+                                <div className="flex flex-row items-center gap-10">
+                                  <div style={{ paddingTop: "2px" }}>
+                                    {card.type === "visa" ? (
+                                      <p className="font-bold text-white">VISA</p>
+                                    ) : (
+                                      <img
+                                        src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png"
+                                        alt="mastercard"
+                                        className="h-5"
+                                      />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-gray-200">{card.typeOfCard}</p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="font-semibold">{card.name}</p>
+                              </div>
+                            </div>
+                            {/* Delete icon outside the card */}
+                            <div className="flex justify-center mt-2">
+                              <button
+                                type="button"
+                                className="hover:bg-red-100 rounded-full p-2 transition"
+                                aria-label="Delete card"
+                                onClick={() => handleDelete(index)}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-6 w-6 text-red-500"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h10"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-gray-200">{upi.upiProvider}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-semibold">{upi.name}</p>
-                    </div>
+                      ))}
+                    </Slider>
                   </div>
-                  {/* Delete icon outside the card */}
-                  <div className="flex justify-center mt-2">
-                    <button
-                      type="button"
-                      className="hover:bg-red-100 rounded-full p-2 transition"
-                      aria-label="Delete card"
-                      onClick={() => handleDelete(index)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-red-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h10"
-                        />
-                      </svg>
+                </div>
+
+                {/* Saved UPI Section */}
+                <div className="border rounded-md p-6 bg-white">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-semibold">Saved UPI</h2>
+                    <button className="text-orange-600 font-medium flex items-center hover:underline">
+                      Add UPI <span className="ml-1">→</span>
                     </button>
                   </div>
+
+                  {/* Carousel Slider for UPI */}
+                  <div className="mt-6 relative">
+                    <Slider {...sliderSettings}>
+                      {upis.map((upi, index) => (
+                        <div key={index} className="px-2">
+                          <div className="relative group">
+                            {/* UPI Card */}
+                            <div
+                              className={`rounded-lg text-white p-6 ${upi.bgColor} shadow-md`}
+                            >
+                              <div className="-mt-3">
+                                <p className="tracking-widest text-lg">{upi.bankName}</p>
+                              </div>
+                              <div className="mt-6 text-sm">
+                                <div className="flex items-center space-x-2">
+                                  <p className="tracking-widest text-lg">
+                                    {upi.upiId}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex justify-between items-center mt-6">
+                                <div className="flex flex-row items-center gap-10">
+                                  <div style={{ paddingTop: "2px" }}>
+                                    <p className="font-bold text-white">UPI</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-gray-200">{upi.upiProvider}</p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="font-semibold">{upi.name}</p>
+                              </div>
+                            </div>
+                            {/* Delete icon outside the card */}
+                            <div className="flex justify-center mt-2">
+                              <button
+                                type="button"
+                                className="hover:bg-red-100 rounded-full p-2 transition"
+                                aria-label="Delete UPI"
+                                onClick={() => handleDeleteUpi(index)}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-6 w-6 text-red-500"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h10"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </Slider>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </Slider>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </div>
-        {/* Upi */}
-      </div>
-    </>
+      </Tabs>
+    </div>
   );
 };
 
