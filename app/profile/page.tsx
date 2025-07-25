@@ -131,6 +131,13 @@ export default function AccountSettings() {
             >
               Saved Payment Method
             </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile/addressBook")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Address Book
+            </button>
             <TabsTrigger value="address">Address Book</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
