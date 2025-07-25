@@ -578,87 +578,59 @@ export const Navbar5 = () => {
             </div>
             <div className="relative" ref={dropdownRef}>
               <User
-                className="w-5 h-5 cursor-pointer"
-                onClick={() => setUserMenuOpen((prev) => !prev)}
+              className="w-5 h-5 cursor-pointer"
+              onClick={() => setUserMenuOpen((prev) => !prev)}
               />
-              {/* {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50">
-                  {isLoggedIn ? (
-                    <>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          router.push('/profile');
-                        }}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                      >
-                        Go to Profile
-                      </button>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/login');
-                      }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                    >
-                      Login
-                    </button>
-                  )}
-                </div>
-              )}
-               */}
               {userMenuOpen && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50"
-                >
-                  {isLoggedIn ? (
-                    <>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          router.push('/profile');
-                        }}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                      >
-                        Go to Profile
-                      </button>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/login');
-                      }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                    >
-                      Login
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      router.push('/profile');
-                    }}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50">
+                {isLoggedIn ? (
+                <>
+                  <Link
+                  href="/profile"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => setUserMenuOpen(false)}
                   >
-                    Account Settings
+                  Profile
+                  </Link>
+                  <Link
+                  href="/profile/orderHistory"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => setUserMenuOpen(false)}
+                  >
+                  Order History
+                  </Link>
+                  <Link
+                  href="/profile/paymentMethod"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => setUserMenuOpen(false)}
+                  >
+                  Saved Payment Method
+                  </Link>
+                  <Link
+                  href="/profile/addressBook"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => setUserMenuOpen(false)}
+                  >
+                  Address Book
+                  </Link>
+                
+                  <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  >
+                  Logout
                   </button>
-                </div>
+                </>
+                ) : (
+                <Link
+                  href="/login"
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => setUserMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                )}
+              </div>
               )}
             </div>
 
