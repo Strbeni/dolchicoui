@@ -1,5 +1,8 @@
 'use client';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+
 
 const initialAddresses = [
   {
@@ -121,7 +124,62 @@ export default function AddressBookPage() {
     setModalOpen(false);
   };
 
+
+  const router = useRouter();
   return (
+    <div>
+        {/* Sidebar Tabs */}
+        <Tabs defaultValue="payment" className="w-full flex">
+        <div className="w-1/4 pr-6">
+          <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Account
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Order History
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+                Saved Payment Method
+            </button>
+            <TabsTrigger value="addressbook" className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full">Address Book</TabsTrigger>
+              
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Security
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Billing
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Settings
+            </button>
+          </TabsList>
+        </div>
+
+        {/* Tab Content Area */}
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-8">Your Addresses</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -130,19 +188,19 @@ export default function AddressBookPage() {
           .slice() // copy array
           .sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0)) // default first
           .map((address, idx) => (
-            <AddressCard
+              <AddressCard
               key={idx}
               address={address}
               onEdit={() => handleEdit(addresses.indexOf(address))}
               onRemove={() => handleRemove(addresses.indexOf(address))}
               onSetDefault={address.isDefault ? undefined : () => handleSetDefault(addresses.indexOf(address))}
-            />
-          ))}
+              />
+            ))}
       </div>
 
       {/* Modal for Add/Edit */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 min-w-[350px] shadow-lg">
             <h2 className="text-xl font-semibold mb-4">{editIndex === null ? "Add Address" : "Edit Address"}</h2>
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-3">
@@ -153,7 +211,7 @@ export default function AddressBookPage() {
                 placeholder="Name"
                 className="border rounded px-2 py-1"
                 required
-              />
+                />
               <textarea
                 name="address"
                 value={form.address}
@@ -161,7 +219,7 @@ export default function AddressBookPage() {
                 placeholder="Address"
                 className="border rounded px-2 py-1"
                 required
-              />
+                />
               <input
                 name="phone"
                 value={form.phone}
@@ -169,14 +227,14 @@ export default function AddressBookPage() {
                 placeholder="Phone number"
                 className="border rounded px-2 py-1"
                 required
-              />
+                />
               <input
                 name="instructions"
                 value={form.instructions}
                 onChange={handleFormChange}
                 placeholder="Delivery instructions (optional)"
                 className="border rounded px-2 py-1"
-              />
+                />
               <div className="flex gap-2 mt-2">
                 <button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Save</button>
                 <button type="button" className="bg-gray-300 px-4 py-1 rounded" onClick={() => setModalOpen(false)}>Cancel</button>
@@ -186,5 +244,7 @@ export default function AddressBookPage() {
         </div>
       )}
     </div>
+    </Tabs>
+      </div>
   );
 }
