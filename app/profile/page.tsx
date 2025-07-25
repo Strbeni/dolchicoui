@@ -117,7 +117,13 @@ export default function AccountSettings() {
         <div className="w-1/4 pr-6">
           <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
             <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="orders">Order History</TabsTrigger>
+            <button
+              type="button"
+              onClick={() => router.push("/profile/orderHistory")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Order History
+            </button>
             <button
               type="button"
               onClick={() => router.push("/profile/paymentMethod")}
@@ -259,60 +265,7 @@ export default function AccountSettings() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="orders">
-            <Card className="shadow-md">
-              <CardContent className="p-6">
-                <div className="border rounded-md p-6 bg-white">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-md font-semibold uppercase text-gray-700">
-                      Order History
-                    </h2>
-                    <button className="text-orange-600 font-medium flex items-center hover:underline">
-                      View All <ArrowRight className="w-4 h-4 ml-1" />
-                    </button>
-                  </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-gray-700">
-                      <thead className="uppercase text-xs border-b bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 font-medium">Order ID</th>
-                          <th className="px-4 py-2 font-medium">Status</th>
-                          <th className="px-4 py-2 font-medium">Date</th>
-                          <th className="px-4 py-2 font-medium">Total</th>
-                          <th className="px-4 py-2 font-medium">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orders.map((order, idx) => (
-                          <tr key={idx} className="border-b hover:bg-gray-50">
-                            <td className="px-4 py-2">{order.id}</td>
-                            <td
-                              className={`px-4 py-2 font-medium ${getStatusColor(
-                                order.status
-                              )}`}
-                            >
-                              {order.status}
-                            </td>
-                            <td className="px-4 py-2">{order.date}</td>
-                            <td className="px-4 py-2">
-                              {order.total} ({order.products} Products)
-                            </td>
-                            <td className="px-4 py-2">
-                              <button className="flex items-center text-orange-600 hover:underline">
-                                View Details{" "}
-                                <ArrowRight className="w-4 h-4 ml-1" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="address">
             <Card className="p-6 shadow-md">
