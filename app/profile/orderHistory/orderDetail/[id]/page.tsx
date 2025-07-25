@@ -260,7 +260,7 @@ Grand Total: ₹${order.total}
                     variant="link"
                     className="text-sm text-red-500 hover:underline flex items-center gap-1"
                   >
-                    Leave a Product Rating <Star className="w-4 h-4" />
+                    Leave a Product Feedback <Star className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -288,6 +288,12 @@ Grand Total: ₹${order.total}
                   {order.expectedDate}
                 </span>
               </div>
+              <Button
+                    variant="link"
+                    className="text-sm text-red-500 hover:underline flex items-center gap-1"
+                  >
+                    Leave a Delivery Feedback <Star className="w-4 h-4" />
+                  </Button>
 
               {/* Order Progress */}
               <div className="flex items-center justify-between mt-4">
@@ -413,6 +419,12 @@ Grand Total: ₹${order.total}
                 </div>
               </div>
 
+            </CardContent>
+          </Card>
+
+          {/* Addresses, Billing and Notes */}
+          <Card className="mt-8">
+            <CardContent className="p-6">
               {/* Addresses and Notes */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Billing Address Card */}
@@ -495,6 +507,16 @@ Grand Total: ₹${order.total}
               </div>
             </CardContent>
           </Card>
+          
+          {/* Product Feedback provided By User */}
+          <Card className="mt-8">
+            <CardContent className="p-6"></CardContent>
+            </Card>
+
+          {/* Delivery Feedback provided By User */}
+          <Card className="mt-8">
+            <CardContent className="p-6"></CardContent>
+            </Card>
         </div>
       </div>
     </div>
