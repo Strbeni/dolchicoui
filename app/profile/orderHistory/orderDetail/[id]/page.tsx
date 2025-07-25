@@ -510,12 +510,20 @@ Grand Total: ₹${order.total}
           
           {/* Product Feedback provided By User */}
           <Card className="mt-8">
-            <CardContent className="p-6"></CardContent>
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4">
+                  Product Feedback provided By You
+                </h2>
+            </CardContent>
             </Card>
 
           {/* Delivery Feedback provided By User */}
           <Card className="mt-8">
-            <CardContent className="p-6"></CardContent>
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-4">
+                  Delivery Feedback provided By You
+                </h2>
+            </CardContent>
             </Card>
         </div>
       </div>
