@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -81,6 +81,13 @@ const getOrderById = (orderId: string) => {
   };
   
   return orders[orderId as keyof typeof orders] || null;
+};
+
+type Feedback = {
+  userName: string;
+  rating: number;
+  description: string;
+  images: File[];
 };
 
 const OrderDetail = () => {
@@ -174,6 +181,71 @@ Grand Total: ₹${order.total}
     URL.revokeObjectURL(url);
   };
 
+  // Feedback state
+  const [deliveryFeedback, setDeliveryFeedback] = useState<Feedback | null>(null);
+  const [productFeedback, setProductFeedback] = useState<Feedback | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'delivery' | 'product' | null>(null);
+  const [feedbackForm, setFeedbackForm] = useState<Omit<Feedback, 'userName'>>({
+    rating: 0,
+    description: "",
+    images: [],
+  });
+
+  // Get user's name from shipping address
+  const userName = "Akash Kulshrestha"; // Replace with dynamic value if needed
+
+  // Open modal for feedback (only for add, not edit)
+  const handleOpenFeedbackModal = (type: 'delivery' | 'product') => {
+    setModalType(type);
+    setFeedbackForm({ rating: 0, description: "", images: [] });
+    setModalOpen(true);
+  };
+
+  // Handle feedback form changes
+  const handleFeedbackChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name === "images" && e.target instanceof HTMLInputElement && e.target.files) {
+      setFeedbackForm({ ...feedbackForm, images: Array.from(e.target.files) });
+    } else {
+      setFeedbackForm({ ...feedbackForm, [name]: value });
+    }
+  };
+
+  // Handle star rating
+  const handleStarClick = (star: number) => {
+    setFeedbackForm({ ...feedbackForm, rating: star });
+  };
+
+  // Submit feedback
+  const handleFeedbackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const feedback: Feedback = { ...feedbackForm, userName };
+    if (modalType === "delivery") {
+      setDeliveryFeedback(feedback);
+    } else {
+      setProductFeedback(feedback);
+    }
+    setModalOpen(false);
+  };
+
+  // Edit feedback (open modal with existing data)
+  const handleEditFeedback = (type: 'delivery' | 'product', feedback: Feedback) => {
+    setModalType(type);
+    setFeedbackForm({
+      rating: feedback.rating,
+      description: feedback.description,
+      images: feedback.images || [],
+    });
+    setModalOpen(true);
+  };
+
+  // Delete feedback
+  const handleDeleteFeedback = (type: 'delivery' | 'product') => {
+    if (type === "delivery") setDeliveryFeedback(null);
+    else setProductFeedback(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="flex">
@@ -259,6 +331,7 @@ Grand Total: ₹${order.total}
                   <Button
                     variant="link"
                     className="text-sm text-red-500 hover:underline flex items-center gap-1"
+                    onClick={() => handleOpenFeedbackModal('product')}
                   >
                     Leave a Product Feedback <Star className="w-4 h-4" />
                   </Button>
@@ -291,6 +364,7 @@ Grand Total: ₹${order.total}
               <Button
                     variant="link"
                     className="text-sm text-red-500 hover:underline flex items-center gap-1"
+                    onClick={() => handleOpenFeedbackModal('delivery')}
                   >
                     Leave a Delivery Feedback <Star className="w-4 h-4" />
                   </Button>
@@ -513,18 +587,112 @@ Grand Total: ₹${order.total}
             <CardContent className="p-6">
               <h2 className="text-lg font-semibold mb-4">
                   Product Feedback provided By You
-                </h2>
+              </h2>
+              {productFeedback ? (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium">{productFeedback.userName}</span>
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-4 h-4 ${i < productFeedback.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
+                    ))}
+                  </div>
+                  <div className="text-sm text-gray-700 mb-2">{productFeedback.description}</div>
+                  {productFeedback.images && productFeedback.images.length > 0 && (
+                    <div className="flex gap-2 mb-2 flex-wrap">
+                      {productFeedback.images.map((img, idx) => (
+                        <img key={idx} src={URL.createObjectURL(img)} alt="Feedback" className="w-24 h-24 object-cover rounded" />
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleEditFeedback('product', productFeedback)}>Edit</Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteFeedback('product')}>Delete</Button>
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
-            </Card>
+          </Card>
 
           {/* Delivery Feedback provided By User */}
           <Card className="mt-8">
             <CardContent className="p-6">
               <h2 className="text-lg font-semibold mb-4">
                   Delivery Feedback provided By You
-                </h2>
+              </h2>
+              {deliveryFeedback ? (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium">{deliveryFeedback.userName}</span>
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className={`w-4 h-4 ${i < deliveryFeedback.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
+                    ))}
+                  </div>
+                  <div className="text-sm text-gray-700 mb-2">{deliveryFeedback.description}</div>
+                  {deliveryFeedback.images && deliveryFeedback.images.length > 0 && (
+                    <div className="flex gap-2 mb-2 flex-wrap">
+                      {deliveryFeedback.images.map((img, idx) => (
+                        <img key={idx} src={URL.createObjectURL(img)} alt="Feedback" className="w-24 h-24 object-cover rounded" />
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleEditFeedback('delivery', deliveryFeedback)}>Edit</Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteFeedback('delivery')}>Delete</Button>
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
-            </Card>
+          </Card>
+
+        {/* Feedback Modal */}
+        {modalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 min-w-[350px] shadow-lg">
+              <h2 className="text-xl font-semibold mb-4">{modalType === 'delivery' ? 'Delivery' : 'Product'} Feedback</h2>
+              <form onSubmit={handleFeedbackSubmit} className="flex flex-col gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Your Name</label>
+                  <input type="text" value={userName} disabled className="border rounded px-2 py-1 w-full bg-gray-100" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Rating</label>
+                  <div className="flex gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <button type="button" key={i} onClick={() => handleStarClick(i+1)}>
+                        <Star className={`w-6 h-6 ${i < feedbackForm.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Feedback Description</label>
+                  <textarea
+                    name="description"
+                    value={feedbackForm.description}
+                    onChange={handleFeedbackChange}
+                    className="border rounded px-2 py-1 w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Upload Images</label>
+                  <input
+                    type="file"
+                    name="images"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFeedbackChange}
+                    className="border rounded px-2 py-1 w-full"
+                  />
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Submit</Button>
+                  <Button type="button" className="bg-gray-300 px-4 py-1 rounded" onClick={() => setModalOpen(false)}>Cancel</Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
         </div>
       </div>
     </div>
