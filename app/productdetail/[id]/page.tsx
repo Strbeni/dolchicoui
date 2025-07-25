@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Minus, Plus, ShoppingCart, Heart, Badge, Truck, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import Link from 'next/link';
-// import MultiSelect from '@/components/ui/multi-select';
 import Zoom from 'react-medium-image-zoom'
 import 'react-medium-image-zoom/dist/styles.css'
-
+import { useCart } from '@/contexts/CartContext';
+import { useWishlist } from '@/contexts/WishlistContext';
 
 interface Product {
   id: number;
@@ -21,35 +21,37 @@ interface Product {
   category: string;
   subCategory: string;
   sizes: string[];
+  stock: number; // Added for stock validation
 }
 
-// const allSizes = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
+// API Helper functions
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 export default function ProductDetail() {
   const params = useParams();
+  const router = useRouter();
   const productId = params?.id;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedSize, setSelectedSize] = useState('');
   const [activeTab, setActiveTab] = useState('details');
   const [error, setError] = useState('');
-  // const [selected, setSelected] = useState<string[]>([]);
-  // const [isLoading,] = useState(false);
-  // const frameworks = [
-  //   { label: "Next.js", value: "nextjs" },
-  //   { label: "React", value: "react" },
-  //   { label: "Vue.js", value: "vue" }
-  // ];
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [addingToWishlist, setAddingToWishlist] = useState(false);
+
+  // Use cart and wishlist contexts
+  const { addToCart } = useCart();
+  const { addToWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/product/single/${productId}`);
+        const res = await fetch(`${API_BASE}/api/product/single/${productId}`);
         const data = await res.json();
         if (res.ok && data.success) {
           setProduct(data.product);
-          // Default size
+          // Set default size to first available size
           if (data.product?.sizes?.length > 0) {
             setSelectedSize(data.product.sizes[0]);
           }
@@ -59,13 +61,81 @@ export default function ProductDetail() {
       } catch {
         setError('Product not found');
       }
-
     };
 
     if (productId) {
       fetchProduct();
     }
   }, [productId]);
+
+  // Handle add to cart
+  const handleAddToCart = async () => {
+    if (!product) return;
+
+    // Check authentication
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    // Validate size selection
+    if (!selectedSize) {
+      alert('Please select a size');
+      return;
+    }
+
+    // Validate quantity
+    if (quantity > product.stock) {
+      alert(`Only ${product.stock} items available in stock`);
+      return;
+    }
+
+    setAddingToCart(true);
+    
+    try {
+      addToCart();
+      
+      // Optional: Show success message or redirect
+      const shouldRedirect = window.confirm(
+        `Added ${quantity} item(s) to cart. Would you like to view your cart?`
+      );
+      
+      if (shouldRedirect) {
+        router.push('/cartpage');
+      }
+      
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      alert(error instanceof Error ? error.message : 'Failed to add to cart');
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  // Handle add to wishlist
+  const handleAddToWishlist = async () => {
+    if (!product) return;
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    setAddingToWishlist(true);
+    
+    try {
+      addToWishlist(product);
+      // Optional: Show success message
+      alert('Added to wishlist!');
+    } catch (error) {
+      console.error('Failed to add to wishlist:', error);
+      alert(error instanceof Error ? error.message : 'Failed to add to wishlist');
+    } finally {
+      setAddingToWishlist(false);
+    }
+  };
 
   if (error) {
     return <div className="p-10 text-center text-red-600">{error}</div>;
@@ -77,19 +147,10 @@ export default function ProductDetail() {
 
   return (
     <>
-      
-
       <div className="px-6 lg:px-20 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {/* Images */}
           <div>
-            {/* <Image
-              src={product.image?.[0] || '/placeholder.png'}
-              alt={product.name}
-              width={600}
-              height={600}
-              className="rounded object-cover"
-            /> */}
             <Zoom>
               <Image
                 src={product.image?.[0] || '/placeholder.png'}
@@ -108,7 +169,7 @@ export default function ProductDetail() {
                   alt={`Thumb ${idx}`}
                   width={80}
                   height={80}
-                  className="rounded border object-cover"
+                  className="rounded border object-cover cursor-pointer hover:opacity-80"
                 />
               ))}
             </div>
@@ -118,65 +179,120 @@ export default function ProductDetail() {
           <div>
             <p className="text-sm text-gray-500 uppercase">{product.subCategory}</p>
             <h1 className="text-2xl md:text-3xl font-semibold">{product.name}</h1>
-            <p className="text-xl font-bold text-red-600 mt-1">INR {product.price}</p>
+            <p className="text-xl font-bold text-red-600 mt-1">INR {product.price.toLocaleString()}</p>
+            
+            {/* Stock indicator */}
+            <div className="mt-2">
+              {product.stock > 0 ? (
+                <p className="text-sm text-green-600">✓ In Stock ({product.stock} available)</p>
+              ) : (
+                <p className="text-sm text-red-600">✗ Out of Stock</p>
+              )}
+            </div>
+
             <p className="text-sm text-gray-600 mt-3 leading-relaxed">
               {product.description || 'No description available.'}
             </p>
 
             {/* Sizes */}
-            <div className="mt-4 flex flex-wrap gap-2">
-              {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  className={`px-4 py-1 border text-sm ${size === selectedSize
-                    ? 'bg-black text-white'
-                    : 'border-gray-300'
+            <div className="mt-4">
+              <p className="text-sm font-medium mb-2">Size:</p>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes.map((size) => (
+                  <button
+                    key={size}
+                    className={`px-4 py-2 border text-sm transition-colors ${
+                      size === selectedSize
+                        ? 'bg-black text-white border-black'
+                        : 'border-gray-300 hover:border-gray-400'
                     }`}
-                  onClick={() => setSelectedSize(size)}
-                >
-                  {size}
-                </button>
-              ))}
+                    onClick={() => setSelectedSize(size)}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-
 
             {/* Quantity + Add to Cart */}
             <div className="mt-6 flex items-center gap-4">
-              <div className="flex items-center border px-2 py-1">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+              <div className="flex items-center border border-gray-300 rounded">
+                <button 
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="px-3 py-2 hover:bg-gray-100 transition-colors"
+                  disabled={addingToCart}
+                >
                   <Minus size={16} />
                 </button>
-                <span className="px-4">{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)}>
+                <span className="px-4 py-2 min-w-[50px] text-center">{quantity}</span>
+                <button 
+                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                  className="px-3 py-2 hover:bg-gray-100 transition-colors"
+                  disabled={addingToCart || quantity >= product.stock}
+                >
                   <Plus size={16} />
                 </button>
               </div>
-              <Button className="bg-[#c2552d] hover:bg-[#a8441d] text-white rounded-none px-8 flex items-center gap-2">
-                ADD TO CART <ShoppingCart size={18} />
+
+              <Button 
+                onClick={handleAddToCart}
+                disabled={addingToCart || product.stock === 0 || !selectedSize}
+                className="bg-[#c2552d] hover:bg-[#a8441d] text-white rounded-none px-8 flex items-center gap-2 disabled:opacity-50"
+              >
+                {addingToCart ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ADDING...
+                  </>
+                ) : (
+                  <>
+                    ADD TO CART <ShoppingCart size={18} />
+                  </>
+                )}
               </Button>
-              <button className="border p-2 rounded-full hover:bg-gray-100">
-                <Heart size={20} />
+
+              <button 
+                onClick={handleAddToWishlist}
+                disabled={addingToWishlist}
+                className={`border p-2 rounded-full transition-colors ${
+                  isInWishlist(product.id) 
+                    ? 'bg-red-100 border-red-300 text-red-600' 
+                    : 'hover:bg-gray-100 border-gray-300'
+                }`}
+              >
+                {addingToWishlist ? (
+                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Heart 
+                    size={20} 
+                    fill={isInWishlist(product.id) ? 'currentColor' : 'none'}
+                  />
+                )}
               </button>
             </div>
 
             {/* Delivery Info */}
-            <div className="mt-6 space-y-2 text-sm border-t pt-4">
-              <div className="flex gap-2 items-center">
-                <Truck size={30} />
-                <span>
-                  <strong>Free Delivery</strong> &nbsp;
-                  <a href="#" className="underline text-blue-600 text-xs">
-                    Enter your postal code
-                  </a>
-                </span>
+            <div className="mt-6 space-y-3 text-sm border-t pt-4">
+              <div className="flex gap-3 items-start">
+                <Truck size={20} className="text-green-600 mt-1" />
+                <div>
+                  <p className="font-medium">Free Delivery</p>
+                  <p className="text-gray-600 text-xs">
+                    <a href="#" className="underline text-blue-600">
+                      Enter your postal code for delivery date
+                    </a>
+                  </p>
+                </div>
               </div>
-              <div className="flex gap-2 items-center">
-                <RefreshCw size={30} />
-                <span>
-                  <strong>Return Delivery</strong> &nbsp;
-                  <span className="text-xs text-gray-600">Free 30 Days Delivery Returns.</span> &nbsp;
-                  <a href="#" className="underline text-blue-600 text-xs">Details</a>
-                </span>
+              <div className="flex gap-3 items-start">
+                <RefreshCw size={20} className="text-blue-600 mt-1" />
+                <div>
+                  <p className="font-medium">Return Delivery</p>
+                  <p className="text-gray-600 text-xs">
+                    Free 30 Days Delivery Returns. {' '}
+                    <a href="#" className="underline text-blue-600">Details</a>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -188,7 +304,11 @@ export default function ProductDetail() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-2 ${activeTab === tab ? 'border-b-2 border-black font-semibold text-black' : ''}`}
+              className={`pb-2 transition-colors ${
+                activeTab === tab 
+                  ? 'border-b-2 border-black font-semibold text-black' 
+                  : 'hover:text-gray-800'
+              }`}
             >
               {tab === 'details' ? 'Product Details' : tab === 'spec' ? 'Specification' : 'Ratings & Reviews'}
             </button>
@@ -200,7 +320,7 @@ export default function ProductDetail() {
             <>
               <div>
                 <h3 className="font-semibold">Product Details</h3>
-                <p>Blue washed jacket, has a spread collar, 4 pockets, button closure, long sleeves, straight hem</p>
+                <p>{product.description || 'Blue washed jacket, has a spread collar, 4 pockets, button closure, long sleeves, straight hem'}</p>
               </div>
               <div>
                 <h3 className="font-semibold">Size & Fit</h3>
@@ -218,10 +338,10 @@ export default function ProductDetail() {
               <div>
                 <h3 className="font-semibold">General</h3>
                 <ul className="list-disc ml-5 text-gray-700">
-                  <li>Brand: DolchiCo</li>
-                  <li>Gender: Men</li>
-                  <li>Occasion: Casual</li>
-                  <li>Fit: Regular Fit</li>
+                  <li>Category: {product.category}</li>
+                  <li>Sub Category: {product.subCategory}</li>
+                  <li>Available Sizes: {product.sizes.join(', ')}</li>
+                  <li>Stock: {product.stock} units</li>
                 </ul>
               </div>
             </div>
@@ -242,13 +362,13 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* You can keep this section as-is */}
+      {/* Related Products Section */}
       <section className="px-6 lg:px-20 py-10">
-        <h2 className="text-3xl font-semibold text-start mb-6">THE BEST DRESS FOR THE BEST WOMAN</h2>
+        <h2 className="text-3xl font-semibold text-start mb-6">YOU MIGHT ALSO LIKE</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((id) => (
             <Link key={id} href={`/productdetail/${id}`}>
-              <Card className="relative p-2">
+              <Card className="relative p-2 hover:shadow-lg transition-shadow">
                 <Image
                   src={`/h${id}.svg`}
                   alt={`Product ${id}`}
@@ -267,8 +387,8 @@ export default function ProductDetail() {
               </Card>
             </Link>
           ))}
-
         </div>
+        
         <div className="mt-6 pt-10 flex justify-start">
           <Link href="/productlist">
             <Button className="bg-[#844416] hover:bg-[#6e3612] text-white text-lg gap-2">

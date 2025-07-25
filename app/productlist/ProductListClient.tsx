@@ -1,385 +1,268 @@
-// 'use client';
-
-// import { useEffect, useState } from 'react';
-// import Image from 'next/image';
-// import Link from 'next/link';
-// import MultiSelect from '@/components/ui/multi-select';
-// import ColorFilter from './ColorFilter';
-// import PriceFilter from './PriceFilter';
-// import { useSearchParams } from 'next/navigation';
-// import { Heart, ShoppingCart } from 'lucide-react';
-
-// interface Product {
-// 	id: number;
-// 	name: string;
-// 	description: string;
-// 	price: number;
-// 	image: string[];
-// 	category: string;
-// 	subCategory: string;
-// 	sizes: string[];
-// 	color?: string[];
-// }
-
-// export default function ProductListClient() {
-// 	const [products, setProducts] = useState<Product[]>([]);
-// 	const [loading, setLoading] = useState(true);
-// 	const [error, setError] = useState('');
-// 	const [selected, setSelected] = useState<string[]>([]);
-// 	const [isLoading] = useState(false);
-// 	const [selectedColors, setSelectedColors] = useState<string[]>([]);
-// 	const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
-
-// 	const searchParams = useSearchParams();
-// 	const searchQuery = searchParams.get('q') || '';
-
-// 	const frameworks = [
-// 		{ label: 'Next.js', value: 'nextjs' },
-// 		{ label: 'React', value: 'react' },
-// 		{ label: 'Vue.js', value: 'vue' },
-// 	];
-
-// 	const sizes = ['S', 'M', 'L', 'XL'];
-// 	const colorOptions = [
-// 		{ name: 'Red', hex: '#f87171', count: 10 },
-// 		{ name: 'Blue', hex: '#60a5fa', count: 7 },
-// 		{ name: 'Green', hex: '#34d399', count: 5 },
-// 		{ name: 'Yellow', hex: '#facc15', count: 3 },
-// 		{ name: 'Purple', hex: '#a78bfa', count: 4 },
-// 	];
-
-// 	useEffect(() => {
-// 		const timeoutId = setTimeout(() => {
-// 			const fetchProducts = async () => {
-// 				setLoading(true);
-// 				setError('');
-
-// 				try {
-// 					const endpoint = searchQuery
-// 						? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/product/search?q=${encodeURIComponent(searchQuery)}`
-// 						: `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/product/list`;
-
-// 					const res = await fetch(endpoint);
-// 					const data = await res.json();
-
-// 					if (res.ok && data.success) {
-// 						const filteredProducts = data.products.filter((product: Product) => {
-// 							const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-// 							const matchesColor = selectedColors.length === 0 || selectedColors.some(color => product.color?.includes(color));
-// 							return matchesPrice && matchesColor;
-// 						});
-// 						setProducts(filteredProducts);
-// 					} else {
-// 						throw new Error('Invalid response structure');
-// 					}
-// 				} catch {
-// 					setError('Failed to load products');
-// 				} finally {
-// 					setLoading(false);
-// 				}
-// 			};
-
-// 			fetchProducts();
-// 		}, 300);
-
-// 		return () => clearTimeout(timeoutId);
-// 	}, [searchQuery, priceRange, selectedColors]);
-
-// 	return (
-// 		<div className="px-6 lg:px-20 py-10 grid grid-cols-1 md:grid-cols-4 gap-10">
-// 			{/* Filters */}
-// 			<div className="space-y-6 px-6">
-// 				<h1 className="text-3xl font-bold">ALL PRODUCTS</h1>
-
-// 				{/* Sizes */}
-// 				<div>
-// 					<MultiSelect
-// 						options={frameworks}
-// 						value={selected}
-// 						onChange={setSelected}
-// 						placeholder="Select frameworks..."
-// 						isLoading={isLoading}
-// 					/>
-// 					<p className="font-semibold mb-2">Size</p>
-// 					<div className="flex gap-2 flex-wrap">
-// 						{sizes.map(size => (
-// 							<button key={size} className="border px-3 py-1 text-sm hover:bg-black hover:text-white">
-// 								{size}
-// 							</button>
-// 						))}
-// 					</div>
-// 				</div>
-
-// 				<ColorFilter colors={colorOptions} selectedColors={selectedColors} onChange={setSelectedColors} />
-// 				<PriceFilter priceRange={priceRange} setPriceRange={setPriceRange} />
-// 			</div>
-
-// 			{/* Product Grid */}
-// 			<div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-// 				{searchQuery && (
-// 					<p className="text-sm text-gray-500 mb-4">
-// 						Showing results for <span className="font-semibold">&quot;{searchQuery}&quot;</span>
-// 					</p>
-// 				)}
-
-// 				{loading && <p>Loading products...</p>}
-// 				{error && <p className="text-red-600">{error}</p>}
-
-// 				{!loading && !error && products.length === 0 && (
-// 					<p className="text-gray-500 col-span-full">No products found in this price range.</p>
-// 				)}
-
-// 				{!loading && !error && products.map(product => (
-// 					// <div key={product.id} className="space-y-2 group">
-// 					// 	<Link href={`/productdetail/${product.id}`}>
-// 					// 		<div className="relative aspect-[3/4] overflow-hidden cursor-pointer">
-// 					// 			<Image
-// 					// 				src={product.image?.[0] || '/placeholder.png'}
-// 					// 				alt={product.name}
-// 					// 				width={300}
-// 					// 				height={400}
-// 					// 				className="object-cover w-full h-full"
-// 					// 			/>
-// 					// 			<button className="absolute inset-0 bg-opacity-30 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-// 					// 				Quick View
-// 					// 			</button>
-// 					// 		</div>
-// 					// 	</Link>
-// 					// 	<h3 className="font-medium text-sm">{product.name}</h3>
-// 					// 	<p className="text-sm text-gray-800">₹{product.price}</p>
-// 					// 	<div className="flex gap-1 mt-1">
-// 					// 		{product.sizes?.map((size, i) => (
-// 					// 			<span key={i} className="text-xs border px-2 py-0.5 rounded bg-gray-100">{size}</span>
-// 					// 		))}
-// 					// 	</div>
-// 					// 	<Heart className="w-5 h-5 cursor-pointer" />
-// 					// 	<Link href="/cartpage">
-// 					// 		<ShoppingCart className="w-5 h-5 cursor-pointer" />
-// 					// 	</Link>
-
-// 					// </div>
-// 					<div key={product.id} className="space-y-2 group">
-// 						<div className="relative aspect-[3/4] overflow-hidden cursor-pointer">
-// 							<Link href={`/productdetail/${product.id}`}>
-// 								<Image
-// 									src={product.image?.[0] || '/placeholder.png'}
-// 									alt={product.name}
-// 									width={300}
-// 									height={400}
-// 									className="object-cover w-full h-full"
-// 								/>
-// 								<button className="absolute inset-0 bg-black bg-opacity-30 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-// 									Quick View
-// 								</button>
-// 							</Link>
-// 							{/* Heart icon at top-right corner */}
-// 							<Heart className="absolute top-2 right-2 w-5 h-5 text-white bg-black bg-opacity-50 rounded-full p-1 cursor-pointer" />
-// 						</div>
-
-// 						<h3 className="font-medium text-sm">{product.name}</h3>
-// 						<p className="text-sm text-gray-800">₹{product.price}</p>
-
-// 						{/* Sizes and cart icon in a row */}
-// 						<div className="flex items-center justify-between mt-1">
-// 							<div className="flex gap-1">
-// 								{product.sizes?.map((size, i) => (
-// 									<span key={i} className="text-xs border px-2 py-0.5 rounded bg-gray-100">
-// 										{size}
-// 									</span>
-// 								))}
-// 							</div>
-// 							<Link href="/cartpage">
-// 								<ShoppingCart className="w-5 h-5 cursor-pointer" />
-// 							</Link>
-// 						</div>
-// 					</div>
-
-// 				))}
-// 			</div>
-// 		</div>
-// 	);
-// }
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import MultiSelect from '@/components/ui/multi-select';
 import ColorFilter from './ColorFilter';
 import PriceFilter from './PriceFilter';
 import { useSearchParams } from 'next/navigation';
-import { Heart, ShoppingCart } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { ShoppingCart, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useWishlist } from '@/contexts/WishlistContext';
 
 interface Product {
-	id: number;
-	name: string;
-	description: string;
-	price: number;
-	image: string[];
-	category: string;
-	subCategory: string;
-	sizes: string[];
-	color?: string[];
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string[];
+  category: string;
+  subCategory: string;
+  sizes: string[];
+  color?: string[];
+  stock: number;
 }
 
+// Point at your backend port
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+
+const authHeaders = () => {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+};
+
+// Simple in‐DOM toast
+const showToast = (msg: string, success = true) => {
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 ${
+    success ? 'bg-green-600' : 'bg-red-600'
+  }`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+};
+
 export default function ProductListClient() {
-	const [products, setProducts] = useState<Product[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState('');
-	const [selected, setSelected] = useState<string[]>([]);
-	const [isLoading] = useState(false);
-	const [selectedColors, setSelectedColors] = useState<string[]>([]);
-	const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
+  const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  const [addedToCart, setAddedToCart] = useState<number | null>(null);
 
-	const searchParams = useSearchParams();
-	const searchQuery = searchParams.get('q') || '';
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('q') || '';
+  const router = useRouter();
 
-	const { addToCart } = useCart();
-	const router = useRouter();
-	const { addToWishlist } = useWishlist();
+  // Fetch & filter products
+  useEffect(() => {
+    const id = setTimeout(async () => {
+      setLoading(true); setError('');
+      try {
+        const url = searchQuery
+          ? `${API_BASE}/api/product/search?q=${encodeURIComponent(searchQuery)}`
+          : `${API_BASE}/api/product/list`;
+        const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.success || !Array.isArray(data.products)) throw new Error('Bad format');
+        const filtered = data.products.filter((p: Product) => {
+          const okPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
+          const okColor = !selectedColors.length || selectedColors.some(c => p.color?.includes(c));
+          const okSize = !selectedSizes.length || selectedSizes.some(s => p.sizes.includes(s));
+          return okPrice && okColor && okSize;
+        });
+        setProducts(filtered);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to load');
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(id);
+  }, [searchQuery, priceRange, selectedColors, selectedSizes]);
 
-	useEffect(() => {
-		const timeoutId = setTimeout(() => {
-			const fetchProducts = async () => {
-				setLoading(true);
-				setError('');
+  const handleSizeFilter = (size: string) => {
+    setSelectedSizes(s => s.includes(size) ? s.filter(x => x !== size) : [...s, size]);
+  };
 
-				try {
-					const endpoint = searchQuery
-						? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/product/search?q=${encodeURIComponent(searchQuery)}`
-						: `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/product/list`;
+  const handleAddToCart = async (p: Product) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) return router.push('/login');
+    if (!p.sizes.length) return showToast('No sizes available', false);
 
-					const res = await fetch(endpoint);
-					const data = await res.json();
+    setAddingToCart(p.id);
+    try {
+      const res = await fetch(`${API_BASE}/api/cart/items`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ productId: p.id, size: p.sizes[0], quantity: 1 }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Add failed');
+      }
+      const body = await res.json();
+      if (body.success === false) throw new Error(body.message || 'Add failed');
+      setAddedToCart(p.id);
+      showToast('Added to cart!');
+      setTimeout(() => setAddedToCart(null), 2000);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Add failed', false);
+    } finally {
+      setAddingToCart(null);
+    }
+  };
 
-					if (res.ok && data.success) {
-						const filteredProducts = data.products.filter((product: Product) => {
-							const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-							const matchesColor =
-								selectedColors.length === 0 ||
-								selectedColors.some(color => product.color?.includes(color));
-							return matchesPrice && matchesColor;
-						});
-						setProducts(filteredProducts);
-					} else {
-						throw new Error('Invalid response structure');
-					}
-				} catch {
-					setError('Failed to load products');
-				} finally {
-					setLoading(false);
-				}
-			};
+  return (
+    <div className="px-6 lg:px-20 py-10 grid grid-cols-1 md:grid-cols-4 gap-10">
+      {/* Filters */}
+      <div className="space-y-6 px-6">
+        <h1 className="text-3xl font-bold">ALL PRODUCTS</h1>
 
-			fetchProducts();
-		}, 300);
+        {/* Size */}
+        <div>
+          <p className="font-semibold mb-2">Size</p>
+          <div className="flex flex-wrap gap-2">
+            {['S','M','L','XL'].map(sz => (
+              <button
+                key={sz}
+                onClick={() => handleSizeFilter(sz)}
+                className={`border px-3 py-1 text-sm transition ${
+                  selectedSizes.includes(sz)
+                    ? 'bg-black text-white'
+                    : 'border-gray-300 hover:bg-black hover:text-white'
+                }`}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
+          {selectedSizes.length > 0 && (
+            <p className="text-xs text-gray-500 mt-1">
+              Selected: {selectedSizes.join(', ')}
+            </p>
+          )}
+        </div>
 
-		return () => clearTimeout(timeoutId);
-	}, [searchQuery, priceRange, selectedColors]);
+        {/* Color & Price */}
+        <ColorFilter
+          colors={[
+            { name: 'Red', hex: '#f87171', count: 10 },
+            { name: 'Blue', hex: '#60a5fa', count: 7 },
+            { name: 'Green', hex: '#34d399', count: 5 },
+            { name: 'Yellow', hex: '#facc15', count: 3 },
+            { name: 'Purple', hex: '#a78bfa', count: 4 },
+          ]}
+          selectedColors={selectedColors}
+          onChange={setSelectedColors}
+        />
+        <PriceFilter priceRange={priceRange} setPriceRange={setPriceRange} />
 
-	const handleAddToCart = () => {
-		addToCart();
-		router.push('/cartpage');
-	};
+        <button
+          onClick={() => {
+            setSelectedSizes([]); setSelectedColors([]); setPriceRange([0,15000]);
+          }}
+          className="w-full border border-red-300 text-red-600 px-3 py-2 text-sm hover:bg-red-50 transition rounded"
+        >
+          Clear All Filters
+        </button>
+      </div>
 
-	return (
-		<div className="px-6 lg:px-20 py-10 grid grid-cols-1 md:grid-cols-4 gap-10">
-			{/* Filters */}
-			<div className="space-y-6 px-6">
-				<h1 className="text-3xl font-bold">ALL PRODUCTS</h1>
+      {/* Product Grid */}
+      <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {searchQuery && (
+          <p className="text-sm text-gray-500 mb-4 col-span-full">
+            Showing results for <span className="font-semibold">"{searchQuery}"</span>
+          </p>
+        )}
 
-				<div>
-					<MultiSelect
-						options={[
-							{ label: 'Next.js', value: 'nextjs' },
-							{ label: 'React', value: 'react' },
-							{ label: 'Vue.js', value: 'vue' },
-						]}
-						value={selected}
-						onChange={setSelected}
-						placeholder="Select frameworks..."
-						isLoading={isLoading}
-					/>
+        {loading && (
+          <div className="col-span-full text-center py-10">
+            <div className="inline-flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
+              <p>Loading products...</p>
+            </div>
+          </div>
+        )}
 
-					<p className="font-semibold mb-2">Size</p>
-					<div className="flex gap-2 flex-wrap">
-						{['S', 'M', 'L', 'XL'].map(size => (
-							<button key={size} className="border px-3 py-1 text-sm hover:bg-black hover:text-white">
-								{size}
-							</button>
-						))}
-					</div>
-				</div>
+        {error && (
+          <div className="col-span-full text-center py-10">
+            <p className="text-red-600 mb-2">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
-				<ColorFilter colors={[
-					{ name: 'Red', hex: '#f87171', count: 10 },
-					{ name: 'Blue', hex: '#60a5fa', count: 7 },
-					{ name: 'Green', hex: '#34d399', count: 5 },
-					{ name: 'Yellow', hex: '#facc15', count: 3 },
-					{ name: 'Purple', hex: '#a78bfa', count: 4 },
-				]} selectedColors={selectedColors} onChange={setSelectedColors} />
+        {!loading && !error && !products.length && (
+          <div className="col-span-full text-center py-10">
+            <p className="text-gray-500 mb-2">No products match your criteria.</p>
+            <button
+              onClick={() => {
+                setSelectedSizes([]); setSelectedColors([]); setPriceRange([0,15000]);
+              }}
+              className="text-blue-500 underline hover:text-blue-600"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
 
-				<PriceFilter priceRange={priceRange} setPriceRange={setPriceRange} />
-			</div>
+        {!loading && !error && products.map(p => (
+          <div key={p.id} className="space-y-2 group">
+            <Link href={`/productdetail/${p.id}`}>
+              <div className="relative aspect-[3/4] overflow-hidden cursor-pointer">
+                <Image
+                  src={p.image[0] || '/placeholder.png'}
+                  alt={p.name}
+                  width={300}
+                  height={400}
+                  className="object-cover w-full h-full transition-transform group-hover:scale-105"
+                />
+                <button className="absolute inset-0 bg-black bg-opacity-30 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                  Quick View
+                </button>
+              </div>
+            </Link>
 
-			{/* Product Grid */}
-			<div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-				{searchQuery && (
-					<p className="text-sm text-gray-500 mb-4">
-						Showing results for <span className="font-semibold">&quot;{searchQuery}&quot;</span>
-					</p>
-				)}
+            <h3 className="font-medium text-sm">{p.name}</h3>
+            <p className="text-sm text-gray-800">₹{p.price.toLocaleString()}</p>
 
-				{loading && <p>Loading products...</p>}
-				{error && <p className="text-red-600">{error}</p>}
+            <div className="flex items-center justify-between mt-1">
+              <div className="flex gap-1">
+                {p.sizes.slice(0,3).map((sz,i) => (
+                  <span key={i} className="text-xs border px-2 py-0.5 rounded bg-gray-100">{sz}</span>
+                ))}
+                {p.sizes.length > 3 && <span className="text-xs text-gray-500">+{p.sizes.length-3}</span>}
+              </div>
 
-				{!loading && !error && products.length === 0 && (
-					<p className="text-gray-500 col-span-full">No products found in this price range.</p>
-				)}
-
-				{!loading && !error && products.map(product => (
-					<div key={product.id} className="space-y-2 group">
-						<div className="relative aspect-[3/4] overflow-hidden cursor-pointer">
-							<Link href={`/productdetail/${product.id}`}>
-								<Image
-									src={product.image?.[0] || '/placeholder.png'}
-									alt={product.name}
-									width={300}
-									height={400}
-									className="object-cover w-full h-full"
-								/>
-								<button className="absolute inset-0 bg-black bg-opacity-30 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-									Quick View
-								</button>
-							</Link>
-							{/* <Heart className="absolute top-2 right-2 w-5 h-5 text-white bg-black bg-opacity-50 rounded-full p-1 cursor-pointer" /> */}
-							<Heart
-  onClick={addToWishlist}
-  className="absolute top-2 right-2 w-5 h-5 text-white bg-black bg-opacity-50 rounded-full p-1 cursor-pointer hover:scale-110 transition"
-/>
-
-						</div>
-
-						<h3 className="font-medium text-sm">{product.name}</h3>
-						<p className="text-sm text-gray-800">₹{product.price}</p>
-
-						<div className="flex items-center justify-between mt-1">
-							<div className="flex gap-1">
-								{product.sizes?.map((size, i) => (
-									<span key={i} className="text-xs border px-2 py-0.5 rounded bg-gray-100">
-										{size}
-									</span>
-								))}
-							</div>
-							<ShoppingCart onClick={handleAddToCart} className="w-5 h-5 cursor-pointer" />
-						</div>
-					</div>
-				))}
-			</div>
-		</div>
-	);
+              <div
+                onClick={() => handleAddToCart(p)}
+                className="relative w-6 h-6 cursor-pointer"
+              >
+                {addingToCart === p.id && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
+                  </div>
+                )}
+                {addedToCart === p.id ? (
+                  <Check className="text-green-600 w-6 h-6" />
+                ) : (
+                  <ShoppingCart className="w-6 h-6 text-gray-600 hover:text-black transition-colors" />
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

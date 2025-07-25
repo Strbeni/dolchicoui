@@ -629,14 +629,22 @@ export const Navbar5 = () => {
                         }}
                         className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                       >
-                        Go to Profile
+                        Profile
+
+
+
                       </button>
+                          <button>Saved Payment Method</button>
+                      <button>Address Book</button>
+                          
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                       >
                         Logout
                       </button>
+
+
                     </>
                   ) : (
                     <button
