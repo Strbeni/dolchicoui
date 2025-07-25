@@ -30,6 +30,7 @@ export default function AccountSettings() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [profileImage, setProfileImage] = useState("/profile.jpg");
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -51,6 +52,7 @@ export default function AccountSettings() {
     setCountry("USA");
     setState("California");
     setZip("1207");
+    setProfileImage("/profile.jpg");
   };
 
   const handleSave = (e) => {
@@ -89,6 +91,17 @@ export default function AccountSettings() {
   const handlePhoneChange = (e) => {
     setTempPhone(e.target.value);
     setIsPhoneChanged(e.target.value !== phone);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileImage(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const validatePassword = (password) => {
@@ -190,12 +203,26 @@ export default function AccountSettings() {
                 ) : (
                   <form className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center" onSubmit={handleSave}>
                     <div className="flex flex-col items-center md:items-start">
-                      <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
+                      <div className="w-24 h-24 rounded-full overflow-hidden mb-4 relative">
                         <img
-                          src="/profile.jpg"
+                          src={profileImage}
                           alt="Profile"
                           className="w-full h-full object-cover"
                         />
+                        {isEditing && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                            <Label htmlFor="profileImage" className="cursor-pointer text-white text-sm">
+                              Upload Image
+                            </Label>
+                            <Input
+                              id="profileImage"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="hidden"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 col-span-2">
