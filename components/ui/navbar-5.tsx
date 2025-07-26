@@ -18,7 +18,6 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  // navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import {
   Sheet,
@@ -31,16 +30,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { SearchBar } from "./search-bar";
 import { useWishlist } from "@/contexts/WishlistContext";
-// import Men from "@/components/men"
 
 export const Navbar5 = () => {
-  // const [showMen, setShowMen] = useState(false)
-  // const [showWomen, setShowWomen] = useState(false)
-  // const [showKids, setShowKids] = useState(false)
-  // const [home, setHome] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true'
   const dropdownRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
   const { cartCount } = useCart();
@@ -51,27 +44,10 @@ export const Navbar5 = () => {
     setIsLoggedIn(!!token);
   }, []);
 
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-  //       setUserMenuOpen(false)
-  //     }
-  //   }
-
-  //   document.addEventListener("mousedown", handleClickOutside)
-  //   return () => document.removeEventListener("mousedown", handleClickOutside)
-  // }, [])
-
-  // const handleLogout = () => {
-  //   localStorage.removeItem('isLoggedIn')
-  //   setUserMenuOpen(false)
-  //   router.push('/login')
-  // }
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
-    setIsLoggedIn(false); // update UI
+    setIsLoggedIn(false);
     setUserMenuOpen(false);
     router.push('/login');
   };
@@ -441,11 +417,6 @@ export const Navbar5 = () => {
              href="/home"
             className="flex items-center gap-2"
           >
-            {/* <img
-              src="https://shadcnblocks.com/images/block/logos/shadcnblockscom-icon.svg"
-              className="max-h-8"
-              alt="Shadcn UI Navbar"
-            /> */}
             <span className="text-lg font-semibold tracking-tighter">
               DolchiCo
             </span>
@@ -564,104 +535,68 @@ export const Navbar5 = () => {
 
             </NavigationMenuList>
           </NavigationMenu>
-          {/* <div className="hidden items-center gap-4 lg:flex">
-            <Button variant="outline">Sign in</Button>
-            <Button>Start for free</Button>
-          </div> */}
           <div className="hidden items-center gap-4 lg:flex">
-            {/* <Search className="w-5 h-5 cursor-pointer" /> */}
             <div className="flex flex-col items-center justify-center ">
               <SearchBar
                 onSearch={(query) => router.push(`/productlist?q=${encodeURIComponent(query)}`)}
               />
-
             </div>
             <div className="relative" ref={dropdownRef}>
               <User
                 className="w-5 h-5 cursor-pointer"
                 onClick={() => setUserMenuOpen((prev) => !prev)}
               />
-              {/* {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50">
-                  {isLoggedIn ? (
-                    <>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          router.push('/profile');
-                        }}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                      >
-                        Go to Profile
-                      </button>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                      >
-                        Logout
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/login');
-                      }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                    >
-                      Login
-                    </button>
-                  )}
-                </div>
-              )}
-               */}
               {userMenuOpen && (
-                <div
-                  ref={dropdownRef}
-                  className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50"
-                >
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50">
                   {isLoggedIn ? (
                     <>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          router.push('/profile');
-                        }}
+                      <Link
+                        href="/profile"
                         className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
                       >
                         Profile
-
-
-
-                      </button>
-                          <button>Saved Payment Method</button>
-                      <button>Address Book</button>
-                          
+                      </Link>
+                      <Link
+                        href="/profile/orderHistory"
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Order History
+                      </Link>
+                      <Link
+                        href="/profile/paymentMethod"
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Saved Payment Method
+                      </Link>
+                      <Link
+                        href="/profile/addressBook"
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Address Book
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                       >
                         Logout
                       </button>
-
-
                     </>
                   ) : (
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        router.push('/login');
-                      }}
+                    <Link
+                      href="/login"
                       className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                      onClick={() => setUserMenuOpen(false)}
                     >
                       Login
-                    </button>
+                    </Link>
                   )}
                 </div>
               )}
             </div>
-
-            {/* <Heart className="w-5 h-5 cursor-pointer" /> */}
             <Link href="/wishlistpage" className="relative">
               <Heart className="w-6 h-6" />
               {wishlistCount > 0 && (
@@ -670,9 +605,6 @@ export const Navbar5 = () => {
                 </span>
               )}
             </Link>
-            {/* <Link href="/cartpage">
-              <ShoppingCart className="w-5 h-5 cursor-pointer" />
-            </Link> */}
             <Link href="/cartpage" className="relative">
               <ShoppingCart className="w-5 h-5 cursor-pointer" />
               {cartCount > 0 && (
@@ -696,18 +628,13 @@ export const Navbar5 = () => {
                     href="https://dolchico.com"
                     className="flex items-center gap-2"
                   >
-                    {/* <img
-                      src="https://shadcnblocks.com/images/block/logos/shadcnblockscom-icon.svg"
-                      className="max-h-8"
-                      alt="Shadcnblocks"
-                    /> */}
                     <span className="text-lg font-semibold tracking-tighter">
                       DolchiCo
                     </span>
                   </a>
                 </SheetTitle>
               </SheetHeader>
-              <div className="flex flex-col p-4">
+              <div className="flex flex-col p-4"></div>
                 <Accordion type="single" collapsible className="mt-4 mb-2">
                   <AccordionItem value="solutions" className="border-none">
                     <AccordionTrigger className="text-base hover:no-underline">
@@ -717,7 +644,6 @@ export const Navbar5 = () => {
                       <div className="grid md:grid-cols-2">
                         {men.map((men, index) => (
                           <a
-                            // href={men.href}
                             key={index}
                             className="rounded-md p-3 transition-colors hover:bg-muted/70"
                           >
@@ -725,9 +651,6 @@ export const Navbar5 = () => {
                               <p className="mb-1 font-semibold text-foreground">
                                 {men.title}
                               </p>
-                              {/* <p className="text-sm text-muted-foreground">
-                                {men.description}
-                              </p> */}
                               <ul className="text-sm text-muted-foreground list-none space-y-1">
                                 {men.items.map((item, itemIndex) => (
                                   <li key={itemIndex}>{item}</li>
@@ -740,10 +663,6 @@ export const Navbar5 = () => {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-                {/* <div className="flex flex-col gap-6"> */}
-                {/* <a href="#" className="font-medium">
-                    Women
-                  </a> */}
                 <Accordion type="single" collapsible className="mt-4 mb-2">
                   <AccordionItem value="solutions" className="border-none">
                     <AccordionTrigger className="text-base hover:no-underline">
@@ -753,7 +672,6 @@ export const Navbar5 = () => {
                       <div className="grid md:grid-cols-2">
                         {women.map((women, index) => (
                           <a
-                            // href={men.href}
                             key={index}
                             className="rounded-md p-3 transition-colors hover:bg-muted/70"
                           >
@@ -761,9 +679,6 @@ export const Navbar5 = () => {
                               <p className="mb-1 font-semibold text-foreground">
                                 {women.title}
                               </p>
-                              {/* <p className="text-sm text-muted-foreground">
-                                {men.description}
-                              </p> */}
                               <ul className="text-sm text-muted-foreground list-none space-y-1">
                                 {women.items.map((item, itemIndex) => (
                                   <li key={itemIndex}>{item}</li>
@@ -776,19 +691,15 @@ export const Navbar5 = () => {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-                {/* <a href="#" className="font-medium">
-                    Blog
-                  </a> */}
                 <Accordion type="single" collapsible className="mt-4 mb-2">
                   <AccordionItem value="solutions" className="border-none">
                     <AccordionTrigger className="text-base hover:no-underline">
                       Kids
                     </AccordionTrigger>
-                    <AccordionContent>
+                    <AccordionContent></AccordionContent>
                       <div className="grid md:grid-cols-2">
                         {kids.map((kids, index) => (
                           <a
-                            // href={men.href}
                             key={index}
                             className="rounded-md p-3 transition-colors hover:bg-muted/70"
                           >
@@ -796,9 +707,6 @@ export const Navbar5 = () => {
                               <p className="mb-1 font-semibold text-foreground">
                                 {kids.title}
                               </p>
-                              {/* <p className="text-sm text-muted-foreground">
-                                {men.description}
-                              </p> */}
                               <ul className="text-sm text-muted-foreground list-none space-y-1">
                                 {kids.items.map((item, itemIndex) => (
                                   <li key={itemIndex}>{item}</li>
@@ -811,9 +719,6 @@ export const Navbar5 = () => {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-                {/* <a href="#" className="font-medium">
-                    Pricing
-                  </a> */}
                 <Accordion type="single" collapsible className="mt-4 mb-2">
                   <AccordionItem value="solutions" className="border-none">
                     <AccordionTrigger className="text-base hover:no-underline">
@@ -823,7 +728,6 @@ export const Navbar5 = () => {
                       <div className="grid md:grid-cols-2">
                         {homes.map((homes, index) => (
                           <a
-                            // href={men.href}
                             key={index}
                             className="rounded-md p-3 transition-colors hover:bg-muted/70"
                           >
@@ -831,9 +735,6 @@ export const Navbar5 = () => {
                               <p className="mb-1 font-semibold text-foreground">
                                 {homes.title}
                               </p>
-                              {/* <p className="text-sm text-muted-foreground">
-                                {men.description}
-                              </p> */}
                               <ul className="text-sm text-muted-foreground list-none space-y-1">
                                 {homes.items.map((item, itemIndex) => (
                                   <li key={itemIndex}>{item}</li>
@@ -846,18 +747,16 @@ export const Navbar5 = () => {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-                {/* </div> */}
-                <div className="mt-6 flex flex-col gap-4">
+                <div className="mt-6 flex flex-col gap-4"></div>
                   <Link href="/login" className="text-sm text-muted-foreground hover:underline">
                     <Button variant="outline">Sign in</Button>
                   </Link>
-                  {/* <Button>Start for free</Button> */}
                 </div>
               </div>
             </SheetContent>
           </Sheet>
-        </nav>
       </div>
     </section>
+  </Sheet>
   );
 };
