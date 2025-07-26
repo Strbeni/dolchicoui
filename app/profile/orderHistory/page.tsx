@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
@@ -22,11 +23,12 @@ const allOrders = [
     image: "/curtain.jpg",
     returnWindow: "19 July 2025",
     status: "delivered",
+    placedDate: new Date("2025-07-06"),
   },
   {
     id: "#406-3908338-4442743",
     placed: "6 July 2025",
-    orderId: "406-3908338-4442743", // Fixed: unique orderId
+    orderId: "406-3908338-4442743",
     total: "₹699.00",
     shipTo: "Akash Kulshrestha",
     delivered: "8 July",
@@ -35,10 +37,11 @@ const allOrders = [
     image: "/gond.jpg",
     returnWindow: "18 July 2025",
     status: "delivered",
+    placedDate: new Date("2025-07-06"),
   },
   {
     id: "#406-3396058-1809901",
-    orderId: "406-3396058-1809901", // Fixed: unique orderId
+    orderId: "406-3396058-1809901",
     placed: "27 June 2025",
     total: "₹588.82",
     shipTo: "Akash Kulshrestha",
@@ -47,19 +50,47 @@ const allOrders = [
     image: "/airtel.png",
     isBroadband: true,
     status: "not_shipped",
+    placedDate: new Date("2025-06-27"),
   },
 ];
 
 export default function OrderHistoryPage() {
   const [tab, setTab] = useState("all");
+  const [monthFilter, setMonthFilter] = useState("all");
   const router = useRouter();
 
-  // Fixed: Use the correct orderId for navigation
   const handleViewDetails = (orderId: string) => {
     router.push(`/profile/orderHistory/orderDetail/${orderId}`);
   };
 
-  const filteredOrders =
+  // Filter orders by month
+  const getFilteredOrdersByMonth = (orders: typeof allOrders) => {
+    if (monthFilter === "all") return orders;
+    
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    switch (monthFilter) {
+      case "past30days":
+        cutoffDate.setDate(now.getDate() - 30);
+        break;
+      case "past3months":
+        cutoffDate.setMonth(now.getMonth() - 3);
+        break;
+      case "2025":
+        return orders.filter(order => order.placedDate.getFullYear() === 2025);
+      case "2024":
+        return orders.filter(order => order.placedDate.getFullYear() === 2024);
+      case "2023":
+        return orders.filter(order => order.placedDate.getFullYear() === 2023);
+      default:
+        return orders;
+    }
+    
+    return orders.filter(order => order.placedDate >= cutoffDate);
+  };
+
+  const filteredOrders = getFilteredOrdersByMonth(
     tab === "all"
       ? allOrders
       : allOrders.filter((order) => {
@@ -67,7 +98,8 @@ export default function OrderHistoryPage() {
           if (tab === "cancelled") return order.status === "cancelled";
           if (tab === "buy_again") return true;
           return true;
-        });
+        })
+  );
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -96,27 +128,7 @@ export default function OrderHistoryPage() {
             >
               Address Book
             </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Security
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Billing
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Settings
-            </button>
+           
           </TabsList>
         </div>
         <TabsContent value="orders" className="w-3/4">
@@ -173,6 +185,29 @@ export default function OrderHistoryPage() {
                 <Button>Search Orders</Button>
               </div>
             </div>
+            
+            {/* Month Filter Section */}
+            <div className="bg-white p-4 rounded shadow mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-gray-700">
+                  {filteredOrders.length} orders placed in
+                </span>
+                <Select value={monthFilter} onValueChange={setMonthFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select time period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All time</SelectItem>
+                    <SelectItem value="past30days">Past 30 days</SelectItem>
+                    <SelectItem value="past3months">Past 3 months</SelectItem>
+                    <SelectItem value="2025">2025</SelectItem>
+                    <SelectItem value="2024">2024</SelectItem>
+                    <SelectItem value="2023">2023</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <CardContent className="p-6 space-y-6">
               {filteredOrders.length === 0 ? (
                 <p className="text-center text-gray-500">
@@ -181,7 +216,7 @@ export default function OrderHistoryPage() {
               ) : (
                 filteredOrders.map((order, index) => (
                   <div
-                    key={order.orderId} // Use orderId as key for better React performance
+                    key={order.orderId}
                     className="bg-white border rounded-lg shadow p-4 space-y-2"
                   >
                     <div className="flex justify-between items-center">

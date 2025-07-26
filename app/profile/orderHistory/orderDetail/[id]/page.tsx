@@ -28,9 +28,9 @@ const getOrderById = (orderId: string) => {
           description: "20 Strings, 7 Ft - Sparkling Decor for Doors/Windows",
           price: 699,
           quantity: 1,
-          image: "/curtain.jpg"
-        }
-      ]
+          image: "/curtain.jpg",
+        },
+      ],
     },
     "406-3908338-4442743": {
       id: "406-3908338-4442743",
@@ -48,12 +48,13 @@ const getOrderById = (orderId: string) => {
       products: [
         {
           name: "BNSN Pure & Original Kala Gond",
-          description: "Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis",
+          description:
+            "Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis",
           price: 699,
           quantity: 1,
-          image: "/gond.jpg"
-        }
-      ]
+          image: "/gond.jpg",
+        },
+      ],
     },
     "406-3396058-1809901": {
       id: "406-3396058-1809901",
@@ -74,12 +75,12 @@ const getOrderById = (orderId: string) => {
           description: "Monthly broadband service",
           price: 588.82,
           quantity: 1,
-          image: "/airtel.png"
-        }
-      ]
-    }
+          image: "/airtel.png",
+        },
+      ],
+    },
   };
-  
+
   return orders[orderId as keyof typeof orders] || null;
 };
 
@@ -94,17 +95,19 @@ const OrderDetail = () => {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
-  
+
   // Get order data based on the ID
   const order = getOrderById(orderId);
-  
+
   if (!order) {
     return (
       <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
         <Card>
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-2">Order Not Found</h2>
-            <p className="text-gray-600 mb-4">The order with ID {orderId} could not be found.</p>
+            <p className="text-gray-600 mb-4">
+              The order with ID {orderId} could not be found.
+            </p>
             <Button onClick={() => router.push("/profile/orderHistory")}>
               Back to Order History
             </Button>
@@ -151,9 +154,9 @@ const OrderDetail = () => {
       tax: order.tax,
       shipping: order.shippingCost,
       discount: order.couponDiscount,
-      total: order.total
+      total: order.total,
     };
-    
+
     // Create a blob with invoice data (in real app, this would be a PDF)
     const invoiceContent = `
 INVOICE - Order #${order.id}
@@ -161,18 +164,26 @@ Date: ${order.datePlaced}
 Customer: Akash Kulshrestha
 
 Products:
-${order.products.map(p => `${p.name} - ₹${p.price} x ${p.quantity} = ₹${p.price * p.quantity}`).join('\n')}
+${order.products
+  .map(
+    (p) => `${p.name} - ₹${p.price} x ${p.quantity} = ₹${p.price * p.quantity}`
+  )
+  .join("\n")}
 
 Subtotal: ₹${order.subtotal}
 Tax: ₹${order.tax}
-Shipping: ${order.shippingCost === 0 ? 'Free' : `₹${order.shippingCost}`}
-${order.couponDiscount > 0 ? `Discount (${order.couponCode}): -₹${order.couponDiscount}` : ''}
+Shipping: ${order.shippingCost === 0 ? "Free" : `₹${order.shippingCost}`}
+${
+  order.couponDiscount > 0
+    ? `Discount (${order.couponCode}): -₹${order.couponDiscount}`
+    : ""
+}
 Grand Total: ₹${order.total}
     `;
-    
-    const blob = new Blob([invoiceContent], { type: 'text/plain' });
+
+    const blob = new Blob([invoiceContent], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = `invoice_${order.id}.txt`;
     document.body.appendChild(link);
@@ -182,11 +193,15 @@ Grand Total: ₹${order.total}
   };
 
   // Feedback state
-  const [deliveryFeedback, setDeliveryFeedback] = useState<Feedback | null>(null);
+  const [deliveryFeedback, setDeliveryFeedback] = useState<Feedback | null>(
+    null
+  );
   const [productFeedback, setProductFeedback] = useState<Feedback | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'delivery' | 'product' | null>(null);
-  const [feedbackForm, setFeedbackForm] = useState<Omit<Feedback, 'userName'>>({
+  const [modalType, setModalType] = useState<"delivery" | "product" | null>(
+    null
+  );
+  const [feedbackForm, setFeedbackForm] = useState<Omit<Feedback, "userName">>({
     rating: 0,
     description: "",
     images: [],
@@ -196,16 +211,22 @@ Grand Total: ₹${order.total}
   const userName = "Akash Kulshrestha"; // Replace with dynamic value if needed
 
   // Open modal for feedback (only for add, not edit)
-  const handleOpenFeedbackModal = (type: 'delivery' | 'product') => {
+  const handleOpenFeedbackModal = (type: "delivery" | "product") => {
     setModalType(type);
     setFeedbackForm({ rating: 0, description: "", images: [] });
     setModalOpen(true);
   };
 
   // Handle feedback form changes
-  const handleFeedbackChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleFeedbackChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    if (name === "images" && e.target instanceof HTMLInputElement && e.target.files) {
+    if (
+      name === "images" &&
+      e.target instanceof HTMLInputElement &&
+      e.target.files
+    ) {
       setFeedbackForm({ ...feedbackForm, images: Array.from(e.target.files) });
     } else {
       setFeedbackForm({ ...feedbackForm, [name]: value });
@@ -230,7 +251,10 @@ Grand Total: ₹${order.total}
   };
 
   // Edit feedback (open modal with existing data)
-  const handleEditFeedback = (type: 'delivery' | 'product', feedback: Feedback) => {
+  const handleEditFeedback = (
+    type: "delivery" | "product",
+    feedback: Feedback
+  ) => {
     setModalType(type);
     setFeedbackForm({
       rating: feedback.rating,
@@ -241,7 +265,7 @@ Grand Total: ₹${order.total}
   };
 
   // Delete feedback
-  const handleDeleteFeedback = (type: 'delivery' | 'product') => {
+  const handleDeleteFeedback = (type: "delivery" | "product") => {
     if (type === "delivery") setDeliveryFeedback(null);
     else setProductFeedback(null);
   };
@@ -280,27 +304,7 @@ Grand Total: ₹${order.total}
             >
               Address Book
             </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Security
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Billing
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Settings
-            </button>
+            
           </div>
         </div>
 
@@ -331,7 +335,7 @@ Grand Total: ₹${order.total}
                   <Button
                     variant="link"
                     className="text-sm text-red-500 hover:underline flex items-center gap-1"
-                    onClick={() => handleOpenFeedbackModal('product')}
+                    onClick={() => handleOpenFeedbackModal("product")}
                   >
                     Leave a Product Feedback <Star className="w-4 h-4" />
                   </Button>
@@ -344,7 +348,8 @@ Grand Total: ₹${order.total}
                   <div>
                     <div className="text-lg font-semibold">#{order.id}</div>
                     <div className="text-sm text-gray-600">
-                      {order.productsCount} Product{order.productsCount > 1 ? 's' : ''} • Order Placed on{" "}
+                      {order.productsCount} Product
+                      {order.productsCount > 1 ? "s" : ""} • Order Placed on{" "}
                       {order.datePlaced} at {order.time}
                     </div>
                   </div>
@@ -362,12 +367,12 @@ Grand Total: ₹${order.total}
                 </span>
               </div>
               <Button
-                    variant="link"
-                    className="text-sm text-red-500 hover:underline flex items-center gap-1"
-                    onClick={() => handleOpenFeedbackModal('delivery')}
-                  >
-                    Leave a Delivery Feedback <Star className="w-4 h-4" />
-                  </Button>
+                variant="link"
+                className="text-sm text-red-500 hover:underline flex items-center gap-1"
+                onClick={() => handleOpenFeedbackModal("delivery")}
+              >
+                Leave a Delivery Feedback <Star className="w-4 h-4" />
+              </Button>
 
               {/* Order Progress */}
               <div className="flex items-center justify-between mt-4">
@@ -411,7 +416,8 @@ Grand Total: ₹${order.total}
             <CardContent className="p-6">
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-4">
-                  Product{order.productsCount > 1 ? 's' : ''} ({order.productsCount.toString().padStart(2, '0')})
+                  Product{order.productsCount > 1 ? "s" : ""} (
+                  {order.productsCount.toString().padStart(2, "0")})
                 </h2>
                 <div className="grid grid-cols-5 gap-4 text-sm font-medium border-b pb-2">
                   <div className="col-span-2">PRODUCTS</div>
@@ -421,7 +427,10 @@ Grand Total: ₹${order.total}
                 </div>
 
                 {order.products.map((product, index) => (
-                  <div key={index} className="grid grid-cols-5 gap-4 py-4 border-b items-center text-sm">
+                  <div
+                    key={index}
+                    className="grid grid-cols-5 gap-4 py-4 border-b items-center text-sm"
+                  >
                     <div className="col-span-2 flex gap-4">
                       <img
                         src={product.image}
@@ -429,15 +438,17 @@ Grand Total: ₹${order.total}
                         className="w-14 h-14 object-contain border rounded"
                       />
                       <div>
-                        <p className="font-semibold text-sm">{product.name.toUpperCase()}</p>
-                        <p className="text-gray-600">
-                          {product.description}
+                        <p className="font-semibold text-sm">
+                          {product.name.toUpperCase()}
                         </p>
+                        <p className="text-gray-600">{product.description}</p>
                       </div>
                     </div>
                     <div>₹{product.price.toFixed(2)}</div>
                     <div>x{product.quantity}</div>
-                    <div className="font-medium">₹{(product.price * product.quantity).toFixed(2)}</div>
+                    <div className="font-medium">
+                      ₹{(product.price * product.quantity).toFixed(2)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -446,35 +457,43 @@ Grand Total: ₹${order.total}
               <div className="border-t pt-6 mb-6">
                 <div className="flex justify-end">
                   <div className="w-80">
-                    <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
-                    
+                    <h3 className="text-lg font-semibold mb-4">
+                      Order Summary
+                    </h3>
+
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Subtotal:</span>
                         <span>₹{order.subtotal.toFixed(2)}</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span>Shipping:</span>
-                        <span>{order.shippingCost === 0 ? 'Free' : `₹${order.shippingCost.toFixed(2)}`}</span>
+                        <span>
+                          {order.shippingCost === 0
+                            ? "Free"
+                            : `₹${order.shippingCost.toFixed(2)}`}
+                        </span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span>Tax:</span>
                         <span>₹{order.tax.toFixed(2)}</span>
                       </div>
-                      
+
                       {order.couponDiscount > 0 && (
                         <div className="flex justify-between text-green-600">
                           <span>Coupon Discount ({order.couponCode}):</span>
                           <span>-₹{order.couponDiscount.toFixed(2)}</span>
                         </div>
                       )}
-                      
+
                       <div className="border-t pt-2 mt-3">
                         <div className="flex justify-between font-semibold text-lg">
                           <span>Grand Total:</span>
-                          <span className="text-green-700">₹{order.total.toFixed(2)}</span>
+                          <span className="text-green-700">
+                            ₹{order.total.toFixed(2)}
+                          </span>
                         </div>
                       </div>
 
@@ -492,7 +511,6 @@ Grand Total: ₹${order.total}
                   </div>
                 </div>
               </div>
-
             </CardContent>
           </Card>
 
@@ -506,9 +524,47 @@ Grand Total: ₹${order.total}
                   <CardContent className="p-4">
                     <div className="flex items-center mb-3">
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-blue-600 text-sm font-semibold">💳</span>
+                        <span className="text-blue-600 text-sm font-semibold">
+                          💳
+                        </span>
                       </div>
-                      <h3 className="font-semibold text-gray-800">Billing Address</h3>
+                      <h3 className="font-semibold text-gray-800">
+                        Delivery Address
+                      </h3>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <p className="font-medium text-gray-900">
+                        Akash Kulshrestha
+                      </p>
+                      <p className="text-gray-600 leading-relaxed">
+                        Sector 22, Chandigarh, Punjab - 160022, India
+                      </p>
+                      <div className="pt-2 border-t border-gray-100">
+                        <p className="text-gray-600">
+                          <span className="font-medium text-gray-700">
+                            Phone:
+                          </span>{" "}
+                          +91-98765-43210
+                        </p>
+                        <p className="text-gray-600">
+                          <span className="font-medium text-gray-700">
+                            Email:
+                          </span>{" "}
+                          akash.kulshrestha@gmail.com
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Shipping Address Card */}
+                {/* <Card className="shadow-sm border-l-4 border-l-green-500">
+                  <CardContent className="p-4">
+                    <div className="flex items-center mb-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <span className="text-green-600 text-sm font-semibold">🚚</span>
+                      </div>
+                      <h3 className="font-semibold text-gray-800">Payment Method</h3>
                     </div>
                     <div className="space-y-2 text-sm">
                       <p className="font-medium text-gray-900">Akash Kulshrestha</p>
@@ -527,32 +583,29 @@ Grand Total: ₹${order.total}
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-
-                {/* Shipping Address Card */}
+                </Card> */}
                 <Card className="shadow-sm border-l-4 border-l-green-500">
                   <CardContent className="p-4">
                     <div className="flex items-center mb-3">
                       <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-green-600 text-sm font-semibold">🚚</span>
+                        <span className="text-green-600 text-sm font-semibold">
+                          💵
+                        </span>
                       </div>
-                      <h3 className="font-semibold text-gray-800">Shipping Address</h3>
+                      <h3 className="font-semibold text-gray-800">
+                        Payment Method
+                      </h3>
                     </div>
-                    <div className="space-y-2 text-sm">
-                      <p className="font-medium text-gray-900">Akash Kulshrestha</p>
-                      <p className="text-gray-600 leading-relaxed">
-                        Sector 22, Chandigarh, Punjab - 160022, India
-                      </p>
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-gray-600">
-                          <span className="font-medium text-gray-700">Phone:</span>{" "}
-                          +91-98765-43210
-                        </p>
-                        <p className="text-gray-600">
-                          <span className="font-medium text-gray-700">Email:</span>{" "}
-                          akash.kulshrestha@gmail.com
-                        </p>
+                    <div className="bg-blue-800 text-white rounded-lg p-4 space-y-2 mt-3">
+                      <p className="text-sm font-semibold">HSBC</p>
+                      <p className="text-sm">Kartik@axis</p>
+                      <div className="flex justify-between text-sm font-medium pt-1">
+                        <div className="text-white">
+                          <span className="font-semibold">UPI</span>
+                        </div>
+                        <div className="text-white">Google Pay (GPay)</div>
                       </div>
+                      <p className="text-sm font-bold pt-1">Kevin Gilbert</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -562,13 +615,18 @@ Grand Total: ₹${order.total}
                   <CardContent className="p-4">
                     <div className="flex items-center mb-3">
                       <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-orange-600 text-sm font-semibold">📝</span>
+                        <span className="text-orange-600 text-sm font-semibold">
+                          📝
+                        </span>
                       </div>
-                      <h3 className="font-semibold text-gray-800">Order Notes</h3>
+                      <h3 className="font-semibold text-gray-800">
+                        Order Notes
+                      </h3>
                     </div>
                     <div className="text-sm">
                       <p className="text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-md italic">
-                        "Please handle with care. Delivery to be made during daytime hours only."
+                        "Please handle with care. Delivery to be made during
+                        daytime hours only."
                       </p>
                       <div className="mt-3 pt-2 border-t border-gray-100">
                         <p className="text-xs text-gray-500">
@@ -581,32 +639,62 @@ Grand Total: ₹${order.total}
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Product Feedback provided By User */}
           <Card className="mt-8">
             <CardContent className="p-6">
               <h2 className="text-lg font-semibold mb-4">
-                  Product Feedback provided By You
+                Product Feedback provided By You
               </h2>
               {productFeedback ? (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{productFeedback.userName}</span>
+                    <span className="font-medium">
+                      {productFeedback.userName}
+                    </span>
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-4 h-4 ${i < productFeedback.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < productFeedback.rating
+                            ? "text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
                     ))}
                   </div>
-                  <div className="text-sm text-gray-700 mb-2">{productFeedback.description}</div>
-                  {productFeedback.images && productFeedback.images.length > 0 && (
-                    <div className="flex gap-2 mb-2 flex-wrap">
-                      {productFeedback.images.map((img, idx) => (
-                        <img key={idx} src={URL.createObjectURL(img)} alt="Feedback" className="w-24 h-24 object-cover rounded" />
-                      ))}
-                    </div>
-                  )}
+                  <div className="text-sm text-gray-700 mb-2">
+                    {productFeedback.description}
+                  </div>
+                  {productFeedback.images &&
+                    productFeedback.images.length > 0 && (
+                      <div className="flex gap-2 mb-2 flex-wrap">
+                        {productFeedback.images.map((img, idx) => (
+                          <img
+                            key={idx}
+                            src={URL.createObjectURL(img)}
+                            alt="Feedback"
+                            className="w-24 h-24 object-cover rounded"
+                          />
+                        ))}
+                      </div>
+                    )}
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleEditFeedback('product', productFeedback)}>Edit</Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDeleteFeedback('product')}>Delete</Button>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        handleEditFeedback("product", productFeedback)
+                      }
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteFeedback("product")}
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </div>
               ) : null}
@@ -617,82 +705,151 @@ Grand Total: ₹${order.total}
           <Card className="mt-8">
             <CardContent className="p-6">
               <h2 className="text-lg font-semibold mb-4">
-                  Delivery Feedback provided By You
+                Delivery Feedback provided By You
               </h2>
               {deliveryFeedback ? (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{deliveryFeedback.userName}</span>
+                    <span className="font-medium">
+                      {deliveryFeedback.userName}
+                    </span>
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-4 h-4 ${i < deliveryFeedback.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < deliveryFeedback.rating
+                            ? "text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
                     ))}
                   </div>
-                  <div className="text-sm text-gray-700 mb-2">{deliveryFeedback.description}</div>
-                  {deliveryFeedback.images && deliveryFeedback.images.length > 0 && (
-                    <div className="flex gap-2 mb-2 flex-wrap">
-                      {deliveryFeedback.images.map((img, idx) => (
-                        <img key={idx} src={URL.createObjectURL(img)} alt="Feedback" className="w-24 h-24 object-cover rounded" />
-                      ))}
-                    </div>
-                  )}
+                  <div className="text-sm text-gray-700 mb-2">
+                    {deliveryFeedback.description}
+                  </div>
+                  {deliveryFeedback.images &&
+                    deliveryFeedback.images.length > 0 && (
+                      <div className="flex gap-2 mb-2 flex-wrap">
+                        {deliveryFeedback.images.map((img, idx) => (
+                          <img
+                            key={idx}
+                            src={URL.createObjectURL(img)}
+                            alt="Feedback"
+                            className="w-24 h-24 object-cover rounded"
+                          />
+                        ))}
+                      </div>
+                    )}
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleEditFeedback('delivery', deliveryFeedback)}>Edit</Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDeleteFeedback('delivery')}>Delete</Button>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        handleEditFeedback("delivery", deliveryFeedback)
+                      }
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteFeedback("delivery")}
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </div>
               ) : null}
             </CardContent>
           </Card>
 
-        {/* Feedback Modal */}
-        {modalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 min-w-[350px] shadow-lg">
-              <h2 className="text-xl font-semibold mb-4">{modalType === 'delivery' ? 'Delivery' : 'Product'} Feedback</h2>
-              <form onSubmit={handleFeedbackSubmit} className="flex flex-col gap-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Your Name</label>
-                  <input type="text" value={userName} disabled className="border rounded px-2 py-1 w-full bg-gray-100" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Rating</label>
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <button type="button" key={i} onClick={() => handleStarClick(i+1)}>
-                        <Star className={`w-6 h-6 ${i < feedbackForm.rating ? 'text-yellow-400' : 'text-gray-300'}`} />
-                      </button>
-                    ))}
+          {/* Feedback Modal */}
+          {modalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 min-w-[350px] shadow-lg">
+                <h2 className="text-xl font-semibold mb-4">
+                  {modalType === "delivery" ? "Delivery" : "Product"} Feedback
+                </h2>
+                <form
+                  onSubmit={handleFeedbackSubmit}
+                  className="flex flex-col gap-3"
+                >
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Your Name
+                    </label>
+                    <input
+                      type="text"
+                      value={userName}
+                      disabled
+                      className="border rounded px-2 py-1 w-full bg-gray-100"
+                    />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Feedback Description</label>
-                  <textarea
-                    name="description"
-                    value={feedbackForm.description}
-                    onChange={handleFeedbackChange}
-                    className="border rounded px-2 py-1 w-full"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Upload Images</label>
-                  <input
-                    type="file"
-                    name="images"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFeedbackChange}
-                    className="border rounded px-2 py-1 w-full"
-                  />
-                </div>
-                <div className="flex gap-2 mt-2">
-                  <Button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Submit</Button>
-                  <Button type="button" className="bg-gray-300 px-4 py-1 rounded" onClick={() => setModalOpen(false)}>Cancel</Button>
-                </div>
-              </form>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Rating
+                    </label>
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <button
+                          type="button"
+                          key={i}
+                          onClick={() => handleStarClick(i + 1)}
+                        >
+                          <Star
+                            className={`w-6 h-6 ${
+                              i < feedbackForm.rating
+                                ? "text-yellow-400"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Feedback Description
+                    </label>
+                    <textarea
+                      name="description"
+                      value={feedbackForm.description}
+                      onChange={handleFeedbackChange}
+                      className="border rounded px-2 py-1 w-full"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Upload Images
+                    </label>
+                    <input
+                      type="file"
+                      name="images"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFeedbackChange}
+                      className="border rounded px-2 py-1 w-full"
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      type="submit"
+                      className="bg-blue-600 text-white px-4 py-1 rounded"
+                    >
+                      Submit
+                    </Button>
+                    <Button
+                      type="button"
+                      className="bg-gray-300 px-4 py-1 rounded"
+                      onClick={() => setModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
     </div>

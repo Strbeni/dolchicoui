@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
 export default function AccountSettings() {
   const router = useRouter();
 
@@ -160,9 +159,7 @@ export default function AccountSettings() {
             >
               Address Book
             </button>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="billing">Billing</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            
           </TabsList>
         </div>
 

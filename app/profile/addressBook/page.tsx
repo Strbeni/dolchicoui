@@ -155,13 +155,7 @@ export default function AddressBookPage() {
             </button>
             <TabsTrigger value="addressbook" className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full">Address Book</TabsTrigger>
               
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Security
-            </button>
+            
             <button
               type="button"
               onClick={() => router.push("/profile")}

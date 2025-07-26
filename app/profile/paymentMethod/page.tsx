@@ -181,27 +181,7 @@ const PaymentMethodPage = () => {
             >
               Address Book
             </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Security
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Billing
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Settings
-            </button>
+           
           </TabsList>
         </div>
 
