@@ -5,7 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
@@ -18,9 +24,20 @@ const allOrders = [
     total: "₹699.00",
     shipTo: "Akash Kulshrestha",
     delivered: "9 July",
-    title:
-      "Weavers Villa Beads Hanging Curtain - 20 Strings, 7 Ft - Sparkling Decor for Doors/Windows...",
-    image: "/curtain.jpg",
+    products: [
+      {
+        title:
+          "Weavers Villa Beads Hanging Curtain - 20 Strings, 7 Ft - Sparkling Decor for Doors/Windows...",
+        image: "/curtain.jpg",
+        quantity: 2,
+      },
+      {
+        title:
+          "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
+        image: "/gond.jpg",
+        quantity: 1,
+      },
+    ],
     returnWindow: "19 July 2025",
     status: "delivered",
     placedDate: new Date("2025-07-06"),
@@ -32,9 +49,14 @@ const allOrders = [
     total: "₹699.00",
     shipTo: "Akash Kulshrestha",
     delivered: "8 July",
-    title:
-      "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
-    image: "/gond.jpg",
+    products: [
+      {
+        title:
+          "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
+        image: "/gond.jpg",
+        quantity: 3,
+      },
+    ],
     returnWindow: "18 July 2025",
     status: "delivered",
     placedDate: new Date("2025-07-06"),
@@ -46,8 +68,13 @@ const allOrders = [
     total: "₹588.82",
     shipTo: "Akash Kulshrestha",
     delivered: null,
-    title: "Broadband - Airtel",
-    image: "/airtel.png",
+    products: [
+      {
+        title: "Broadband - Airtel",
+        image: "/airtel.png",
+        quantity: 1,
+      },
+    ],
     isBroadband: true,
     status: "not_shipped",
     placedDate: new Date("2025-06-27"),
@@ -63,13 +90,12 @@ export default function OrderHistoryPage() {
     router.push(`/profile/orderHistory/orderDetail/${orderId}`);
   };
 
-  // Filter orders by month
   const getFilteredOrdersByMonth = (orders: typeof allOrders) => {
     if (monthFilter === "all") return orders;
-    
+
     const now = new Date();
     const cutoffDate = new Date();
-    
+
     switch (monthFilter) {
       case "past30days":
         cutoffDate.setDate(now.getDate() - 30);
@@ -78,16 +104,16 @@ export default function OrderHistoryPage() {
         cutoffDate.setMonth(now.getMonth() - 3);
         break;
       case "2025":
-        return orders.filter(order => order.placedDate.getFullYear() === 2025);
+        return orders.filter((order) => order.placedDate.getFullYear() === 2025);
       case "2024":
-        return orders.filter(order => order.placedDate.getFullYear() === 2024);
+        return orders.filter((order) => order.placedDate.getFullYear() === 2024);
       case "2023":
-        return orders.filter(order => order.placedDate.getFullYear() === 2023);
+        return orders.filter((order) => order.placedDate.getFullYear() === 2023);
       default:
         return orders;
     }
-    
-    return orders.filter(order => order.placedDate >= cutoffDate);
+
+    return orders.filter((order) => order.placedDate >= cutoffDate);
   };
 
   const filteredOrders = getFilteredOrdersByMonth(
@@ -128,65 +154,36 @@ export default function OrderHistoryPage() {
             >
               Address Book
             </button>
-           
           </TabsList>
         </div>
         <TabsContent value="orders" className="w-3/4">
           <Card className="shadow-md w-full">
             <div className="bg-white p-4 rounded shadow mb-6 flex items-center justify-between">
               <div className="flex items-center gap-6 text-sm font-medium text-blue-600">
-                <button
-                  className={`pb-1 ${
-                    tab === "all"
-                      ? "border-b-2 border-black text-black"
-                      : "hover:underline"
-                  }`}
-                  onClick={() => setTab("all")}
-                >
-                  Orders
-                </button>
-                <button
-                  className={`pb-1 ${
-                    tab === "buy_again"
-                      ? "border-b-2 border-black text-black"
-                      : "hover:underline"
-                  }`}
-                  onClick={() => setTab("buy_again")}
-                >
-                  Buy Again
-                </button>
-                <button
-                  className={`pb-1 ${
-                    tab === "not_shipped"
-                      ? "border-b-2 border-black text-black"
-                      : "hover:underline"
-                  }`}
-                  onClick={() => setTab("not_shipped")}
-                >
-                  Not Yet Shipped
-                </button>
-                <button
-                  className={`pb-1 ${
-                    tab === "cancelled"
-                      ? "border-b-2 border-black text-black"
-                      : "hover:underline"
-                  }`}
-                  onClick={() => setTab("cancelled")}
-                >
-                  Cancelled Orders
-                </button>
+                {["all", "buy_again", "not_shipped", "cancelled"].map((type) => (
+                  <button
+                    key={type}
+                    className={`pb-1 ${
+                      tab === type ? "border-b-2 border-black text-black" : "hover:underline"
+                    }`}
+                    onClick={() => setTab(type)}
+                  >
+                    {type === "all"
+                      ? "Orders"
+                      : type === "buy_again"
+                      ? "Buy Again"
+                      : type === "not_shipped"
+                      ? "Not Yet Shipped"
+                      : "Cancelled Orders"}
+                  </button>
+                ))}
               </div>
               <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="Search all orders"
-                  className="w-64 px-3"
-                />
+                <Input type="text" placeholder="Search all orders" className="w-64 px-3" />
                 <Button>Search Orders</Button>
               </div>
             </div>
-            
-            {/* Month Filter Section */}
+
             <div className="bg-white p-4 rounded shadow mb-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-medium text-gray-700">
@@ -210,98 +207,88 @@ export default function OrderHistoryPage() {
 
             <CardContent className="p-6 space-y-6">
               {filteredOrders.length === 0 ? (
-                <p className="text-center text-gray-500">
-                  No orders found in this category.
-                </p>
+                <p className="text-center text-gray-500">No orders found in this category.</p>
               ) : (
-                filteredOrders.map((order, index) => (
-                  <div
-                    key={order.orderId}
-                    className="bg-white border rounded-lg shadow p-4 space-y-2"
-                  >
+                filteredOrders.map((order) => (
+                  <div key={order.orderId} className="bg-white border rounded-lg shadow p-4 space-y-4">
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-sm text-gray-600">
                           ORDER ID:{" "}
-                          <span className="font-medium text-black">
-                            {order.orderId}
-                          </span>
+                          <span className="font-medium text-black">{order.orderId}</span>
                         </p>
                         <p className="text-sm text-gray-600">
                           ORDER PLACED:{" "}
-                          <span className="font-medium text-black">
-                            {order.placed}
-                          </span>
+                          <span className="font-medium text-black">{order.placed}</span>
                         </p>
                         <p className="text-sm text-gray-600">
                           TOTAL:{" "}
-                          <span className="font-medium text-black">
-                            {order.total}
-                          </span>
+                          <span className="font-medium text-black">{order.total}</span>
                         </p>
                         <p className="text-sm text-gray-600">
                           SHIP TO:{" "}
-                          <span className="font-medium text-black">
-                            {order.shipTo}
-                          </span>
+                          <span className="font-medium text-black">{order.shipTo}</span>
                         </p>
                       </div>
-                      <div 
-                        className="text-right text-sm text-blue-600 cursor-pointer hover:underline" 
+                      <div
+                        className="text-right text-sm text-blue-600 cursor-pointer hover:underline"
                         onClick={() => handleViewDetails(order.orderId)}
                       >
                         View order details
                       </div>
                     </div>
 
-                    <div className="border-t pt-4 flex gap-4">
-                      <div className="w-24 h-24 relative">
-                        <Image
-                          src={order.image}
-                          alt={order.title}
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                      <div className="flex flex-col justify-between">
-                        <p className="font-medium text-black text-sm line-clamp-2">
-                          {order.title}
-                        </p>
-                        {order.delivered ? (
-                          <p className="text-sm text-gray-600">
-                            Delivered{" "}
-                            <span className="font-semibold">
-                              {order.delivered}
-                            </span>
-                          </p>
-                        ) : null}
-                        {order.returnWindow ? (
-                          <p className="text-sm text-gray-500">
-                            Return window closed on {order.returnWindow}
-                          </p>
-                        ) : null}
-                        <div className="flex gap-2 mt-2 flex-wrap">
-                          <Button size="sm" variant="secondary">
-                            Track package
-                          </Button>
-                          {!order.isBroadband && (
-                            <>
-                              <Button size="sm" variant="secondary">
-                                Leave seller feedback
-                              </Button>
-                              <Button size="sm" variant="secondary">
-                                Write a product review
-                              </Button>
-                            </>
+                    {order.products.map((product, idx) => (
+                      <div key={idx} className="flex gap-4 mb-4">
+                        <div className="w-24 h-24 relative shrink-0">
+                          <Image
+                            src={product.image}
+                            alt={product.title}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                        <div className="flex flex-col justify-between">
+                          <p className="font-medium text-black text-sm line-clamp-2">{product.title}</p>
+                          <p className="text-sm text-gray-500">Qty: {product.quantity ?? 1}</p>
+
+                          {order.delivered && idx === 0 && (
+                            <p className="text-sm text-gray-600">
+                              Delivered <span className="font-semibold">{order.delivered}</span>
+                            </p>
                           )}
-                          {order.isBroadband && (
-                            <Button size="sm" variant="default">
-                              Pay Bill Again
-                            </Button>
+
+                          {order.returnWindow && idx === 0 && (
+                            <p className="text-sm text-gray-500">
+                              Return window closed on {order.returnWindow}
+                            </p>
+                          )}
+
+                          {idx === 0 && (
+                            <div className="flex gap-2 mt-2 flex-wrap">
+                              <Button size="sm" variant="secondary">
+                                Track package
+                              </Button>
+                              {!order.isBroadband && (
+                                <>
+                                  <Button size="sm" variant="secondary">
+                                    Leave seller feedback
+                                  </Button>
+                                  <Button size="sm" variant="secondary">
+                                    Write a product review
+                                  </Button>
+                                </>
+                              )}
+                              {order.isBroadband && (
+                                <Button size="sm" variant="default">
+                                  Pay Bill Again
+                                </Button>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 ))
               )}
