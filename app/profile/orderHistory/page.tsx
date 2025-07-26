@@ -24,6 +24,7 @@ const allOrders = [
     total: "₹699.00",
     shipTo: "Akash Kulshrestha",
     delivered: "9 July",
+    placedDate: new Date("2025-07-06"),
     products: [
       {
         title:
@@ -32,7 +33,7 @@ const allOrders = [
         quantity: 2,
         returnWindow: "18 July 2025",
         status: "delivered",
-        placedDate: new Date("2025-07-06"),
+        isBroadband: false,
       },
       {
         title:
@@ -41,7 +42,7 @@ const allOrders = [
         quantity: 1,
         returnWindow: "19 July 2025",
         status: "delivered",
-        placedDate: new Date("2025-07-06"),
+        isBroadband: false,
       },
     ],
   },
@@ -52,6 +53,7 @@ const allOrders = [
     total: "₹699.00",
     shipTo: "Akash Kulshrestha",
     delivered: "8 July",
+    placedDate: new Date("2025-07-06"),
     products: [
       {
         title:
@@ -60,9 +62,9 @@ const allOrders = [
         quantity: 3,
         returnWindow: "18 July 2025",
         status: "delivered",
-        placedDate: new Date("2025-07-06"),
+        isBroadband: false,
       },
-    ]
+    ],
   },
   {
     id: "#406-3396058-1809901",
@@ -71,14 +73,15 @@ const allOrders = [
     total: "₹588.82",
     shipTo: "Akash Kulshrestha",
     delivered: null,
+    placedDate: new Date("2025-06-27"),
     products: [
       {
         title: "Broadband - Airtel",
         image: "/airtel.png",
         quantity: 1,
-        isBroadband: true,
+        returnWindow: "",
         status: "not_shipped",
-        placedDate: new Date("2025-06-27"),
+        isBroadband: true,
       },
     ],
   },
@@ -94,18 +97,16 @@ export default function OrderHistoryPage() {
   };
 
   const getFilteredOrdersByMonth = (orders: typeof allOrders) => {
-    if (monthFilter === "all") return orders;
-
     const now = new Date();
     const cutoffDate = new Date();
 
     switch (monthFilter) {
       case "past30days":
         cutoffDate.setDate(now.getDate() - 30);
-        break;
+        return orders.filter((order) => order.placedDate >= cutoffDate);
       case "past3months":
         cutoffDate.setMonth(now.getMonth() - 3);
-        break;
+        return orders.filter((order) => order.placedDate >= cutoffDate);
       case "2025":
         return orders.filter((order) => order.placedDate.getFullYear() === 2025);
       case "2024":
@@ -115,19 +116,16 @@ export default function OrderHistoryPage() {
       default:
         return orders;
     }
-
-    return orders.filter((order) => order.placedDate >= cutoffDate);
   };
 
   const filteredOrders = getFilteredOrdersByMonth(
-    tab === "all"
-      ? allOrders
-      : allOrders.filter((order) => {
-        if (tab === "not_shipped") return order.status === "not_shipped";
-        if (tab === "cancelled") return order.status === "cancelled";
-        if (tab === "buy_again") return true;
-        return true;
-      })
+    allOrders.filter((order) => {
+      const allStatuses = order.products.map((p) => p.status);
+
+      if (tab === "not_shipped") return allStatuses.includes("not_shipped");
+      if (tab === "cancelled") return allStatuses.includes("cancelled");
+      return true; // for "all" and "buy_again"
+    })
   );
 
   return (
@@ -149,18 +147,26 @@ export default function OrderHistoryPage() {
             >
               Order History
             </button>
-            <TabsTrigger value="payment">Saved Payment Method</TabsTrigger>
             <button
               type="button"
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push("/profile/payment")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Saved Payment Method
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile/address")}
               className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
             >
               Address Book
             </button>
           </TabsList>
         </div>
+
         <TabsContent value="orders" className="w-3/4">
           <Card className="shadow-md w-full">
+            {/* Filter Tabs */}
             <div className="bg-white p-4 rounded shadow mb-6 flex items-center justify-between">
               <div className="flex items-center gap-6 text-sm font-medium text-blue-600">
                 {["all", "buy_again", "not_shipped", "cancelled"].map((type) => (
@@ -186,6 +192,7 @@ export default function OrderHistoryPage() {
               </div>
             </div>
 
+            {/* Date Filter */}
             <div className="bg-white p-4 rounded shadow mb-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <span className="text-sm font-medium text-gray-700">
@@ -207,6 +214,7 @@ export default function OrderHistoryPage() {
               </div>
             </div>
 
+            {/* Orders List */}
             <CardContent className="p-6 space-y-6">
               {filteredOrders.length === 0 ? (
                 <p className="text-center text-gray-500">No orders found in this category.</p>
@@ -216,20 +224,16 @@ export default function OrderHistoryPage() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="text-sm text-gray-600">
-                          ORDER ID:{" "}
-                          <span className="font-medium text-black">{order.orderId}</span>
+                          ORDER ID: <span className="font-medium text-black">{order.orderId}</span>
                         </p>
                         <p className="text-sm text-gray-600">
-                          ORDER PLACED:{" "}
-                          <span className="font-medium text-black">{order.placed}</span>
+                          ORDER PLACED: <span className="font-medium text-black">{order.placed}</span>
                         </p>
                         <p className="text-sm text-gray-600">
-                          TOTAL:{" "}
-                          <span className="font-medium text-black">{order.total}</span>
+                          TOTAL: <span className="font-medium text-black">{order.total}</span>
                         </p>
                         <p className="text-sm text-gray-600">
-                          SHIP TO:{" "}
-                          <span className="font-medium text-black">{order.shipTo}</span>
+                          SHIP TO: <span className="font-medium text-black">{order.shipTo}</span>
                         </p>
                       </div>
                       <div
@@ -253,41 +257,36 @@ export default function OrderHistoryPage() {
                         <div className="flex flex-col justify-between">
                           <p className="font-medium text-black text-sm line-clamp-2">{product.title}</p>
                           <p className="text-sm text-gray-500">Qty: {product.quantity ?? 1}</p>
-
-                          {order.delivered && idx === 0 && (
+                          {product.status === "delivered" && (
                             <p className="text-sm text-gray-600">
                               Delivered <span className="font-semibold">{order.delivered}</span>
                             </p>
                           )}
-
-                          {order.returnWindow && idx === 0 && (
+                          {product.returnWindow && (
                             <p className="text-sm text-gray-500">
-                              Return window closed on {order.returnWindow}
+                              Return window closed on {product.returnWindow}
                             </p>
                           )}
-
-                          {idx === 0 && (
-                            <div className="flex gap-2 mt-2 flex-wrap">
-                              <Button size="sm" variant="secondary">
-                                Track package
-                              </Button>
-                              {!order.isBroadband && (
-                                <>
-                                  <Button size="sm" variant="secondary">
-                                    Leave seller feedback
-                                  </Button>
-                                  <Button size="sm" variant="secondary">
-                                    Write a product review
-                                  </Button>
-                                </>
-                              )}
-                              {order.isBroadband && (
-                                <Button size="sm" variant="default">
-                                  Pay Bill Again
+                          <div className="flex gap-2 mt-2 flex-wrap">
+                            <Button size="sm" variant="secondary">
+                              Track package
+                            </Button>
+                            {!product.isBroadband && (
+                              <>
+                                <Button size="sm" variant="secondary">
+                                  Leave seller feedback
                                 </Button>
-                              )}
-                            </div>
-                          )}
+                                <Button size="sm" variant="secondary">
+                                  Write a product review
+                                </Button>
+                              </>
+                            )}
+                            {product.isBroadband && (
+                              <Button size="sm" variant="default">
+                                Pay Bill Again
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
