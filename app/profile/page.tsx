@@ -55,7 +55,7 @@ export default function AccountSettings() {
     setProfileImage("/profile.jpg");
   };
 
-  const handleSave = (e) => {
+  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isEmailChanged || isPhoneChanged) {
       setShowOtp(true);
@@ -65,7 +65,7 @@ export default function AccountSettings() {
     alert(`Saved!\nUsername: ${username}\nEmail: ${email}\nPhone: ${phone}`);
   };
 
-  const handleVerifyOtp = (e) => {
+  const handleVerifyOtp = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (otp === "123456") {
       if (isEmailChanged) setEmail(tempEmail);
@@ -83,28 +83,28 @@ export default function AccountSettings() {
     }
   };
 
-  const handleEmailChange = (e) => {
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTempEmail(e.target.value);
     setIsEmailChanged(e.target.value !== email);
   };
 
-  const handlePhoneChange = (e) => {
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTempPhone(e.target.value);
     setIsPhoneChanged(e.target.value !== phone);
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setProfileImage(e.target.result);
+        setProfileImage(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const validatePassword = (password) => {
+  const validatePassword = (password: string) => {
     const minLength = password.length >= 8;
     const hasNumber = /\d/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
@@ -114,7 +114,7 @@ export default function AccountSettings() {
     return "";
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
       setPasswordError("Passwords do not match");
