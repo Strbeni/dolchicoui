@@ -8,80 +8,124 @@ import { ArrowLeft, Star, Download } from "lucide-react";
 
 // Mock data - in a real app, you'd fetch this based on the orderId
 const getOrderById = (orderId: string) => {
-  const orders = {
-    "406-9025561-0841152": {
-      id: "406-9025561-0841152",
-      subtotal: 699,
-      shippingCost: 40,
-      tax: 55.92,
-      couponDiscount: 50,
-      couponCode: "SAVE50",
-      total: 744.92,
-      datePlaced: "6 July, 2025",
-      time: "2:45 PM",
-      productsCount: 1,
-      expectedDate: "9 July, 2025",
-      status: "Delivered",
-      products: [
-        {
-          name: "Weavers Villa Beads Hanging Curtain",
-          description: "20 Strings, 7 Ft - Sparkling Decor for Doors/Windows",
-          price: 699,
-          quantity: 1,
-          image: "/curtain.jpg",
-        },
-      ],
-    },
-    "406-3908338-4442743": {
-      id: "406-3908338-4442743",
-      subtotal: 699,
-      shippingCost: 0,
-      tax: 55.92,
-      couponDiscount: 0,
-      couponCode: null,
-      total: 754.92,
-      datePlaced: "6 July, 2025",
-      time: "3:20 PM",
-      productsCount: 1,
-      expectedDate: "8 July, 2025",
-      status: "Delivered",
-      products: [
-        {
-          name: "BNSN Pure & Original Kala Gond",
-          description:
-            "Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis",
-          price: 699,
-          quantity: 1,
-          image: "/gond.jpg",
-        },
-      ],
-    },
-    "406-3396058-1809901": {
-      id: "406-3396058-1809901",
-      subtotal: 588.82,
-      shippingCost: 0,
-      tax: 47.11,
-      couponDiscount: 100,
-      couponCode: "NEWUSER100",
-      total: 535.93,
-      datePlaced: "27 June, 2025",
-      time: "10:30 AM",
-      productsCount: 1,
-      expectedDate: "30 June, 2025",
-      status: "Processing",
-      products: [
-        {
-          name: "Broadband - Airtel",
-          description: "Monthly broadband service",
-          price: 588.82,
-          quantity: 1,
-          image: "/airtel.png",
-        },
-      ],
-    },
-  };
+  const orders = [
+  {
+    id: "#406-9025561-0841152",
+    orderId: "406-9025561-0841152",
+    placed: "6 July 2025",
+    datePlaced: "6 July, 2025",
+    time: "2:45 PM",
+    placedDate: new Date("2025-07-06"),
+    total: "₹699.00",
+    totalAmount: 744.92,
+    subtotal: 699,
+    shippingCost: 40,
+    tax: 55.92,
+    couponDiscount: 50,
+    couponCode: "SAVE50",
+    shipTo: "Akash Kulshrestha",
+    delivered: "9 July",
+    expectedDate: "9 July, 2025",
+    status: "Delivered",
+    productsCount: 1,
+    products: [
+      {
+        title: "Weavers Villa Beads Hanging Curtain",
+        name: "Weavers Villa Beads Hanging Curtain",
+        description: "20 Strings, 7 Ft - Sparkling Decor for Doors/Windows",
+        image: "/curtain.jpg",
+        quantity: 2,
+        price: 699,
+        returnWindow: "18 July 2025",
+        status: "delivered",
+        isBroadband: false,
+      },
+      {
+        title:
+          "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
+        name: "BNSN Pure & Original Kala Gond",
+        description:
+          "Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis",
+        image: "/gond.jpg",
+        quantity: 1,
+        price: 699,
+        returnWindow: "19 July 2025",
+        status: "delivered",
+        isBroadband: false,
+      },
+    ],
+  },
+  {
+    id: "#406-3908338-4442743",
+    orderId: "406-3908338-4442743",
+    placed: "6 July 2025",
+    datePlaced: "6 July, 2025",
+    time: "3:20 PM",
+    placedDate: new Date("2025-07-06"),
+    total: "₹699.00",
+    totalAmount: 754.92,
+    subtotal: 699,
+    shippingCost: 0,
+    tax: 55.92,
+    couponDiscount: 0,
+    couponCode: null,
+    shipTo: "Akash Kulshrestha",
+    delivered: "8 July",
+    expectedDate: "8 July, 2025",
+    status: "Delivered",
+    productsCount: 1,
+    products: [
+      {
+        title:
+          "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
+        name: "BNSN Pure & Original Kala Gond",
+        description:
+          "Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis",
+        image: "/gond.jpg",
+        quantity: 3,
+        price: 699,
+        returnWindow: "18 July 2025",
+        status: "delivered",
+        isBroadband: false,
+      },
+    ],
+  },
+  {
+    id: "#406-3396058-1809901",
+    orderId: "406-3396058-1809901",
+    placed: "27 June 2025",
+    datePlaced: "27 June, 2025",
+    time: "10:30 AM",
+    placedDate: new Date("2025-06-27"),
+    total: "₹588.82",
+    totalAmount: 535.93,
+    subtotal: 588.82,
+    shippingCost: 0,
+    tax: 47.11,
+    couponDiscount: 100,
+    couponCode: "NEWUSER100",
+    shipTo: "Akash Kulshrestha",
+    delivered: null,
+    expectedDate: "30 June, 2025",
+    status: "Processing",
+    productsCount: 1,
+    products: [
+      {
+        title: "Broadband - Airtel",
+        name: "Broadband - Airtel",
+        description: "Monthly broadband service",
+        image: "/airtel.png",
+        quantity: 1,
+        price: 588.82,
+        returnWindow: "",
+        status: "not_shipped",
+        isBroadband: true,
+      },
+    ],
+  },
+];
 
-  return orders[orderId as keyof typeof orders] || null;
+  return orders.find(order => order.orderId === orderId) || null;
 };
 
 type Feedback = {
@@ -323,7 +367,7 @@ Grand Total: ₹${order.total}
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="sm"
                     onClick={handleDownloadInvoice}
@@ -331,7 +375,7 @@ Grand Total: ₹${order.total}
                   >
                     <Download className="w-4 h-4" />
                     Download Invoice
-                  </Button>
+                  </Button> */}
                   <Button
                     variant="link"
                     className="text-sm text-red-500 hover:underline flex items-center gap-1"
@@ -354,7 +398,7 @@ Grand Total: ₹${order.total}
                     </div>
                   </div>
                   <div className="text-xl font-bold text-green-700">
-                    ₹{order.total.toFixed(2)}
+                    ₹{order.total}
                   </div>
                 </CardContent>
               </Card>
@@ -492,7 +536,7 @@ Grand Total: ₹${order.total}
                         <div className="flex justify-between font-semibold text-lg">
                           <span>Grand Total:</span>
                           <span className="text-green-700">
-                            ₹{order.total.toFixed(2)}
+                            {order.total}
                           </span>
                         </div>
                       </div>
