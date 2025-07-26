@@ -274,7 +274,7 @@ export default function OrderHistoryPage() {
                             {!product.isBroadband && (
                               <>
                                 <Button size="sm" variant="secondary">
-                                  Leave seller feedback
+                                  Leave Delivery feedback
                                 </Button>
                                 <Button size="sm" variant="secondary">
                                   Write a product review
