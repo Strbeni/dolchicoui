@@ -30,17 +30,20 @@ const allOrders = [
           "Weavers Villa Beads Hanging Curtain - 20 Strings, 7 Ft - Sparkling Decor for Doors/Windows...",
         image: "/curtain.jpg",
         quantity: 2,
+        returnWindow: "18 July 2025",
+        status: "delivered",
+        placedDate: new Date("2025-07-06"),
       },
       {
         title:
           "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
         image: "/gond.jpg",
         quantity: 1,
+        returnWindow: "19 July 2025",
+        status: "delivered",
+        placedDate: new Date("2025-07-06"),
       },
     ],
-    returnWindow: "19 July 2025",
-    status: "delivered",
-    placedDate: new Date("2025-07-06"),
   },
   {
     id: "#406-3908338-4442743",
@@ -55,11 +58,11 @@ const allOrders = [
           "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
         image: "/gond.jpg",
         quantity: 3,
+        returnWindow: "18 July 2025",
+        status: "delivered",
+        placedDate: new Date("2025-07-06"),
       },
-    ],
-    returnWindow: "18 July 2025",
-    status: "delivered",
-    placedDate: new Date("2025-07-06"),
+    ]
   },
   {
     id: "#406-3396058-1809901",
@@ -73,11 +76,11 @@ const allOrders = [
         title: "Broadband - Airtel",
         image: "/airtel.png",
         quantity: 1,
+        isBroadband: true,
+        status: "not_shipped",
+        placedDate: new Date("2025-06-27"),
       },
     ],
-    isBroadband: true,
-    status: "not_shipped",
-    placedDate: new Date("2025-06-27"),
   },
 ];
 
@@ -120,11 +123,11 @@ export default function OrderHistoryPage() {
     tab === "all"
       ? allOrders
       : allOrders.filter((order) => {
-          if (tab === "not_shipped") return order.status === "not_shipped";
-          if (tab === "cancelled") return order.status === "cancelled";
-          if (tab === "buy_again") return true;
-          return true;
-        })
+        if (tab === "not_shipped") return order.status === "not_shipped";
+        if (tab === "cancelled") return order.status === "cancelled";
+        if (tab === "buy_again") return true;
+        return true;
+      })
   );
 
   return (
@@ -163,18 +166,17 @@ export default function OrderHistoryPage() {
                 {["all", "buy_again", "not_shipped", "cancelled"].map((type) => (
                   <button
                     key={type}
-                    className={`pb-1 ${
-                      tab === type ? "border-b-2 border-black text-black" : "hover:underline"
-                    }`}
+                    className={`pb-1 ${tab === type ? "border-b-2 border-black text-black" : "hover:underline"
+                      }`}
                     onClick={() => setTab(type)}
                   >
                     {type === "all"
                       ? "Orders"
                       : type === "buy_again"
-                      ? "Buy Again"
-                      : type === "not_shipped"
-                      ? "Not Yet Shipped"
-                      : "Cancelled Orders"}
+                        ? "Buy Again"
+                        : type === "not_shipped"
+                          ? "Not Yet Shipped"
+                          : "Cancelled Orders"}
                   </button>
                 ))}
               </div>
