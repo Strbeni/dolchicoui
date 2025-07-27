@@ -1,35 +1,130 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+
+// Types
+interface CartItem {
+  id: number;
+  productId: number;
+  size: string;
+  quantity: number;
+  price: number;
+  product: {
+    name: string;
+    image: string[];
+  };
+}
+
+interface CartData {
+  items: CartItem[];
+  summary: {
+    totalItems: number;
+    subtotal: number;
+  };
+}
 
 export default function ShippingPage() {
   const [paymentMethod, setPaymentMethod] = useState('mastercard')
   const [upiID, setUpiID] = useState('')
   const [upiVerified, setUpiVerified] = useState(false)
+  const [cartData, setCartData] = useState<CartData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [formData, setFormData] = useState<any>(null)
+  
+  const router = useRouter()
 
-  const products = [
-    {
-      name: 'WHITE CASUAL T-SHIRT',
-      price: 'IDR 100.000',
-      qty: 1,
-      img: '/p1.svg',
-      note: 'Please recheck the size before send to me :)',
-    },
-    {
-      name: 'WHITE CASUAL T-SHIRT',
-      price: 'IDR 100.000',
-      qty: 1,
-      img: '/p1.svg',
-    },
-  ]
+  // Load cart data and form data from previous step
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+
+        const response = await fetch('http://localhost:3000/api/cart', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch cart');
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          setCartData(result.data);
+        }
+
+        // Load form data from previous step
+        const savedFormData = localStorage.getItem('checkoutFormData');
+        if (savedFormData) {
+          setFormData(JSON.parse(savedFormData));
+        } else {
+          router.push('/checkout'); // Redirect back if no form data
+        }
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, [router]);
 
   const handleUPIChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUpiID(e.target.value)
-    setUpiVerified(!!e.target.value && e.target.value.includes('@')) // Basic verification
+    setUpiVerified(!!e.target.value && e.target.value.includes('@'))
   }
+
+  const handleContinueToPayment = () => {
+    // Store payment method and details
+    const paymentData = {
+      method: paymentMethod,
+      ...(paymentMethod === 'gpay' && { upiId: upiID }),
+    };
+    
+    localStorage.setItem('checkoutPaymentData', JSON.stringify(paymentData));
+    router.push('/checkout/confirmation');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!cartData || cartData.items.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg mb-4">Your cart is empty</p>
+          <Button onClick={() => router.push('/productlist')}>
+            Continue Shopping
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const discount = 50000;
+  const shipping = 39000;
+  const subtotal = cartData.summary.subtotal;
+  const total = Math.max(0, subtotal - discount + shipping);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 px-6 lg:px-20 py-10">
@@ -64,8 +159,8 @@ export default function ShippingPage() {
           </div>
         </div>
 
-        {/* Shipping */}
-        <h2 className="text-xl font-semibold mb-4">SHIPPING DELIVERY</h2>
+        {/* Payment Methods */}
+        <h2 className="text-xl font-semibold mb-4">PAYMENT METHOD</h2>
         <div className="flex items-center gap-6 mb-6 flex-wrap">
           {['mastercard', 'visa', 'gpay', 'paypal'].map((method) => (
             <label key={method} className="flex items-center gap-2 cursor-pointer">
@@ -118,14 +213,14 @@ export default function ShippingPage() {
             </div>
           </form>
         )}
-        
 
-
-        <Link href="/checkout/confirmation" className='w-full'>
-          <Button className=" bg-[#d9673f] hover:bg-[#c2552d] text-white px-6 py-2 mt-6">
-            CONTINUE TO PAYMENT
-          </Button>
-        </Link>
+        <Button 
+          className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white px-6 py-2 mt-6"
+          onClick={handleContinueToPayment}
+          disabled={paymentMethod === 'gpay' && !upiVerified}
+        >
+          CONTINUE TO CONFIRMATION
+        </Button>
       </div>
 
       {/* RIGHT SUMMARY */}
@@ -136,15 +231,20 @@ export default function ShippingPage() {
           <button className="text-gray-400 text-lg">×</button>
         </div>
 
-        {/* Products */}
+        {/* Products from Cart */}
         <div className="space-y-4 mb-6">
-          {products.map((item, idx) => (
-            <div key={idx} className="flex gap-4 items-start">
-              <Image src={item.img} alt={item.name} width={70} height={70} />
+          {cartData.items.map((item) => (
+            <div key={item.id} className="flex gap-4 items-start">
+              <Image 
+                src={item.product.image[0] || '/p1.svg'} 
+                alt={item.product.name} 
+                width={70} 
+                height={70} 
+              />
               <div>
-                <h4 className="font-semibold text-sm">{item.name}</h4>
-                <p className="text-xs text-gray-500">{item.qty} × {item.price}</p>
-                {item.note && <p className="text-xs text-gray-400 mt-1">{item.note}</p>}
+                <h4 className="font-semibold text-sm">{item.product.name}</h4>
+                <p className="text-xs text-gray-500">{item.quantity} × IDR {item.price.toLocaleString()}</p>
+                <p className="text-xs text-gray-400 mt-1">Size: {item.size}</p>
               </div>
             </div>
           ))}
@@ -152,20 +252,20 @@ export default function ShippingPage() {
 
         <div className="space-y-2 text-sm border-t pt-4">
           <div className="flex justify-between">
-            <span>Subtotal</span>
-            <span>IDR 300.000</span>
+            <span>Subtotal ({cartData.summary.totalItems} items)</span>
+            <span>IDR {subtotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-red-600">
             <span>Voucher (50KDISCOUNT)</span>
-            <span>IDR 50.000</span>
+            <span>-IDR {discount.toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
             <span>Shipping</span>
-            <span>IDR -</span>
+            <span>IDR {shipping.toLocaleString()}</span>
           </div>
           <div className="flex justify-between font-bold pt-2">
             <span>Total</span>
-            <span>IDR 250.000</span>
+            <span>IDR {total.toLocaleString()}</span>
           </div>
         </div>
       </div>
