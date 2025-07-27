@@ -9,8 +9,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from 'next/link';
 import Zoom from 'react-medium-image-zoom'
 import 'react-medium-image-zoom/dist/styles.css'
-import { useCart } from '@/contexts/CartContext';
-import { useWishlist } from '@/contexts/WishlistContext';
 
 interface Product {
   id: number;
@@ -21,7 +19,7 @@ interface Product {
   category: string;
   subCategory: string;
   sizes: string[];
-  stock: number; // Added for stock validation
+  stock: number;
 }
 
 // API Helper functions
@@ -39,10 +37,8 @@ export default function ProductDetail() {
   const [error, setError] = useState('');
   const [addingToCart, setAddingToCart] = useState(false);
   const [addingToWishlist, setAddingToWishlist] = useState(false);
-
-  // Use cart and wishlist contexts
-  const { addToCart } = useCart();
-  const { addToWishlist, isInWishlist } = useWishlist();
+  const [isInWishlistState, setIsInWishlistState] = useState(false);
+  const [cartSuccess, setCartSuccess] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -68,9 +64,33 @@ export default function ProductDetail() {
     }
   }, [productId]);
 
+  // Check if item is in wishlist
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token || !product) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/wishlist/check/${product.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setIsInWishlistState(data.inWishlist || false);
+        }
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [product]);
+
   // Handle add to cart
   const handleAddToCart = async () => {
-    if (!product) return;
+    if (!product || addingToCart) return; // Prevent multiple calls
 
     // Check authentication
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -92,18 +112,36 @@ export default function ProductDetail() {
     }
 
     setAddingToCart(true);
+    setCartSuccess(false);
     
     try {
-      addToCart();
-      
-      // Optional: Show success message or redirect
-      const shouldRedirect = window.confirm(
-        `Added ${quantity} item(s) to cart. Would you like to view your cart?`
-      );
-      
-      if (shouldRedirect) {
-        router.push('/cartpage');
+      // Make direct API call to backend
+      const response = await fetch(`${API_BASE}/api/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          quantity: quantity,
+          size: selectedSize
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to add to cart');
       }
+
+      // Show success state without popup
+      setCartSuccess(true);
+      
+      // Reset success state after 2 seconds
+      setTimeout(() => {
+        setCartSuccess(false);
+      }, 2000);
       
     } catch (error) {
       console.error('Failed to add to cart:', error);
@@ -126,9 +164,27 @@ export default function ProductDetail() {
     setAddingToWishlist(true);
     
     try {
-      addToWishlist(product);
-      // Optional: Show success message
-      alert('Added to wishlist!');
+      // Make direct API call to backend
+      const response = await fetch(`${API_BASE}/api/wishlist/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: product.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to add to wishlist');
+      }
+
+      setIsInWishlistState(true);
+      alert('Successfully added to wishlist!');
+      
     } catch (error) {
       console.error('Failed to add to wishlist:', error);
       alert(error instanceof Error ? error.message : 'Failed to add to wishlist');
@@ -237,12 +293,20 @@ export default function ProductDetail() {
               <Button 
                 onClick={handleAddToCart}
                 disabled={addingToCart || product.stock === 0 || !selectedSize}
-                className="bg-[#c2552d] hover:bg-[#a8441d] text-white rounded-none px-8 flex items-center gap-2 disabled:opacity-50"
+                className={`rounded-none px-8 flex items-center gap-2 disabled:opacity-50 transition-colors ${
+                  cartSuccess 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-[#c2552d] hover:bg-[#a8441d] text-white'
+                }`}
               >
                 {addingToCart ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ADDING...
+                  </>
+                ) : cartSuccess ? (
+                  <>
+                    ✓ ADDED TO CART
                   </>
                 ) : (
                   <>
@@ -255,7 +319,7 @@ export default function ProductDetail() {
                 onClick={handleAddToWishlist}
                 disabled={addingToWishlist}
                 className={`border p-2 rounded-full transition-colors ${
-                  isInWishlist(product.id) 
+                  isInWishlistState 
                     ? 'bg-red-100 border-red-300 text-red-600' 
                     : 'hover:bg-gray-100 border-gray-300'
                 }`}
@@ -265,11 +329,18 @@ export default function ProductDetail() {
                 ) : (
                   <Heart 
                     size={20} 
-                    fill={isInWishlist(product.id) ? 'currentColor' : 'none'}
+                    fill={isInWishlistState ? 'currentColor' : 'none'}
                   />
                 )}
               </button>
             </div>
+
+            {/* Success message */}
+            {cartSuccess && (
+              <div className="mt-2 text-sm text-green-600 flex items-center gap-2">
+                ✓ Item added to cart successfully!
+              </div>
+            )}
 
             {/* Delivery Info */}
             <div className="mt-6 space-y-3 text-sm border-t pt-4">

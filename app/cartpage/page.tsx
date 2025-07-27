@@ -38,14 +38,51 @@ const authHeaders = () => {
   };
 };
 
+// Local storage helpers for cart state
+const getLocalCartState = (): Record<number, number> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const saved = localStorage.getItem('cartQuantities');
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveLocalCartState = (quantities: Record<number, number>) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('cartQuantities', JSON.stringify(quantities));
+  } catch (error) {
+    console.error('Failed to save cart state:', error);
+  }
+};
+
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([])
   const [summary, setSummary] = useState<CartSummary>({ totalItems: 0, subtotal: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [updating, setUpdating] = useState<number | null>(null)
+  const [localQuantities, setLocalQuantities] = useState<Record<number, number>>({})
   
   const router = useRouter()
+
+  // Merge server data with local state
+  const mergeWithLocalState = (serverItems: CartItem[]) => {
+    const localState = getLocalCartState();
+    return serverItems.map(item => ({
+      ...item,
+      quantity: localState[item.id] !== undefined ? localState[item.id] : item.quantity
+    }));
+  };
+
+  // Calculate summary based on current quantities
+  const calculateSummary = (cartItems: CartItem[]) => {
+    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return { totalItems, subtotal };
+  };
 
   // Fetch cart from API with proper nested response handling
   const fetchCart = async () => {
@@ -87,11 +124,15 @@ export default function CartPage() {
         throw new Error('No data in API response');
       }
       
-      // Extract items and summary from the nested data structure
-      setItems(data.items || [])
-      setSummary(data.summary || { totalItems: 0, subtotal: 0 })
-      console.log('🔍 Cart items set:', data.items?.length || 0);
-      console.log('🔍 Cart summary set:', data.summary);
+      // Merge with local state and calculate summary
+      const mergedItems = mergeWithLocalState(data.items || []);
+      const calculatedSummary = calculateSummary(mergedItems);
+      
+      setItems(mergedItems);
+      setSummary(calculatedSummary);
+      
+      console.log('🔍 Cart items set:', mergedItems.length);
+      console.log('🔍 Cart summary calculated:', calculatedSummary);
       
     } catch (err) {
       console.error('🔍 Cart fetch error:', err)
@@ -101,9 +142,21 @@ export default function CartPage() {
     }
   }
 
-  // Update item quantity
+  // Update local quantity immediately, sync with server
   const updateQuantity = async (cartItemId: number, newQuantity: number) => {
     try {
+      // Update local state immediately
+      const newLocalQuantities = { ...localQuantities, [cartItemId]: newQuantity };
+      setLocalQuantities(newLocalQuantities);
+      saveLocalCartState(newLocalQuantities);
+
+      // Update items state immediately for instant UI feedback
+      const updatedItems = items.map(item => 
+        item.id === cartItemId ? { ...item, quantity: newQuantity } : item
+      );
+      setItems(updatedItems);
+      setSummary(calculateSummary(updatedItems));
+
       setUpdating(cartItemId)
       console.log('🔍 Updating quantity:', { cartItemId, newQuantity });
       
@@ -117,11 +170,24 @@ export default function CartPage() {
 
       if (!res.ok) {
         const errorData = await res.json()
+        // Revert local state on error
+        const revertedQuantities = { ...localQuantities };
+        delete revertedQuantities[cartItemId];
+        setLocalQuantities(revertedQuantities);
+        saveLocalCartState(revertedQuantities);
+        
+        // Refresh from server to get correct state
+        await fetchCart();
+        
         throw new Error(errorData.error || errorData.message || 'Failed to update quantity')
       }
 
-      // Refresh cart after updating
-      await fetchCart()
+      // Clear local override on successful sync
+      const updatedLocalQuantities = { ...newLocalQuantities };
+      delete updatedLocalQuantities[cartItemId];
+      setLocalQuantities(updatedLocalQuantities);
+      saveLocalCartState(updatedLocalQuantities);
+
     } catch (error) {
       console.error('Failed to update quantity:', error)
       alert(error instanceof Error ? error.message : 'Failed to update quantity')
@@ -147,6 +213,12 @@ export default function CartPage() {
         const errorData = await res.json()
         throw new Error(errorData.error || errorData.message || 'Failed to remove item')
       }
+
+      // Remove from local state
+      const updatedLocalQuantities = { ...localQuantities };
+      delete updatedLocalQuantities[cartItemId];
+      setLocalQuantities(updatedLocalQuantities);
+      saveLocalCartState(updatedLocalQuantities);
 
       // Refresh cart after removing
       await fetchCart()
@@ -189,13 +261,14 @@ export default function CartPage() {
     }
   }
 
-  // Load cart on component mount
+  // Load cart on component mount and initialize local state
   useEffect(() => {
     console.log('🔍 CartPage mounted, fetching cart...');
+    setLocalQuantities(getLocalCartState());
     fetchCart()
   }, [])
 
-  // Calculate totals from API data
+  // Calculate totals from current state
   const subtotal = summary.subtotal
   const discount = 50000
   const total = Math.max(0, subtotal - discount) // Ensure non-negative total

@@ -64,7 +64,7 @@ export default function Checkout() {
           return;
         }
 
-        const response = await fetch('http://localhost:3000/api/cart', {
+        const response = await fetch('http://localhost:4000/api/cart', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -135,7 +135,6 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen bg-white px-6 lg:px-20 py-12 flex flex-col lg:flex-row gap-10">
-      {/* Left Form */}
       <div className="w-full lg:w-2/3">
         <h1 className="text-3xl font-serif mb-2">
           <span className="text-[#844416] font-bold">M</span>
