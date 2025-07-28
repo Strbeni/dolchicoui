@@ -2,6 +2,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import Image from "next/image";
 
 
 const initialAddresses = [
@@ -48,7 +49,7 @@ function AddressCard({ address, onEdit, onRemove, onSetDefault }: {
         <div className="flex items-center gap-2 mb-1 text-xs text-gray-500">
           <span>Default:</span>
           {/* Use next/image for optimization in production */}
-          <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" className="h-4" />
+          <Image src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" width={16} height={16} className="h-4" />
         </div>
       )}
       <div className="font-semibold">{address.name}</div>
@@ -129,7 +130,7 @@ export default function AddressBookPage() {
   return (
     <div>
         {/* Sidebar Tabs */}
-        <Tabs defaultValue="payment" className="w-full flex">
+        <Tabs defaultValue="addressbook" className="w-full flex">
         <div className="w-1/4 pr-6">
           <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
             <button
@@ -179,15 +180,15 @@ export default function AddressBookPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <AddAddressCard onAdd={handleAdd} />
         {addresses
-          .slice() // copy array
-          .sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0)) // default first
-          .map((address, idx) => (
+          .map((address, originalIdx) => ({ address, originalIdx }))
+          .sort((a, b) => (b.address.isDefault ? 1 : 0) - (a.address.isDefault ? 1 : 0))
+          .map(({ address, originalIdx }) => (
               <AddressCard
-              key={idx}
+              key={originalIdx}
               address={address}
-              onEdit={() => handleEdit(addresses.indexOf(address))}
-              onRemove={() => handleRemove(addresses.indexOf(address))}
-              onSetDefault={address.isDefault ? undefined : () => handleSetDefault(addresses.indexOf(address))}
+              onEdit={() => handleEdit(originalIdx)}
+              onRemove={() => handleRemove(originalIdx)}
+              onSetDefault={address.isDefault ? undefined : () => handleSetDefault(originalIdx)}
               />
             ))}
       </div>

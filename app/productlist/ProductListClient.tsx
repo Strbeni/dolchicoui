@@ -26,15 +26,16 @@ interface Product {
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 const authHeaders = () => {
+  if (typeof window === 'undefined') return { 'Content-Type': 'application/json' };
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),
   };
 };
-
 // Simple in‐DOM toast
 const showToast = (msg: string, success = true) => {
+  if (typeof window === 'undefined') return;
   const el = document.createElement('div');
   el.textContent = msg;
   el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 ${
@@ -94,7 +95,6 @@ export default function ProductListClient() {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) return router.push('/login');
     if (!p.sizes.length) return showToast('No sizes available', false);
-
     setAddingToCart(p.id);
     try {
       const res = await fetch(`${API_BASE}/api/cart/items`, {
@@ -177,7 +177,7 @@ export default function ProductListClient() {
       <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {searchQuery && (
           <p className="text-sm text-gray-500 mb-4 col-span-full">
-            Showing results for <span className="font-semibold">"{searchQuery}"</span>
+            Showing results for <span className="font-semibold">&quot;{searchQuery}&quot;</span>
           </p>
         )}
 

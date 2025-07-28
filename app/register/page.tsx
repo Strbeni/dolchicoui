@@ -82,7 +82,7 @@ export default function AuthPage() {
 
   // Close country dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: any) => {
+    const handleClickOutside = () => {
       if (showCountryDropdown) {
         setShowCountryDropdown(false)
       }
@@ -91,38 +91,8 @@ export default function AuthPage() {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [showCountryDropdown])
 
-  const validateInput = () => {
-    const trimmedInput = contactInput.trim()
-    if (!trimmedInput) {
-      setError('Please enter your email or mobile number')
-      return false
-    }
-    
-    if (contactType === 'email') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(trimmedInput)) {
-        setError('Please enter a valid email address')
-        return false
-      }
-    } else {
-      if (trimmedInput.length < 10) {
-        setError('Please enter a valid mobile number')
-        return false
-      }
-    }
-    
-    if (!acceptTerms) {
-      setError('Please accept terms and conditions to continue')
-      return false
-    }
-    
-    return true
-  }
-
-  // ✅ Uses registerUser controller function
+  // Updated handleSendOTP function (no validation)
   const handleSendOTP = async () => {
-    if (!validateInput()) return
-
     setError('')
     setLoading(true)
 
@@ -154,17 +124,11 @@ export default function AuthPage() {
     }
   }
 
-  // ✅ Uses verifyEmailOtp or verifyPhoneOtp controller functions
+  // Updated handleVerifyOTP function (no validation)
   const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      setError('Please enter a valid 6-digit OTP')
-      return
-    }
-
     setError('')
     setLoading(true)
 
-    // ✅ Use specific endpoints based on contact type (matching controller)
     const endpoint = contactType === 'mobile' ? 'verify-phone-otp' : 'verify-email-otp'
     const payload = contactType === 'mobile'
       ? { phoneNumber: `${countryCode}${contactInput.trim()}`, otp }
@@ -184,12 +148,10 @@ export default function AuthPage() {
         throw new Error(data?.message || 'Invalid OTP')
       }
 
-      // ✅ Check response based on controller logic
       if (data.requiresProfileCompletion) {
         setUserId(data.userId)
-        setStep(3) // Go to profile completion
+        setStep(3)
       } else {
-        // User already has complete profile - login successful
         localStorage.setItem('token', data.token)
         sessionStorage.setItem('token', data.token)
         router.push('/home')
@@ -201,13 +163,8 @@ export default function AuthPage() {
     }
   }
 
-  // ✅ Uses loginUser controller function
+  // Updated handlePasswordLogin function (no validation)
   const handlePasswordLogin = async () => {
-    if (!password) {
-      setError('Please enter your password')
-      return
-    }
-
     setError('')
     setLoading(true)
 
@@ -239,18 +196,8 @@ export default function AuthPage() {
     }
   }
 
-  // ✅ Uses completeProfile controller function
+  // Updated handleCompleteProfile function (no validation)
   const handleCompleteProfile = async () => {
-    if (!fullName.trim() || !password) {
-      setError('Please fill all required fields')
-      return
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return
-    }
-
     setError('')
     setLoading(true)
 
@@ -285,17 +232,12 @@ export default function AuthPage() {
   }
 
   const handleSocialLogin = (provider: 'google' | 'facebook') => {
-    if (!acceptTerms && step === 1) {
-      setError('Please accept terms and conditions to continue')
-      return
-    }
-    
     if (provider === 'google') {
       window.location.href = 'https://valyris-i.onrender.com/api/auth/google'
     }
   }
 
-  // ✅ Resend by calling register again (as per controller logic)
+  // Updated handleResendOTP function (no validation)
   const handleResendOTP = async () => {
     if (resendTimer > 0) return
 
@@ -417,7 +359,7 @@ export default function AuthPage() {
 
                   <Button
                     onClick={handleSendOTP}
-                    disabled={loading || !contactInput.trim() || !acceptTerms}
+                    disabled={loading}
                     className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white disabled:opacity-50 h-12 font-semibold tracking-wide text-base transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                   >
                     {loading ? (
@@ -499,7 +441,7 @@ export default function AuthPage() {
                   <div className="text-center space-y-2">
                     <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Verify Your Identity</h2>
                     <p className="text-sm text-gray-600">
-                      We've sent a verification code to{' '}
+                      We&apos;ve sent a verification code to{' '}
                       <span className="font-semibold text-[#d9673f]">
                         {contactType === 'mobile' ? `${countryCode}${contactInput}` : contactInput}
                       </span>
@@ -540,7 +482,7 @@ export default function AuthPage() {
 
                   <Button
                     onClick={handleVerifyOTP}
-                    disabled={loading || otp.length !== 6}
+                    disabled={loading}
                     className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                   >
                     {loading ? 'Verifying...' : 'Verify OTP'}
@@ -581,7 +523,7 @@ export default function AuthPage() {
 
                     <Button
                       onClick={handlePasswordLogin}
-                      disabled={loading || !password}
+                      disabled={loading}
                       variant="outline"
                       className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white"
                     >
@@ -596,9 +538,6 @@ export default function AuthPage() {
                       className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
                     >
                       Forgot Password?
-
-
-                  
                     </Link>
                   </div>
 
@@ -658,15 +597,12 @@ export default function AuthPage() {
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
-                      {password && password.length < 8 && (
-                        <p className="text-xs text-gray-500">Password must be at least 8 characters long</p>
-                      )}
                     </div>
                   </div>
 
                   <Button
                     onClick={handleCompleteProfile}
-                    disabled={loading || !fullName.trim() || !password || password.length < 8}
+                    disabled={loading}
                     className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                   >
                     {loading ? 'Creating Account...' : 'Complete Setup'}

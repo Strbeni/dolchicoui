@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Star, Download } from "lucide-react";
+import Image from "next/image";
 
 // Mock data - in a real app, you'd fetch this based on the orderId
 const getOrderById = (orderId: string) => {
@@ -147,6 +148,17 @@ const OrderDetail = () => {
   const router = useRouter();
   const orderId = params.id as string;
 
+  // Move all hooks to the top, before any conditional logic
+  const [feedbacks, setFeedbacks] = useState<FeedbackMap>({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"delivery" | "product" | null>(null);
+  const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null);
+  const [feedbackForm, setFeedbackForm] = useState<Omit<Feedback, "userName">>({
+    rating: 0,
+    description: "",
+    images: [],
+  });
+
   // Get order data based on the ID
   const order = getOrderById(orderId);
 
@@ -196,17 +208,6 @@ const OrderDetail = () => {
   const handleDownloadInvoice = () => {
     // In a real application, this would generate and download a PDF invoice
     // For now, we'll simulate the download process
-    const invoiceData = {
-      orderId: order.id,
-      customerName: "Akash Kulshrestha",
-      date: order.datePlaced,
-      products: order.products,
-      subtotal: order.subtotal,
-      tax: order.tax,
-      shipping: order.shippingCost,
-      discount: order.couponDiscount,
-      total: order.total,
-    };
 
     // Create a blob with invoice data (in real app, this would be a PDF)
     const invoiceContent = `
@@ -242,17 +243,6 @@ Grand Total: ₹${order.total}
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
-
-  // Feedback state
-  const [feedbacks, setFeedbacks] = useState<FeedbackMap>({});
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"delivery" | "product" | null>(null);
-  const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null);
-  const [feedbackForm, setFeedbackForm] = useState<Omit<Feedback, "userName">>({
-    rating: 0,
-    description: "",
-    images: [],
-  });
 
   // Get user's name from shipping address
   const userName = "Akash Kulshrestha"; // Replace with dynamic value if needed
@@ -381,15 +371,6 @@ Grand Total: ₹${order.total}
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadInvoice}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download Invoice
-                  </Button> */}
                   <Button
                     variant="link"
                     className="text-sm text-red-500 hover:underline flex items-center gap-1"
@@ -490,9 +471,11 @@ Grand Total: ₹${order.total}
                     className="grid grid-cols-5 gap-4 py-4 border-b items-center text-sm"
                   >
                     <div className="col-span-2 flex gap-4">
-                      <img
+                      <Image
                         src={product.image}
                         alt={product.name}
+                        width={56}
+                        height={56}
                         className="w-14 h-14 object-contain border rounded"
                       />
                       <div>
@@ -615,33 +598,6 @@ Grand Total: ₹${order.total}
                   </CardContent>
                 </Card>
 
-                {/* Shipping Address Card */}
-                {/* <Card className="shadow-sm border-l-4 border-l-green-500">
-                  <CardContent className="p-4">
-                    <div className="flex items-center mb-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-green-600 text-sm font-semibold">🚚</span>
-                      </div>
-                      <h3 className="font-semibold text-gray-800">Payment Method</h3>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <p className="font-medium text-gray-900">Akash Kulshrestha</p>
-                      <p className="text-gray-600 leading-relaxed">
-                        Sector 22, Chandigarh, Punjab - 160022, India
-                      </p>
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-gray-600">
-                          <span className="font-medium text-gray-700">Phone:</span>{" "}
-                          +91-98765-43210
-                        </p>
-                        <p className="text-gray-600">
-                          <span className="font-medium text-gray-700">Email:</span>{" "}
-                          akash.kulshrestha@gmail.com
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card> */}
                 <Card className="shadow-sm border-l-4 border-l-green-500">
                   <CardContent className="p-4">
                     <div className="flex items-center mb-3">
@@ -683,8 +639,8 @@ Grand Total: ₹${order.total}
                     </div>
                     <div className="text-sm">
                       <p className="text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-md italic">
-                        "Please handle with care. Delivery to be made during
-                        daytime hours only."
+                        &quot;Please handle with care. Delivery to be made during
+                        daytime hours only.&quot;
                       </p>
                       <div className="mt-3 pt-2 border-t border-gray-100">
                         <p className="text-xs text-gray-500">
@@ -707,7 +663,7 @@ Grand Total: ₹${order.total}
                 return feedback ? (
                   <div className="mb-4" key={idx}>
                     <div className="flex items-center gap-2 mb-1">
-                      <img src={product.image} alt={product.name} className="w-8 h-8 object-contain rounded border" />
+                      <Image src={product.image} alt={product.name} width={32} height={32} className="w-8 h-8 object-contain rounded border" />
                       <span className="font-medium">{product.name}</span>
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className={`w-4 h-4 ${i < feedback.rating ? "text-yellow-400" : "text-gray-300"}`} />
@@ -717,7 +673,7 @@ Grand Total: ₹${order.total}
                     {feedback.images && feedback.images.length > 0 && (
                       <div className="flex gap-2 mb-2 flex-wrap">
                         {feedback.images.map((img, imgIdx) => (
-                          <img key={imgIdx} src={URL.createObjectURL(img)} alt="Feedback" className="w-24 h-24 object-cover rounded" />
+                          <Image key={imgIdx} src={URL.createObjectURL(img)} alt="Feedback" width={96} height={96} className="w-24 h-24 object-cover rounded" />
                         ))}
                       </div>
                     )}
@@ -740,7 +696,7 @@ Grand Total: ₹${order.total}
                 return feedback ? (
                   <div className="mb-4" key={idx}>
                     <div className="flex items-center gap-2 mb-1">
-                      <img src={product.image} alt={product.name} className="w-8 h-8 object-contain rounded border" />
+                      <Image src={product.image} alt={product.name} width={32} height={32} className="w-8 h-8 object-contain rounded border" />
                       <span className="font-medium">{product.name}</span>
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className={`w-4 h-4 ${i < feedback.rating ? "text-yellow-400" : "text-gray-300"}`} />
@@ -750,7 +706,7 @@ Grand Total: ₹${order.total}
                     {feedback.images && feedback.images.length > 0 && (
                       <div className="flex gap-2 mb-2 flex-wrap">
                         {feedback.images.map((img, imgIdx) => (
-                          <img key={imgIdx} src={URL.createObjectURL(img)} alt="Feedback" className="w-24 h-24 object-cover rounded" />
+                          <Image key={imgIdx} src={URL.createObjectURL(img)} alt="Feedback" width={96} height={96} className="w-24 h-24 object-cover rounded" />
                         ))}
                       </div>
                     )}
@@ -785,7 +741,7 @@ Grand Total: ₹${order.total}
                             className={`flex items-center gap-3 p-2 border rounded hover:bg-gray-50 ${alreadySubmitted ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                             onClick={() => setSelectedProductIdx(idx)}
                           >
-                            <img src={product.image} alt={product.name} className="w-10 h-10 object-contain rounded border" />
+                            <Image src={product.image} alt={product.name} width={40} height={40} className="w-10 h-10 object-contain rounded border" />
                             <span className="font-medium">{product.name}</span>
                             {alreadySubmitted && <span className="text-xs text-green-600 ml-2">Feedback Submitted</span>}
                           </button>
@@ -797,7 +753,7 @@ Grand Total: ₹${order.total}
                 {selectedProductIdx !== null && (
                   <form onSubmit={handleFeedbackSubmit} className="flex flex-col gap-3 mt-4">
                     <div className="flex items-center gap-3 mb-2">
-                      <img src={order.products[selectedProductIdx].image} alt={order.products[selectedProductIdx].name} className="w-10 h-10 object-contain rounded border" />
+                      <Image src={order.products[selectedProductIdx].image} alt={order.products[selectedProductIdx].name} width={40} height={40} className="w-10 h-10 object-contain rounded border" />
                       <span className="font-medium">{order.products[selectedProductIdx].name}</span>
                     </div>
                     <div>
@@ -824,7 +780,7 @@ Grand Total: ₹${order.total}
                       {feedbackForm.images.length > 0 && (
                         <div className="flex gap-2 mt-2 flex-wrap">
                           {feedbackForm.images.map((img, idx) => (
-                            <img key={idx} src={URL.createObjectURL(img)} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                            <Image key={idx} src={URL.createObjectURL(img)} alt="Preview" width={64} height={64} className="w-16 h-16 object-cover rounded" />
                           ))}
                         </div>
                       )}

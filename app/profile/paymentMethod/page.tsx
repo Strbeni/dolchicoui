@@ -4,13 +4,14 @@ import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 // Add these imports for the carousel
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 // Custom Arrow Components
-const Arrow = ({ className, style, onClick, direction }: any) => (
+const Arrow = ({ style, onClick, direction }: { style?: React.CSSProperties; onClick?: () => void; direction: 'left' | 'right' }) => (
   <button
     type="button"
     className={`absolute top-1/2 z-10 transform -translate-y-1/2 bg-white rounded-full shadow p-2 ${
@@ -222,13 +223,14 @@ const PaymentMethodPage = () => {
                               </div>
                               <div className="flex justify-between items-center mt-6">
                                 <div className="flex flex-row items-center gap-10">
-                                  <div style={{ paddingTop: "2px" }}>
                                     {card.type === "visa" ? (
                                       <p className="font-bold text-white">VISA</p>
                                     ) : (
-                                      <img
+                                      <Image
                                         src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png"
                                         alt="mastercard"
+                                        width={32}
+                                        height={20}
                                         className="h-5"
                                       />
                                     )}
@@ -237,7 +239,6 @@ const PaymentMethodPage = () => {
                                     <p className="text-gray-200">{card.typeOfCard}</p>
                                   </div>
                                 </div>
-                              </div>
                               <div>
                                 <p className="font-semibold">{card.name}</p>
                               </div>
