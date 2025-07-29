@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
 // Types matching your API response
@@ -85,7 +85,7 @@ export default function CartPage() {
   };
 
   // Fetch cart from API with proper nested response handling
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     try {
       setLoading(true)
       setError('')
@@ -140,7 +140,7 @@ export default function CartPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
 
   // Update local quantity immediately, sync with server
   const updateQuantity = async (cartItemId: number, newQuantity: number) => {
@@ -266,7 +266,7 @@ export default function CartPage() {
     console.log('🔍 CartPage mounted, fetching cart...');
     setLocalQuantities(getLocalCartState());
     fetchCart()
-  }, [])
+  }, [fetchCart])
 
   // Calculate totals from current state
   const subtotal = summary.subtotal

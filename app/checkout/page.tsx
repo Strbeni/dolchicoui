@@ -12,7 +12,6 @@ import {
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Stepper } from "@/components/ui/stepper";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 // Types
@@ -130,8 +129,9 @@ export default function Checkout() {
   }
 
   const discount = 50000;
+  const shipping = 15000;
   const subtotal = cartData.summary.subtotal;
-  const total = Math.max(0, subtotal - discount);
+  const total = Math.max(0, subtotal - discount + shipping);
 
   return (
     <div className="min-h-screen bg-white px-6 lg:px-20 py-12 flex flex-col lg:flex-row gap-10">
@@ -234,7 +234,7 @@ export default function Checkout() {
       </div>
 
       {/* Right Order Summary */}
-      <div className="w-full lg:w-1/3 bg-white border border-gray-200 p-6 rounded shadow-sm"></div>
+      <div className="w-full lg:w-1/3 bg-white border border-gray-200 p-6 rounded shadow-sm">
         <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
 
         <div className="bg-[#f3f3f3] text-sm p-2 mb-4 text-[#844416] flex justify-between">
@@ -256,8 +256,8 @@ export default function Checkout() {
               <p className="text-sm">{item.quantity} X IDR {item.price.toLocaleString()}</p>
               <p className="text-xs text-gray-500">Size: {item.size}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
 
         {/* Order Summary Totals */}
         <div className="text-sm space-y-2 border-t pt-4 mt-4">

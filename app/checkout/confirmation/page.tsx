@@ -26,13 +26,26 @@ interface CartData {
   };
 }
 
+interface CheckoutFormData {
+  name: string;
+  email: string;
+  phone: string;
+  street: string;
+  province: string;
+  country: string;
+  zipCode: string;
+}
+
+interface CheckoutPaymentData {
+  method: string;
+}
+
 export default function ConfirmationPage() {
   const [cartData, setCartData] = useState<CartData | null>(null)
-  const [formData, setFormData] = useState<any>(null)
-  const [paymentData, setPaymentData] = useState<any>(null)
+  const [formData, setFormData] = useState<CheckoutFormData | null>(null)
+  const [paymentData, setPaymentData] = useState<CheckoutPaymentData | null>(null)
   const [loading, setLoading] = useState(true)
   const [placingOrder, setPlacingOrder] = useState(false)
-  const [orderNumber, setOrderNumber] = useState('')
   
   const router = useRouter()
 
@@ -76,15 +89,12 @@ export default function ConfirmationPage() {
 
         if (savedPaymentData) {
           setPaymentData(JSON.parse(savedPaymentData));
-        } else {
-          router.push('/checkout/shipping');
-          return;
-        }
+    } else {
+      router.push('/checkout/shipping');
+      return;
+    }
 
-        // Generate order number
-        setOrderNumber(generateOrderNumber());
-
-      } catch (error) {
+  } catch (error) {
         console.error('Error loading data:', error);
       } finally {
         setLoading(false);
@@ -94,13 +104,11 @@ export default function ConfirmationPage() {
     loadData();
   }, [router]);
 
-  const generateOrderNumber = () => {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 5).toUpperCase();
-  };
+  // Function removed as it's not being used
 
   const handlePlaceOrder = async () => {
     if (!cartData || !formData) return;
-
+    
     setPlacingOrder(true);
 
     try {
@@ -233,11 +241,14 @@ export default function ConfirmationPage() {
           </div>
         </div>
 
-        {/* Order number + status */}
+        {/* Order Status */}
         <div className="flex justify-between items-center mb-4">
           <div>
-            <p className="text-sm text-gray-700">Order Number</p>
-            <p className="font-semibold">{orderNumber}</p>
+            <p className="font-semibold mb-1">Order Status</p>
+            <p className="text-sm text-gray-600">
+              By clicking &quot;PLACE ORDER&quot;, you confirm that you want to place this order. 
+              You will receive an order confirmation email with all the details.
+            </p>
           </div>
           <span className="bg-yellow-100 text-yellow-600 text-xs px-4 py-1 rounded-full">
             Ready to Place
@@ -248,7 +259,7 @@ export default function ConfirmationPage() {
         <div className="mt-4 text-sm text-gray-700">
           <p className="font-semibold mb-1">Payment Information</p>
           <p>
-            By clicking "PLACE ORDER", you confirm that you want to place this order. 
+            By clicking &quot;PLACE ORDER&quot;, you confirm that you want to place this order. 
             You will receive an order confirmation email with all the details.
           </p>
         </div>

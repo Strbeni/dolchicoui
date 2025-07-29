@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -199,11 +200,13 @@ export default function AccountSettings() {
                   </form>
                 ) : (
                   <form className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center" onSubmit={handleSave}>
-                    <div className="flex flex-col items-center md:items-start">
+                    <div>
                       <div className="w-24 h-24 rounded-full overflow-hidden mb-4 relative">
-                        <img
+                        <Image
                           src={profileImage}
                           alt="Profile"
+                          width={96}
+                          height={96}
                           className="w-full h-full object-cover"
                         />
                         {isEditing && (
