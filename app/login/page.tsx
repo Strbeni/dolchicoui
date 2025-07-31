@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Eye, EyeOff, ChevronDown, Check, Edit3 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
 // Enhanced Custom Checkbox
 interface CustomCheckboxProps {
@@ -49,11 +48,20 @@ const countryCodes = [
 
 // API Response types to match your backend exactly
 interface UserCheckResponse {
+  success: any
+  message: string
+  userId: any
   exists: boolean
   loginMethods?: string[]
   userRole?: string
   requiresRegistration?: boolean
   isProfileComplete?: boolean
+}
+
+interface User {
+  id: number;
+  name: string;
+  [key: string]: unknown;
 }
 
 interface AuthResponse {
@@ -62,7 +70,7 @@ interface AuthResponse {
   userId?: number
   requiresProfileCompletion?: boolean
   message?: string
-  user?: any
+  user?: User
 }
 
 interface SendOTPResponse {
@@ -80,21 +88,15 @@ export default function UnifiedAuthComponent() {
   const [countryCode, setCountryCode] = useState('+91')
   const [showCountryDropdown, setShowCountryDropdown] = useState(false)
   const [otp, setOtp] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [fullName, setFullName] = useState('')
-  const [acceptTerms, setAcceptTerms] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
   const [userId, setUserId] = useState<number | null>(null)
   
   // State for user existence and flow control
+  // State for user existence and flow control
   const [userExists, setUserExists] = useState(false)
-  const [availableLoginMethods, setAvailableLoginMethods] = useState<string[]>([])
   const [showPasswordOption, setShowPasswordOption] = useState(false)
+  const [availableLoginMethods, setAvailableLoginMethods] = useState<string[]>([])
   const [otpSent, setOtpSent] = useState(false)
-  
   // Store the verified contact
   const [verifiedContact, setVerifiedContact] = useState('')
   const [verifiedContactType, setVerifiedContactType] = useState<'email' | 'mobile'>('email')
@@ -105,16 +107,20 @@ export default function UnifiedAuthComponent() {
   const [editContactType, setEditContactType] = useState<'email' | 'mobile'>('email')
   const [editCountryCode, setEditCountryCode] = useState('+91')
   const [showEditCountryDropdown, setShowEditCountryDropdown] = useState(false)
-  
-  // 🔥 NEW: Add redirecting state for better UX
+
+  // Form state
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [fullName, setFullName] = useState('')
+  const [acceptTerms, setAcceptTerms] = useState(false)
+
+  // UI state
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [redirecting, setRedirecting] = useState(false)
 
-  const router = useRouter()
-
-  // 🔥 ENHANCED: Token storage and management helper
-  const setAuthTokens = (token: string, user?: any) => {
-    setRedirecting(true) // Show redirecting state
-    
+  // Enhanced token storage and management helper
+  const setAuthTokens = React.useCallback((token: string, user?: User) => {
     // Store in both localStorage and sessionStorage for redundancy
     localStorage.setItem('token', token)
     sessionStorage.setItem('token', token)
@@ -134,7 +140,7 @@ export default function UnifiedAuthComponent() {
     console.log('Token stored:', token)
     console.log('User stored:', user)
     console.log('About to redirect to /home')
-  }
+  }, [])
 
   // Smart contact type detection
   useEffect(() => {
@@ -223,7 +229,7 @@ export default function UnifiedAuthComponent() {
   }, [showCountryDropdown, showEditCountryDropdown])
 
   // Helper function to format contact for API
-  const formatContactForAPI = (input: string, type: 'email' | 'mobile', countryCodeVal?: string): string => {
+  const formatContactForAPI = React.useCallback((input: string, type: 'email' | 'mobile', countryCodeVal?: string): string => {
     const trimmed = input.trim()
     
     if (type === 'email') {
@@ -240,11 +246,12 @@ export default function UnifiedAuthComponent() {
     }
     
     return trimmed
-  }
+  }, [countryCode])
 
-  // 🔑 KEY FUNCTION: Check if user exists using your backend API
-  const checkUserExists = async (emailOrPhone: string): Promise<UserCheckResponse> => {
-    if (!emailOrPhone.trim()) return { exists: false }
+  // KEY FUNCTION: Check if user exists using your backend API
+  // KEY FUNCTION: Check if user exists using your backend API
+  const checkUserExists = React.useCallback(async (emailOrPhone: string): Promise<UserCheckResponse> => {
+    if (!emailOrPhone.trim()) return { success: false, message: 'Contact is empty', exists: false, userId: null }
     
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
@@ -261,26 +268,25 @@ export default function UnifiedAuthComponent() {
         setUserExists(data.exists)
         setAvailableLoginMethods(data.loginMethods || [])
         setShowPasswordOption(data.exists && (data.loginMethods?.includes('password') || false))
-        
         return data
       } else {
         console.error('Check auth API error:', data)
         setUserExists(false)
-        setAvailableLoginMethods([])
         setShowPasswordOption(false)
-        return { exists: false }
+        setAvailableLoginMethods([])
+        return { success: false, message: data.message || 'API Error', exists: false, userId: null }
       }
     } catch (error) {
       console.error('Error checking user:', error)
       setUserExists(false)
-      setAvailableLoginMethods([])
       setShowPasswordOption(false)
-      return { exists: false }
+      setAvailableLoginMethods([])
+      return { success: false, message: 'Network or server error', exists: false, userId: null }
     }
-  }
+  }, [])
 
-  // Send OTP for new user registration
-  const handleSendOTPForNewUser = async (cleanContact: string): Promise<void> => {
+  // Send OTP for new users (registration)
+  const handleSendOTPForNewUser = React.useCallback(async (cleanContact: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
     
     const payload = contactType === 'mobile'
@@ -305,10 +311,10 @@ export default function UnifiedAuthComponent() {
 
     setOtpSent(true)
     setResendTimer(30)
-  }
+  }, [contactType])
 
   // Send OTP for existing users
-  const handleSendOTPForExistingUser = async (cleanContact: string): Promise<void> => {
+  const handleSendOTPForExistingUser = React.useCallback(async (cleanContact: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
     
     const res = await fetch(`${API_BASE_URL}/api/user/auth/send-otp`, {
@@ -329,10 +335,10 @@ export default function UnifiedAuthComponent() {
 
     setOtpSent(true)
     setResendTimer(30)
-  }
+  }, [])
 
-  // 🚀 MAIN ENTRY POINT: Handle continue from step 1
-  const handleContinue = async (): Promise<void> => {
+  // MAIN ENTRY POINT: Handle continue from step 1
+  const handleContinue = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
 
@@ -341,14 +347,14 @@ export default function UnifiedAuthComponent() {
       setVerifiedContact(cleanContact)
       setVerifiedContactType(contactType)
       
-      // 🔍 Check if user exists first
+      // Check if user exists first
       const userStatus = await checkUserExists(cleanContact)
       
       if (userStatus.exists) {
-        // 👤 EXISTING USER: Go to login flow
+        // EXISTING USER: Go to login flow
         setStep(2)
       } else {
-        // 🆕 NEW USER: Check terms and send OTP immediately
+        // NEW USER: Check terms and send OTP immediately
         if (!acceptTerms) {
           setError('Please accept the Terms of Use and Privacy Policy to continue')
           return
@@ -363,19 +369,19 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [contactInput, contactType, acceptTerms, formatContactForAPI, checkUserExists, handleSendOTPForNewUser])
 
   // Handle edit contact (inline editing with pencil icon)
-  const handleEditContact = (): void => {
+  const handleEditContact = React.useCallback((): void => {
     setIsEditingContact(true)
     setEditContactInput(contactInput)
     setEditContactType(contactType)
     setEditCountryCode(countryCode)
     setError('')
-  }
+  }, [contactInput, contactType, countryCode])
 
   // Save edited contact and re-check user existence
-  const handleSaveEditContact = async (): Promise<void> => {
+  const handleSaveEditContact = React.useCallback(async (): Promise<void> => {
     if (!editContactInput.trim()) {
       setError('Please enter a valid email or phone number')
       return
@@ -408,17 +414,17 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [editContactInput, editContactType, editCountryCode, formatContactForAPI, checkUserExists])
 
   // Cancel edit contact
-  const handleCancelEditContact = (): void => {
+  const handleCancelEditContact = React.useCallback((): void => {
     setIsEditingContact(false)
     setEditContactInput('')
     setError('')
-  }
+  }, [])
 
-  // 🔥 ENHANCED: Handle OTP verification with improved token handling
-  const handleVerifyOTP = async (): Promise<void> => {
+  // ENHANCED: Handle OTP verification with improved token handling
+  const handleVerifyOTP = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
 
@@ -448,7 +454,7 @@ export default function UnifiedAuthComponent() {
         }
         setStep(3)
       } else {
-        // 🔥 ENHANCED LOGIN SUCCESS HANDLING
+        // ENHANCED LOGIN SUCCESS HANDLING
         if (data.token) {
           setAuthTokens(data.token, data.user)
           
@@ -465,10 +471,10 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [verifiedContactType, verifiedContact, otp, setAuthTokens])
 
-  // 🔥 ENHANCED: Handle password login with improved token handling
-  const handlePasswordLogin = async (): Promise<void> => {
+  // ENHANCED: Handle password login with improved token handling
+  const handlePasswordLogin = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
 
@@ -488,7 +494,7 @@ export default function UnifiedAuthComponent() {
         throw new Error(data?.message || 'Login failed')
       }
 
-      // 🔥 ENHANCED LOGIN SUCCESS HANDLING
+      // ENHANCED LOGIN SUCCESS HANDLING
       if (data.token) {
         setAuthTokens(data.token, data.user)
         
@@ -504,10 +510,10 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [verifiedContact, password, setAuthTokens])
 
-  // 🔥 ENHANCED: Handle profile completion with improved token handling
-  const handleCompleteProfile = async (): Promise<void> => {
+  // ENHANCED: Handle profile completion with improved token handling
+  const handleCompleteProfile = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
 
@@ -531,7 +537,7 @@ export default function UnifiedAuthComponent() {
         throw new Error(data?.message || 'Profile completion failed')
       }
 
-      // 🔥 ENHANCED PROFILE COMPLETION SUCCESS HANDLING
+      // ENHANCED PROFILE COMPLETION SUCCESS HANDLING
       if (data.token) {
         setAuthTokens(data.token, data.user)
         
@@ -547,17 +553,17 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId, fullName, password, setAuthTokens])
 
   // Handle social login
-  const handleSocialLogin = (provider: 'google' | 'facebook'): void => {
+  const handleSocialLogin = React.useCallback((provider: 'google' | 'facebook'): void => {
     if (provider === 'google') {
       window.location.href = 'https://valyris-i.onrender.com/api/auth/google'
     }
-  }
+  }, [])
 
   // Handle resend OTP with proper endpoint selection
-  const handleResendOTP = async (): Promise<void> => {
+  const handleResendOTP = React.useCallback(async (): Promise<void> => {
     if (resendTimer > 0) return
 
     setError('')
@@ -575,10 +581,10 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [resendTimer, userExists, verifiedContact, handleSendOTPForExistingUser, handleSendOTPForNewUser])
 
   // Handle request OTP for existing users
-  const handleRequestOTP = async (): Promise<void> => {
+  const handleRequestOTP = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
 
@@ -589,45 +595,45 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [verifiedContact, handleSendOTPForExistingUser])
 
   // Utility functions
-  const handleContactBlur = (): void => {
+  const handleContactBlur = React.useCallback((): void => {
     if (contactInput.trim()) {
       const cleanContact = formatContactForAPI(contactInput, contactType)
       void checkUserExists(cleanContact)
     }
-  }
+  }, [contactInput, contactType, formatContactForAPI, checkUserExists])
 
-  const handleCountrySelect = (countryCodeValue: string): void => {
+  const handleCountrySelect = React.useCallback((countryCodeValue: string): void => {
     setCountryCode(countryCodeValue)
     setShowCountryDropdown(false)
-  }
+  }, [])
 
-  const handleEditCountrySelect = (countryCodeValue: string): void => {
+  const handleEditCountrySelect = React.useCallback((countryCodeValue: string): void => {
     setEditCountryCode(countryCodeValue)
     setShowEditCountryDropdown(false)
-  }
+  }, [])
 
-  const toggleCountryDropdown = (e: React.MouseEvent): void => {
+  const toggleCountryDropdown = React.useCallback((e: React.MouseEvent): void => {
     e.stopPropagation()
     setShowCountryDropdown(!showCountryDropdown)
-  }
+  }, [showCountryDropdown])
 
-  const toggleEditCountryDropdown = (e: React.MouseEvent): void => {
+  const toggleEditCountryDropdown = React.useCallback((e: React.MouseEvent): void => {
     e.stopPropagation()
     setShowEditCountryDropdown(!showEditCountryDropdown)
-  }
+  }, [showEditCountryDropdown])
 
-  const handleCountryDropdownClick = (e: React.MouseEvent, countryCodeValue: string): void => {
+  const handleCountryDropdownClick = React.useCallback((e: React.MouseEvent, countryCodeValue: string): void => {
     e.stopPropagation()
     handleCountrySelect(countryCodeValue)
-  }
+  }, [handleCountrySelect])
 
-  const handleEditCountryDropdownClick = (e: React.MouseEvent, countryCodeValue: string): void => {
+  const handleEditCountryDropdownClick = React.useCallback((e: React.MouseEvent, countryCodeValue: string): void => {
     e.stopPropagation()
     handleEditCountrySelect(countryCodeValue)
-  }
+  }, [handleEditCountrySelect])
 
   return (
     <div className="min-h-screen bg-[url('/login.svg')] md:bg-none bg-cover bg-center bg-no-repeat relative">
@@ -715,7 +721,7 @@ export default function UnifiedAuthComponent() {
                   </div>
 
                   <Button
-                    onClick={() => void handleContinue()}
+                    onClick={handleContinue}
                     disabled={loading || !contactInput.trim()}
                     className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white disabled:opacity-50 h-12 font-semibold tracking-wide text-base transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
                   >
@@ -893,7 +899,7 @@ export default function UnifiedAuthComponent() {
                       </div>
                       <div className="flex gap-2">
                         <Button
-                          onClick={() => void handleSaveEditContact()}
+                          onClick={handleSaveEditContact}
                           disabled={loading || !editContactInput.trim()}
                           className="flex-1 bg-[#d9673f] hover:bg-[#c2552d] text-white h-9 text-sm"
                         >
@@ -910,7 +916,7 @@ export default function UnifiedAuthComponent() {
                     </div>
                   )}
 
-                  {/* 👤 EXISTING USERS: Password first, then OTP option */}
+                  {/* EXISTING USERS: Password first, then OTP option */}
                   {userExists && showPasswordOption && !isEditingContact && (
                     <div className="space-y-4">
                       <div className="space-y-2">
@@ -937,7 +943,7 @@ export default function UnifiedAuthComponent() {
                       </div>
 
                       <Button
-                        onClick={() => void handlePasswordLogin()}
+                        onClick={handlePasswordLogin}
                         disabled={loading || !password.trim()}
                         className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                       >
@@ -946,7 +952,7 @@ export default function UnifiedAuthComponent() {
                       </Button>
 
                       <Button
-                        onClick={() => void handleRequestOTP()}
+                        onClick={handleRequestOTP}
                         disabled={loading || otpSent}
                         variant="outline"
                         className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white"
@@ -965,7 +971,7 @@ export default function UnifiedAuthComponent() {
                     </div>
                   )}
 
-                  {/* 🔐 OTP Input: For NEW USERS (always show) OR existing users who requested OTP */}
+                  {/* OTP Input: For NEW USERS (always show) OR existing users who requested OTP */}
                   {((otpSent && userExists) || !userExists) && !isEditingContact && (
                     <>
                       <div className="space-y-2">
@@ -987,7 +993,7 @@ export default function UnifiedAuthComponent() {
                       <div className="text-center">
                         <button
                           type="button"
-                          onClick={() => void handleResendOTP()}
+                          onClick={handleResendOTP}
                           disabled={resendTimer > 0 || loading}
                           className="text-sm text-orange-600 hover:text-orange-700 underline disabled:text-gray-400 disabled:no-underline transition-colors"
                         >
@@ -996,7 +1002,7 @@ export default function UnifiedAuthComponent() {
                       </div>
 
                       <Button
-                        onClick={() => void handleVerifyOTP()}
+                        onClick={handleVerifyOTP}
                         disabled={loading || !otp.trim()}
                         className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                       >
@@ -1058,7 +1064,7 @@ export default function UnifiedAuthComponent() {
                   </div>
 
                   <Button
-                    onClick={() => void handleCompleteProfile()}
+                    onClick={handleCompleteProfile}
                     disabled={loading || !fullName.trim() || !password.trim()}
                     className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                   >
@@ -1072,7 +1078,7 @@ export default function UnifiedAuthComponent() {
         </div>
       </div>
 
-      {/* 🔥 NEW: Loading overlay during redirect */}
+      {/* Loading overlay during redirect */}
       {redirecting && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3">
@@ -1084,3 +1090,4 @@ export default function UnifiedAuthComponent() {
     </div>
   )
 }
+
