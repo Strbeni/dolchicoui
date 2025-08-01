@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Eye, EyeOff, ChevronDown, Check, Edit3 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 // Enhanced Custom Checkbox
 interface CustomCheckboxProps {
@@ -46,22 +47,28 @@ const countryCodes = [
   { code: "+81", country: "JP", flag: "🇯🇵", name: "Japan" },
 ]
 
-// API Response types to match your backend exactly
+// Properly typed interfaces
+interface User {
+  id: number
+  name: string
+  email?: string
+  phoneNumber?: string
+  emailVerified?: boolean
+  phoneVerified?: boolean
+  isProfileComplete?: boolean
+  role?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
 interface UserCheckResponse {
-  success: any
-  message: string
-  userId: any
+  success?: boolean
+  message?: string
   exists: boolean
   loginMethods?: string[]
   userRole?: string
   requiresRegistration?: boolean
   isProfileComplete?: boolean
-}
-
-interface User {
-  id: number;
-  name: string;
-  [key: string]: unknown;
 }
 
 interface AuthResponse {
@@ -82,50 +89,52 @@ interface SendOTPResponse {
 }
 
 export default function UnifiedAuthComponent() {
+  const router = useRouter()
+
+  // Step and form state
   const [step, setStep] = useState(1) // 1: Contact Check, 2: Auth Flow, 3: Profile Setup
   const [contactInput, setContactInput] = useState('')
   const [contactType, setContactType] = useState<'email' | 'mobile'>('email')
   const [countryCode, setCountryCode] = useState('+91')
   const [showCountryDropdown, setShowCountryDropdown] = useState(false)
   const [otp, setOtp] = useState('')
-  const [resendTimer, setResendTimer] = useState(0)
-  const [userId, setUserId] = useState<number | null>(null)
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [fullName, setFullName] = useState('')
+  const [acceptTerms, setAcceptTerms] = useState(false)
   
-  // State for user existence and flow control
-  // State for user existence and flow control
+  // User and auth state
   const [userExists, setUserExists] = useState(false)
   const [showPasswordOption, setShowPasswordOption] = useState(false)
-  const [availableLoginMethods, setAvailableLoginMethods] = useState<string[]>([])
   const [otpSent, setOtpSent] = useState(false)
-  // Store the verified contact
+  const [userId, setUserId] = useState<number | null>(null)
+  
+  // Contact management
   const [verifiedContact, setVerifiedContact] = useState('')
   const [verifiedContactType, setVerifiedContactType] = useState<'email' | 'mobile'>('email')
   
-  // State for inline contact editing
+  // Inline editing state
   const [isEditingContact, setIsEditingContact] = useState(false)
   const [editContactInput, setEditContactInput] = useState('')
   const [editContactType, setEditContactType] = useState<'email' | 'mobile'>('email')
   const [editCountryCode, setEditCountryCode] = useState('+91')
   const [showEditCountryDropdown, setShowEditCountryDropdown] = useState(false)
-
-  // Form state
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [fullName, setFullName] = useState('')
-  const [acceptTerms, setAcceptTerms] = useState(false)
-
+  
   // UI state
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [redirecting, setRedirecting] = useState(false)
+  const [resendTimer, setResendTimer] = useState(0)
 
   // Enhanced token storage and management helper
   const setAuthTokens = React.useCallback((token: string, user?: User) => {
-    // Store in both localStorage and sessionStorage for redundancy
+    setRedirecting(true) // Show redirecting state
+    
+    // Multi-layer persistence
     localStorage.setItem('token', token)
     sessionStorage.setItem('token', token)
     
-    // Also store user data if provided
+    // Store user data if provided
     if (user) {
       localStorage.setItem('user', JSON.stringify(user))
       sessionStorage.setItem('user', JSON.stringify(user))
@@ -136,10 +145,7 @@ export default function UnifiedAuthComponent() {
       document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 days
     }
     
-    // Debug logging (remove in production)
-    console.log('Token stored:', token)
-    console.log('User stored:', user)
-    console.log('About to redirect to /home')
+    console.log('Authentication successful, redirecting...')
   }, [])
 
   // Smart contact type detection
@@ -206,7 +212,7 @@ export default function UnifiedAuthComponent() {
     }
   }, [editContactInput])
 
-  // Resend timer
+  // Resend timer countdown
   useEffect(() => {
     if (resendTimer > 0) {
       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
@@ -248,10 +254,9 @@ export default function UnifiedAuthComponent() {
     return trimmed
   }, [countryCode])
 
-  // KEY FUNCTION: Check if user exists using your backend API
-  // KEY FUNCTION: Check if user exists using your backend API
+  // Check if user exists using backend API
   const checkUserExists = React.useCallback(async (emailOrPhone: string): Promise<UserCheckResponse> => {
-    if (!emailOrPhone.trim()) return { success: false, message: 'Contact is empty', exists: false, userId: null }
+    if (!emailOrPhone.trim()) return { exists: false }
     
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
@@ -266,26 +271,25 @@ export default function UnifiedAuthComponent() {
 
       if (res.ok) {
         setUserExists(data.exists)
-        setAvailableLoginMethods(data.loginMethods || [])
-        setShowPasswordOption(data.exists && (data.loginMethods?.includes('password') || false))
+        // Use data.loginMethods directly without storing in state
+        const hasPasswordMethod = (data.loginMethods || []).includes('password')
+        setShowPasswordOption(data.exists && hasPasswordMethod)
         return data
       } else {
         console.error('Check auth API error:', data)
         setUserExists(false)
         setShowPasswordOption(false)
-        setAvailableLoginMethods([])
-        return { success: false, message: data.message || 'API Error', exists: false, userId: null }
+        return { exists: false }
       }
     } catch (error) {
       console.error('Error checking user:', error)
       setUserExists(false)
       setShowPasswordOption(false)
-      setAvailableLoginMethods([])
-      return { success: false, message: 'Network or server error', exists: false, userId: null }
+      return { exists: false }
     }
   }, [])
 
-  // Send OTP for new users (registration)
+  // Send OTP for new user registration
   const handleSendOTPForNewUser = React.useCallback(async (cleanContact: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
     
@@ -337,7 +341,7 @@ export default function UnifiedAuthComponent() {
     setResendTimer(30)
   }, [])
 
-  // MAIN ENTRY POINT: Handle continue from step 1
+  // Main entry point: Handle continue from step 1
   const handleContinue = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
@@ -351,10 +355,10 @@ export default function UnifiedAuthComponent() {
       const userStatus = await checkUserExists(cleanContact)
       
       if (userStatus.exists) {
-        // EXISTING USER: Go to login flow
+        // Existing user: Go to login flow
         setStep(2)
       } else {
-        // NEW USER: Check terms and send OTP immediately
+        // New user: Check terms and send OTP immediately
         if (!acceptTerms) {
           setError('Please accept the Terms of Use and Privacy Policy to continue')
           return
@@ -423,7 +427,7 @@ export default function UnifiedAuthComponent() {
     setError('')
   }, [])
 
-  // ENHANCED: Handle OTP verification with improved token handling
+  // Handle OTP verification with improved token handling
   const handleVerifyOTP = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
@@ -454,13 +458,13 @@ export default function UnifiedAuthComponent() {
         }
         setStep(3)
       } else {
-        // ENHANCED LOGIN SUCCESS HANDLING
+        // Login successful
         if (data.token) {
           setAuthTokens(data.token, data.user)
           
-          // Add a small delay to ensure tokens are stored, then redirect
+          // Add delay to ensure tokens are stored, then redirect
           setTimeout(() => {
-            window.location.href = '/home' // Use window.location for full page reload
+            router.push('/home')
           }, 100)
         } else {
           throw new Error('No authentication token received')
@@ -471,9 +475,9 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }, [verifiedContactType, verifiedContact, otp, setAuthTokens])
+  }, [verifiedContactType, verifiedContact, otp, setAuthTokens, router])
 
-  // ENHANCED: Handle password login with improved token handling
+  // Handle password login with improved token handling
   const handlePasswordLogin = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
@@ -494,13 +498,13 @@ export default function UnifiedAuthComponent() {
         throw new Error(data?.message || 'Login failed')
       }
 
-      // ENHANCED LOGIN SUCCESS HANDLING
+      // Login successful
       if (data.token) {
         setAuthTokens(data.token, data.user)
         
-        // Add a small delay to ensure tokens are stored, then redirect
+        // Add delay to ensure tokens are stored, then redirect
         setTimeout(() => {
-          window.location.href = '/home' // Use window.location for full page reload
+          window.location.href = '/home'
         }, 100)
       } else {
         throw new Error('No authentication token received')
@@ -512,7 +516,7 @@ export default function UnifiedAuthComponent() {
     }
   }, [verifiedContact, password, setAuthTokens])
 
-  // ENHANCED: Handle profile completion with improved token handling
+  // Handle profile completion with improved token handling
   const handleCompleteProfile = React.useCallback(async (): Promise<void> => {
     setError('')
     setLoading(true)
@@ -537,13 +541,13 @@ export default function UnifiedAuthComponent() {
         throw new Error(data?.message || 'Profile completion failed')
       }
 
-      // ENHANCED PROFILE COMPLETION SUCCESS HANDLING
+      // Profile completion successful
       if (data.token) {
         setAuthTokens(data.token, data.user)
         
-        // Add a small delay to ensure tokens are stored, then redirect
+        // Add delay to ensure tokens are stored, then redirect
         setTimeout(() => {
-          window.location.href = '/home' // Use window.location for full page reload
+          window.location.href = '/home'
         }, 100)
       } else {
         throw new Error('No authentication token received')
@@ -738,7 +742,7 @@ export default function UnifiedAuthComponent() {
                     )}
                   </Button>
 
-                  {/* Terms and Conditions - Always visible */}
+                  {/* Terms and Conditions */}
                   <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border">
                     <div className="pt-0.5">
                       <CustomCheckbox
@@ -826,7 +830,7 @@ export default function UnifiedAuthComponent() {
                     </div>
                   )}
 
-                  {/* Contact display with pencil edit (inline editing) */}
+                  {/* Contact display with edit option */}
                   {!isEditingContact && (
                     <div className="bg-gray-50 p-3 rounded-lg border">
                       <div className="flex items-center justify-between">
@@ -916,7 +920,7 @@ export default function UnifiedAuthComponent() {
                     </div>
                   )}
 
-                  {/* EXISTING USERS: Password first, then OTP option */}
+                  {/* Existing users: Password first, then OTP option */}
                   {userExists && showPasswordOption && !isEditingContact && (
                     <div className="space-y-4">
                       <div className="space-y-2">
@@ -971,7 +975,7 @@ export default function UnifiedAuthComponent() {
                     </div>
                   )}
 
-                  {/* OTP Input: For NEW USERS (always show) OR existing users who requested OTP */}
+                  {/* OTP Input: For new users (always show) OR existing users who requested OTP */}
                   {((otpSent && userExists) || !userExists) && !isEditingContact && (
                     <>
                       <div className="space-y-2">
@@ -1090,4 +1094,3 @@ export default function UnifiedAuthComponent() {
     </div>
   )
 }
-
