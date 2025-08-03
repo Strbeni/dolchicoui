@@ -227,7 +227,7 @@ const PaymentMethodPage = () => {
                                       <p className="font-bold text-white">VISA</p>
                                     ) : (
                                       <Image
-                                        src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png"
+                                        src="/images/mastercard-logo.png"
                                         alt="mastercard"
                                         width={32}
                                         height={20}
