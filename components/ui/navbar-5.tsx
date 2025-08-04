@@ -270,7 +270,7 @@ export const Navbar5 = () => {
             </div>
 
             {/* Wishlist */}
-            <Link href="/wishlistpage" className="relative">
+            <Link href="/wishlist" className="relative">
               <Heart className="w-6 h-6" />
               {wishlistCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-pink-600 text-white rounded-full text-xs px-1">

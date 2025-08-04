@@ -6,7 +6,7 @@ import Link from 'next/link';
 import ColorFilter from './ColorFilter';
 import PriceFilter from './PriceFilter';
 import { useSearchParams } from 'next/navigation';
-import { ShoppingCart, Check } from 'lucide-react';
+import { ShoppingCart, Check, Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface Product {
@@ -33,6 +33,7 @@ const authHeaders = () => {
     ...(token && { Authorization: `Bearer ${token}` }),
   };
 };
+
 // Simple in‐DOM toast
 const showToast = (msg: string, success = true) => {
   if (typeof window === 'undefined') return;
@@ -54,10 +55,43 @@ export default function ProductListClient() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
   const [addedToCart, setAddedToCart] = useState<number | null>(null);
+  
+  // Wishlist states
+  const [wishlistItems, setWishlistItems] = useState<Set<number>>(new Set());
+  const [addingToWishlist, setAddingToWishlist] = useState<number | null>(null);
+  const [removingFromWishlist, setRemovingFromWishlist] = useState<number | null>(null);
 
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
   const router = useRouter();
+
+  // Fetch user's wishlist
+  useEffect(() => {
+    const fetchWishlistStatus = async () => {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/user/wishlist`, {
+          headers: authHeaders(),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.wishlist) {
+            const wishlistProductIds = new Set<number>(
+              data.data.wishlist.map((item: any) => item.productId)
+            );
+            setWishlistItems(wishlistProductIds);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching wishlist:', error);
+      }
+    };
+
+    fetchWishlistStatus();
+  }, []);
 
   // Fetch & filter products
   useEffect(() => {
@@ -115,6 +149,73 @@ export default function ProductListClient() {
       showToast(e instanceof Error ? e.message : 'Add failed', false);
     } finally {
       setAddingToCart(null);
+    }
+  };
+
+  // Handle wishlist toggle
+  const handleWishlistToggle = async (product: Product) => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) return router.push('/login');
+
+    const isInWishlist = wishlistItems.has(product.id);
+    
+    if (isInWishlist) {
+      // Remove from wishlist
+      setRemovingFromWishlist(product.id);
+      try {
+        const response = await fetch(`${API_BASE}/api/user/wishlist/${product.id}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to remove from wishlist');
+        }
+
+        // Update local state
+        setWishlistItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(product.id);
+          return newSet;
+        });
+
+        showToast('Removed from wishlist!', true);
+        
+      } catch (error) {
+        console.error('Failed to remove from wishlist:', error);
+        showToast(error instanceof Error ? error.message : 'Failed to remove from wishlist', false);
+      } finally {
+        setRemovingFromWishlist(null);
+      }
+    } else {
+      // Add to wishlist
+      setAddingToWishlist(product.id);
+      try {
+        const response = await fetch(`${API_BASE}/api/user/wishlist`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            productId: product.id
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to add to wishlist');
+        }
+
+        // Update local state
+        setWishlistItems(prev => new Set([...prev, product.id]));
+        
+        showToast('Added to wishlist!', true);
+        
+      } catch (error) {
+        console.error('Failed to add to wishlist:', error);
+        showToast(error instanceof Error ? error.message : 'Failed to add to wishlist', false);
+      } finally {
+        setAddingToWishlist(null);
+      }
     }
   };
 
@@ -227,9 +328,34 @@ export default function ProductListClient() {
                   height={400}
                   className="object-cover w-full h-full transition-transform group-hover:scale-105"
                 />
-                <button className="absolute inset-0 bg-black bg-opacity-30 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center">
-                  Quick View
+                
+                {/* Wishlist button overlay */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleWishlistToggle(p);
+                  }}
+                  disabled={addingToWishlist === p.id || removingFromWishlist === p.id}
+                  className={`absolute top-2 right-2 p-2 rounded-full shadow-md transition-all duration-200 ${
+                    wishlistItems.has(p.id)
+                      ? 'bg-pink-100 text-pink-600 hover:bg-pink-200'
+                      : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-pink-600'
+                  } disabled:opacity-50`}
+                >
+                  {(addingToWishlist === p.id || removingFromWishlist === p.id) ? (
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Heart 
+                      size={20} 
+                      fill={wishlistItems.has(p.id) ? 'currentColor' : 'none'}
+                      className="transition-colors"
+                    />
+                  )}
                 </button>
+                
+                <div className="absolute inset-0 bg-black bg-opacity-30 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                  Quick View
+                </div>
               </div>
             </Link>
 

@@ -37,8 +37,10 @@ export default function ProductDetail() {
   const [error, setError] = useState('');
   const [addingToCart, setAddingToCart] = useState(false);
   const [addingToWishlist, setAddingToWishlist] = useState(false);
+  const [removingFromWishlist, setRemovingFromWishlist] = useState(false);
   const [isInWishlistState, setIsInWishlistState] = useState(false);
   const [cartSuccess, setCartSuccess] = useState(false);
+  const [wishlistSuccess, setWishlistSuccess] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -71,14 +73,14 @@ export default function ProductDetail() {
       if (!token || !product) return;
 
       try {
-        const response = await fetch(`${API_BASE}/api/wishlist/check/${product.id}`, {
+        const response = await fetch(`${API_BASE}/api/user/wishlist/check/${product.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         const data = await response.json();
-        if (response.ok) {
-          setIsInWishlistState(data.inWishlist || false);
+        if (response.ok && data.success) {
+          setIsInWishlistState(data.data.isInWishlist || false);
         }
       } catch (error) {
         console.error('Error checking wishlist status:', error);
@@ -151,8 +153,8 @@ export default function ProductDetail() {
     }
   };
 
-  // Handle add to wishlist
-  const handleAddToWishlist = async () => {
+  // Handle wishlist toggle (add/remove)
+  const handleWishlistToggle = async () => {
     if (!product) return;
 
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -161,35 +163,74 @@ export default function ProductDetail() {
       return;
     }
 
-    setAddingToWishlist(true);
-    
-    try {
-      // Make direct API call to backend
-      const response = await fetch(`${API_BASE}/api/wishlist/items`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          productId: product.id
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to add to wishlist');
-      }
-
-      setIsInWishlistState(true);
-      alert('Successfully added to wishlist!');
+    if (isInWishlistState) {
+      // Remove from wishlist
+      setRemovingFromWishlist(true);
       
-    } catch (error) {
-      console.error('Failed to add to wishlist:', error);
-      alert(error instanceof Error ? error.message : 'Failed to add to wishlist');
-    } finally {
-      setAddingToWishlist(false);
+      try {
+        const response = await fetch(`${API_BASE}/api/user/wishlist/${product.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to remove from wishlist');
+        }
+
+        setIsInWishlistState(false);
+        setWishlistSuccess(true);
+        
+        // Show success message briefly
+        setTimeout(() => {
+          setWishlistSuccess(false);
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Failed to remove from wishlist:', error);
+        alert(error instanceof Error ? error.message : 'Failed to remove from wishlist');
+      } finally {
+        setRemovingFromWishlist(false);
+      }
+    } else {
+      // Add to wishlist
+      setAddingToWishlist(true);
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/user/wishlist`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            productId: product.id
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to add to wishlist');
+        }
+
+        setIsInWishlistState(true);
+        setWishlistSuccess(true);
+        
+        // Show success message briefly
+        setTimeout(() => {
+          setWishlistSuccess(false);
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Failed to add to wishlist:', error);
+        alert(error instanceof Error ? error.message : 'Failed to add to wishlist');
+      } finally {
+        setAddingToWishlist(false);
+      }
     }
   };
 
@@ -270,7 +311,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Quantity + Add to Cart */}
+            {/* Quantity + Add to Cart + Wishlist */}
             <div className="mt-6 flex items-center gap-4">
               <div className="flex items-center border border-gray-300 rounded">
                 <button 
@@ -316,29 +357,38 @@ export default function ProductDetail() {
               </Button>
 
               <button 
-                onClick={handleAddToWishlist}
-                disabled={addingToWishlist}
+                onClick={handleWishlistToggle}
+                disabled={addingToWishlist || removingFromWishlist}
                 className={`border p-2 rounded-full transition-colors ${
                   isInWishlistState 
-                    ? 'bg-red-100 border-red-300 text-red-600' 
-                    : 'hover:bg-gray-100 border-gray-300'
+                    ? 'bg-pink-100 border-pink-300 text-pink-600 hover:bg-pink-200' 
+                    : 'hover:bg-gray-100 border-gray-300 hover:border-pink-300'
                 }`}
+                title={isInWishlistState ? 'Remove from wishlist' : 'Add to wishlist'}
               >
-                {addingToWishlist ? (
+                {(addingToWishlist || removingFromWishlist) ? (
                   <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Heart 
                     size={20} 
                     fill={isInWishlistState ? 'currentColor' : 'none'}
+                    className={isInWishlistState ? 'text-pink-600' : 'hover:text-pink-600'}
                   />
                 )}
               </button>
             </div>
 
-            {/* Success message */}
+            {/* Success messages */}
             {cartSuccess && (
               <div className="mt-2 text-sm text-green-600 flex items-center gap-2">
                 ✓ Item added to cart successfully!
+              </div>
+            )}
+            
+            {wishlistSuccess && (
+              <div className="mt-2 text-sm text-pink-600 flex items-center gap-2">
+                <Heart size={16} fill="currentColor" />
+                {isInWishlistState ? 'Added to wishlist!' : 'Removed from wishlist!'}
               </div>
             )}
 
