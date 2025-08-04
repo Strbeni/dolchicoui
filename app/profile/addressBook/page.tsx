@@ -153,24 +153,11 @@ export default function AddressBookPage() {
               className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
             >
                 Saved Payment Method
-            </button>
-            <TabsTrigger value="addressbook" className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full">Address Book</TabsTrigger>
+            </button>  
+            <TabsTrigger value="addressbook">Address Book</TabsTrigger> 
               
             
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Billing
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Settings
-            </button>
+           
           </TabsList>
         </div>
 

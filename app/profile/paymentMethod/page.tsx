@@ -174,7 +174,7 @@ const PaymentMethodPage = () => {
             >
               Order History
             </button>
-            <TabsTrigger value="payment">Saved Payment Method</TabsTrigger>
+            <TabsTrigger value="payment">Saved Payme                 nt Method</TabsTrigger>
             <button
               type="button"
               onClick={() => router.push("/profile")}
@@ -227,7 +227,7 @@ const PaymentMethodPage = () => {
                                       <p className="font-bold text-white">VISA</p>
                                     ) : (
                                       <Image
-                                        src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png"
+                                        src="/images/mastercard-logo.png"
                                         alt="mastercard"
                                         width={32}
                                         height={20}
