@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -130,7 +130,7 @@ export default function OrderHistoryPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <Tabs defaultValue="orders" className="w-full flex">
-        <div className="w-1/4 pr-6">
+        {/* <div className="w-1/4 pr-6">
           <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
             <button
               type="button"
@@ -156,6 +156,30 @@ export default function OrderHistoryPage() {
             <button
               type="button"
               onClick={() => router.push("/profile/address")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Address Book
+            </button>
+          </TabsList>
+        </div> */}
+         <div className="w-1/4 pr-6">
+          <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
+            <TabsTrigger value="account">Account</TabsTrigger>
+            {/* <button
+              type="button"  
+            </button> */}
+            <TabsTrigger value="orderHistory">Order History</TabsTrigger>
+            
+            <button
+              type="button"
+              onClick={() => router.push("/profile/paymentMethod")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Saved Payment Method
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/profile/addressBook")}
               className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
             >
               Address Book

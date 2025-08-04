@@ -174,7 +174,7 @@ const PaymentMethodPage = () => {
             >
               Order History
             </button>
-            <TabsTrigger value="payment">Saved Payment Method</TabsTrigger>
+            <TabsTrigger value="payment">Saved Payme                 nt Method</TabsTrigger>
             <button
               type="button"
               onClick={() => router.push("/profile")}

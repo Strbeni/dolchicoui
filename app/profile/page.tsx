@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+
 export default function AccountSettings() {
   const router = useRouter();
 
@@ -31,6 +32,13 @@ export default function AccountSettings() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [profileImage, setProfileImage] = useState("/profile.jpg");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  // New states for delete verification
+  const [showDeleteOtp, setShowDeleteOtp] = useState(false);
+  const [emailOtp, setEmailOtp] = useState("");
+  const [mobileOtp, setMobileOtp] = useState("");
+  const [deleteOtpError, setDeleteOtpError] = useState("");
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -132,6 +140,89 @@ export default function AccountSettings() {
     setConfirmPassword("");
   };
 
+  // Updated delete account handler to show confirmation modal first
+  const handleDeleteAccountClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteOtpVerification = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setDeleteOtpError("");
+    
+    const hasEmail = email && email.trim() !== "";
+    const hasMobile = phone && phone.trim() !== "";
+    
+    let isValid = true;
+    
+    // Check email OTP if email exists
+    if (hasEmail && emailOtp !== "123456") {
+      isValid = false;
+    }
+    
+    // Check mobile OTP if mobile exists
+    if (hasMobile && mobileOtp !== "123456") {
+      isValid = false;
+    }
+    
+    // Check if both fields are filled when both email and mobile exist
+    if (hasEmail && hasMobile) {
+      if (!emailOtp || !mobileOtp) {
+        setDeleteOtpError("Please enter both email and mobile OTP");
+        return;
+      }
+    } else if (hasEmail && !emailOtp) {
+      setDeleteOtpError("Please enter email OTP");
+      return;
+    } else if (hasMobile && !mobileOtp) {
+      setDeleteOtpError("Please enter mobile OTP");
+      return;
+    }
+    
+    if (isValid) {
+      // OTP verified, proceed with account deletion
+      proceedWithDeletion();
+    } else {
+      setDeleteOtpError("Invalid OTP. Please check and try again.");
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    const hasEmail = email && email.trim() !== "";
+    const hasMobile = phone && phone.trim() !== "";
+
+    if (hasEmail || hasMobile) {
+      // Show OTP verification modal
+      setShowDeleteOtp(true);
+      setIsDeleteModalOpen(false);
+      // Simulate sending OTP
+      alert(`OTP sent to ${hasEmail ? 'your email' : ''}${hasEmail && hasMobile ? ' and ' : ''}${hasMobile ? 'your mobile' : ''}`);
+    } else {
+      // No email or mobile, proceed with direct deletion
+      proceedWithDeletion();
+    }
+  };
+
+  const proceedWithDeletion = () => {
+    // In a real app, you'd call an API to delete the user.
+    alert("Your profile deleted successfully. Redirecting to login screen");
+    setShowDeleteOtp(false);
+    setIsDeleteModalOpen(false);
+    setEmailOtp("");
+    setMobileOtp("");
+    setDeleteOtpError("");
+    // Redirect to home or login page
+    setTimeout(() => {
+      router.push("/");
+    }, 2000);
+  };
+
+  const handleCancelDeleteOtp = () => {
+    setShowDeleteOtp(false);
+    setEmailOtp("");
+    setMobileOtp("");
+    setDeleteOtpError("");
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100 p-6">
       <Tabs defaultValue="account" className="w-full flex">
@@ -160,7 +251,6 @@ export default function AccountSettings() {
             >
               Address Book
             </button>
-            
           </TabsList>
         </div>
 
@@ -170,7 +260,15 @@ export default function AccountSettings() {
             {/* Account Settings Card */}
             <Card className="shadow-md mb-8">
               <CardContent className="p-6">
-                <h2 className="text-lg font-semibold mb-4">Account Setting</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Account Settings</h2>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteAccountClick}
+                  >
+                    Delete account
+                  </Button>
+                </div>
                 {showOtp ? (
                   <form onSubmit={handleVerifyOtp} className="grid grid-cols-1 gap-6">
                     <div>
@@ -388,6 +486,90 @@ export default function AccountSettings() {
                 </form>
               </CardContent>
             </Card>
+
+            {/* Delete OTP Verification Modal */}
+            {showDeleteOtp && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <Card className="bg-white rounded-lg p-6 min-w-[400px] shadow-lg">
+                  <CardContent>
+                    <h2 className="text-xl font-semibold mb-4">Verify Identity</h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Please verify your identity by entering the OTP sent to your registered email and/or mobile number.
+                    </p>
+                    <form onSubmit={handleDeleteOtpVerification} className="space-y-4">
+                      {email && email.trim() !== "" && (
+                        <div>
+                          <Label htmlFor="emailOtp">Email OTP</Label>
+                          <Input
+                            id="emailOtp"
+                            value={emailOtp}
+                            onChange={(e) => setEmailOtp(e.target.value)}
+                            placeholder="Enter email OTP"
+                            maxLength={6}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">OTP sent to {email}</p>
+                        </div>
+                      )}
+                      {phone && phone.trim() !== "" && (
+                        <div>
+                          <Label htmlFor="mobileOtp">Mobile OTP</Label>
+                          <Input
+                            id="mobileOtp"
+                            value={mobileOtp}
+                            onChange={(e) => setMobileOtp(e.target.value)}
+                            placeholder="Enter mobile OTP"
+                            maxLength={6}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">OTP sent to {phone}</p>
+                        </div>
+                      )}
+                      {deleteOtpError && (
+                        <p className="text-red-500 text-sm">{deleteOtpError}</p>
+                      )}
+                      <div className="flex justify-end gap-4 mt-6">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCancelDeleteOtp}
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit" variant="destructive">
+                          Verify & Delete Account
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <Card className="bg-white rounded-lg p-6 min-w-[350px] shadow-lg">
+                  <CardContent>
+                    <h2 className="text-xl font-semibold mb-4">Are you sure?</h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                      This action cannot be undone. This will permanently delete your account and all
+                      your data.
+                    </p>
+                    <div className="flex justify-end gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsDeleteModalOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="button" variant="destructive" onClick={handleDeleteAccount}>
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
         </div>
       </Tabs>
