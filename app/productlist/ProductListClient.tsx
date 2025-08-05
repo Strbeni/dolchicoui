@@ -5,9 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import ColorFilter from './ColorFilter';
 import PriceFilter from './PriceFilter';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ShoppingCart, Check, Heart } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 interface Product {
   id: number;
@@ -22,7 +21,12 @@ interface Product {
   stock: number;
 }
 
-// Point at your backend port
+/* ---------- NEW: wishlist entry type ---------- */
+interface WishlistEntry {
+  productId: number;
+}
+
+/* ---------- config helpers ---------- */
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
 const authHeaders = () => {
@@ -34,7 +38,7 @@ const authHeaders = () => {
   };
 };
 
-// Simple in‐DOM toast
+/* ---------- tiny toast ---------- */
 const showToast = (msg: string, success = true) => {
   if (typeof window === 'undefined') return;
   const el = document.createElement('div');
@@ -52,11 +56,11 @@ export default function ProductListClient() {
   const [error, setError] = useState('');
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 15000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 15_000]);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
   const [addedToCart, setAddedToCart] = useState<number | null>(null);
-  
-  // Wishlist states
+
+  /* wishlist */
   const [wishlistItems, setWishlistItems] = useState<Set<number>>(new Set());
   const [addingToWishlist, setAddingToWishlist] = useState<number | null>(null);
   const [removingFromWishlist, setRemovingFromWishlist] = useState<number | null>(null);
@@ -65,52 +69,55 @@ export default function ProductListClient() {
   const searchQuery = searchParams.get('q') || '';
   const router = useRouter();
 
-  // Fetch user's wishlist
+  /* ---------- fetch wishlist once ---------- */
   useEffect(() => {
     const fetchWishlistStatus = async () => {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (!token) return;
 
       try {
-        const response = await fetch(`${API_BASE}/api/user/wishlist`, {
-          headers: authHeaders(),
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data?.wishlist) {
-            const wishlistProductIds = new Set<number>(
-              data.data.wishlist.map((item: any) => item.productId)
-            );
-            setWishlistItems(wishlistProductIds);
-          }
+        const res = await fetch(`${API_BASE}/api/user/wishlist`, { headers: authHeaders() });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data?.wishlist)) {
+          const wishlistProductIds = new Set<number>(
+            (data.data.wishlist as WishlistEntry[]).map((item) => item.productId)
+          );
+          setWishlistItems(wishlistProductIds);
         }
-      } catch (error) {
-        console.error('Error fetching wishlist:', error);
+      } catch (err) {
+        console.error('Error fetching wishlist:', err);
       }
     };
 
     fetchWishlistStatus();
   }, []);
 
-  // Fetch & filter products
+  /* ---------- fetch & filter products ---------- */
   useEffect(() => {
     const id = setTimeout(async () => {
-      setLoading(true); setError('');
+      setLoading(true);
+      setError('');
+
       try {
         const url = searchQuery
           ? `${API_BASE}/api/product/search?q=${encodeURIComponent(searchQuery)}`
           : `${API_BASE}/api/product/list`;
+
         const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const data = await res.json();
         if (!data.success || !Array.isArray(data.products)) throw new Error('Bad format');
+
         const filtered = data.products.filter((p: Product) => {
           const okPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
-          const okColor = !selectedColors.length || selectedColors.some(c => p.color?.includes(c));
-          const okSize = !selectedSizes.length || selectedSizes.some(s => p.sizes.includes(s));
+          const okColor = !selectedColors.length || selectedColors.some((c) => p.color?.includes(c));
+          const okSize = !selectedSizes.length || selectedSizes.some((s) => p.sizes.includes(s));
           return okPrice && okColor && okSize;
         });
+
         setProducts(filtered);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load');
@@ -118,17 +125,21 @@ export default function ProductListClient() {
         setLoading(false);
       }
     }, 300);
+
     return () => clearTimeout(id);
   }, [searchQuery, priceRange, selectedColors, selectedSizes]);
 
+  /* ---------- size filter ---------- */
   const handleSizeFilter = (size: string) => {
-    setSelectedSizes(s => s.includes(size) ? s.filter(x => x !== size) : [...s, size]);
+    setSelectedSizes((s) => (s.includes(size) ? s.filter((x) => x !== size) : [...s, size]));
   };
 
+  /* ---------- add to cart ---------- */
   const handleAddToCart = async (p: Product) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) return router.push('/login');
     if (!p.sizes.length) return showToast('No sizes available', false);
+
     setAddingToCart(p.id);
     try {
       const res = await fetch(`${API_BASE}/api/cart/items`, {
@@ -142,9 +153,10 @@ export default function ProductListClient() {
       }
       const body = await res.json();
       if (body.success === false) throw new Error(body.message || 'Add failed');
+
       setAddedToCart(p.id);
       showToast('Added to cart!');
-      setTimeout(() => setAddedToCart(null), 2000);
+      setTimeout(() => setAddedToCart(null), 2_000);
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Add failed', false);
     } finally {
@@ -152,84 +164,65 @@ export default function ProductListClient() {
     }
   };
 
-  // Handle wishlist toggle
+  /* ---------- wishlist toggle ---------- */
   const handleWishlistToggle = async (product: Product) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) return router.push('/login');
 
     const isInWishlist = wishlistItems.has(product.id);
-    
+
     if (isInWishlist) {
-      // Remove from wishlist
       setRemovingFromWishlist(product.id);
       try {
-        const response = await fetch(`${API_BASE}/api/user/wishlist/${product.id}`, {
+        const res = await fetch(`${API_BASE}/api/user/wishlist/${product.id}`, {
           method: 'DELETE',
           headers: authHeaders(),
         });
+        if (!res.ok) throw new Error((await res.json()).message || 'Remove failed');
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to remove from wishlist');
-        }
-
-        // Update local state
-        setWishlistItems(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(product.id);
-          return newSet;
+        setWishlistItems((prev) => {
+          const next = new Set(prev);
+          next.delete(product.id);
+          return next;
         });
-
-        showToast('Removed from wishlist!', true);
-        
-      } catch (error) {
-        console.error('Failed to remove from wishlist:', error);
-        showToast(error instanceof Error ? error.message : 'Failed to remove from wishlist', false);
+        showToast('Removed from wishlist!');
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : 'Remove failed', false);
       } finally {
         setRemovingFromWishlist(null);
       }
     } else {
-      // Add to wishlist
       setAddingToWishlist(product.id);
       try {
-        const response = await fetch(`${API_BASE}/api/user/wishlist`, {
+        const res = await fetch(`${API_BASE}/api/user/wishlist`, {
           method: 'POST',
           headers: authHeaders(),
-          body: JSON.stringify({
-            productId: product.id
-          }),
+          body: JSON.stringify({ productId: product.id }),
         });
+        if (!res.ok) throw new Error((await res.json()).message || 'Add failed');
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to add to wishlist');
-        }
-
-        // Update local state
-        setWishlistItems(prev => new Set([...prev, product.id]));
-        
-        showToast('Added to wishlist!', true);
-        
-      } catch (error) {
-        console.error('Failed to add to wishlist:', error);
-        showToast(error instanceof Error ? error.message : 'Failed to add to wishlist', false);
+        setWishlistItems((prev) => new Set([...prev, product.id]));
+        showToast('Added to wishlist!');
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : 'Add failed', false);
       } finally {
         setAddingToWishlist(null);
       }
     }
   };
 
+  /* ---------- JSX ---------- */
   return (
     <div className="px-6 lg:px-20 py-10 grid grid-cols-1 md:grid-cols-4 gap-10">
       {/* Filters */}
       <div className="space-y-6 px-6">
         <h1 className="text-3xl font-bold">ALL PRODUCTS</h1>
 
-        {/* Size */}
+        {/* Size filter */}
         <div>
           <p className="font-semibold mb-2">Size</p>
           <div className="flex flex-wrap gap-2">
-            {['S','M','L','XL'].map(sz => (
+            {['S', 'M', 'L', 'XL'].map((sz) => (
               <button
                 key={sz}
                 onClick={() => handleSizeFilter(sz)}
@@ -244,9 +237,7 @@ export default function ProductListClient() {
             ))}
           </div>
           {selectedSizes.length > 0 && (
-            <p className="text-xs text-gray-500 mt-1">
-              Selected: {selectedSizes.join(', ')}
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Selected: {selectedSizes.join(', ')}</p>
           )}
         </div>
 
@@ -266,7 +257,9 @@ export default function ProductListClient() {
 
         <button
           onClick={() => {
-            setSelectedSizes([]); setSelectedColors([]); setPriceRange([0,15000]);
+            setSelectedSizes([]);
+            setSelectedColors([]);
+            setPriceRange([0, 15_000]);
           }}
           className="w-full border border-red-300 text-red-600 px-3 py-2 text-sm hover:bg-red-50 transition rounded"
         >
@@ -308,7 +301,9 @@ export default function ProductListClient() {
             <p className="text-gray-500 mb-2">No products match your criteria.</p>
             <button
               onClick={() => {
-                setSelectedSizes([]); setSelectedColors([]); setPriceRange([0,15000]);
+                setSelectedSizes([]);
+                setSelectedColors([]);
+                setPriceRange([0, 15_000]);
               }}
               className="text-blue-500 underline hover:text-blue-600"
             >
@@ -317,77 +312,76 @@ export default function ProductListClient() {
           </div>
         )}
 
-        {!loading && !error && products.map(p => (
-          <div key={p.id} className="space-y-2 group">
-            <Link href={`/productdetail/${p.id}`}>
-              <div className="relative aspect-[3/4] overflow-hidden cursor-pointer">
-                <Image
-                  src={p.image[0] || '/placeholder.png'}
-                  alt={p.name}
-                  width={300}
-                  height={400}
-                  className="object-cover w-full h-full transition-transform group-hover:scale-105"
-                />
-                
-                {/* Wishlist button overlay */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleWishlistToggle(p);
-                  }}
-                  disabled={addingToWishlist === p.id || removingFromWishlist === p.id}
-                  className={`absolute top-2 right-2 p-2 rounded-full shadow-md transition-all duration-200 ${
-                    wishlistItems.has(p.id)
-                      ? 'bg-pink-100 text-pink-600 hover:bg-pink-200'
-                      : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-pink-600'
-                  } disabled:opacity-50`}
-                >
-                  {(addingToWishlist === p.id || removingFromWishlist === p.id) ? (
-                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Heart 
-                      size={20} 
-                      fill={wishlistItems.has(p.id) ? 'currentColor' : 'none'}
-                      className="transition-colors"
-                    />
+        {!loading &&
+          !error &&
+          products.map((p) => (
+            <div key={p.id} className="space-y-2">
+              <Link href={`/productdetail/${p.id}`}>
+                <div className="relative aspect-[3/4] overflow-hidden cursor-pointer">
+                  <Image
+                    src={p.image[0] || '/placeholder.png'}
+                    alt={p.name}
+                    width={300}
+                    height={400}
+                    className="object-cover w-full h-full" /* ← no scale-on-hover */
+                  />
+
+                  {/* Wishlist button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleWishlistToggle(p);
+                    }}
+                    disabled={addingToWishlist === p.id || removingFromWishlist === p.id}
+                    className={`absolute top-2 right-2 p-2 rounded-full shadow-md transition-all duration-200 ${
+                      wishlistItems.has(p.id)
+                        ? 'bg-pink-100 text-pink-600'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-pink-600'
+                    } disabled:opacity-50`}
+                  >
+                    {addingToWishlist === p.id || removingFromWishlist === p.id ? (
+                      <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Heart
+                        size={20}
+                        fill={wishlistItems.has(p.id) ? 'currentColor' : 'none'}
+                        className="transition-colors"
+                      />
+                    )}
+                  </button>
+                </div>
+              </Link>
+
+              <h3 className="font-medium text-sm">{p.name}</h3>
+              <p className="text-sm text-gray-800">₹{p.price.toLocaleString()}</p>
+
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex gap-1">
+                  {p.sizes.slice(0, 3).map((sz) => (
+                    <span key={sz} className="text-xs border px-2 py-0.5 rounded bg-gray-100">
+                      {sz}
+                    </span>
+                  ))}
+                  {p.sizes.length > 3 && (
+                    <span className="text-xs text-gray-500">+{p.sizes.length - 3}</span>
                   )}
-                </button>
-                
-                <div className="absolute inset-0 bg-black bg-opacity-30 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  Quick View
+                </div>
+
+                <div onClick={() => handleAddToCart(p)} className="relative w-6 h-6 cursor-pointer">
+                  {addingToCart === p.id && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  {addedToCart === p.id ? (
+                    <Check className="text-green-600 w-6 h-6" />
+                  ) : (
+                    <ShoppingCart className="w-6 h-6 text-gray-600 hover:text-black transition-colors" />
+                  )}
                 </div>
               </div>
-            </Link>
-
-            <h3 className="font-medium text-sm">{p.name}</h3>
-            <p className="text-sm text-gray-800">₹{p.price.toLocaleString()}</p>
-
-            <div className="flex items-center justify-between mt-1">
-              <div className="flex gap-1">
-                {p.sizes.slice(0,3).map((sz,i) => (
-                  <span key={i} className="text-xs border px-2 py-0.5 rounded bg-gray-100">{sz}</span>
-                ))}
-                {p.sizes.length > 3 && <span className="text-xs text-gray-500">+{p.sizes.length-3}</span>}
-              </div>
-
-              <div
-                onClick={() => handleAddToCart(p)}
-                className="relative w-6 h-6 cursor-pointer"
-              >
-                {addingToCart === p.id && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin"></div>
-                  </div>
-                )}
-                {addedToCart === p.id ? (
-                  <Check className="text-green-600 w-6 h-6" />
-                ) : (
-                  <ShoppingCart className="w-6 h-6 text-gray-600 hover:text-black transition-colors" />
-                )}
-              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );

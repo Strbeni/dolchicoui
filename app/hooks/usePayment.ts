@@ -1,6 +1,18 @@
 // hooks/usePayment.ts
 import { useState } from 'react';
 
+/* ---------- ambient Paytm type ---------- */
+declare global {
+  interface Window {
+    Paytm?: {
+      CheckoutJS: {
+        init(config: unknown): Promise<void>;
+        invoke(): void;
+      };
+    };
+  }
+}
+
 interface PaymentConfig {
   mid: string;
   orderId: string;
@@ -21,7 +33,9 @@ export const usePayment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const initiatePayment = async (data: InitiatePaymentData): Promise<PaymentConfig | null> => {
+  const initiatePayment = async (
+    data: InitiatePaymentData
+  ): Promise<PaymentConfig | null> => {
     setLoading(true);
     setError(null);
 
@@ -30,18 +44,16 @@ export const usePayment = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Your auth token
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
 
-      if (!result.success) {
-        throw new Error(result.message);
-      }
+      if (!result.success) throw new Error(result.message);
 
-      return result.data.paytmConfig;
+      return result.data.paytmConfig as PaymentConfig;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment initiation failed');
       return null;
@@ -51,49 +63,43 @@ export const usePayment = () => {
   };
 
   const processPayment = (config: PaymentConfig) => {
-    if (typeof window !== 'undefined') {
-      // Load Paytm script dynamically
-      const script = document.createElement('script');
-      script.src = config.isStaging 
-        ? 'https://securestage.paytmpayments.com/merchantpgpui/checkoutjs/merchants/mid.js'
-        : 'https://secure.paytmpayments.com/merchantpgpui/checkoutjs/merchants/mid.js';
-      
-      script.onload = () => {
-        const paymentConfig = {
-          "root": "",
-          "flow": "DEFAULT",
-          "data": {
-            "orderId": config.orderId,
-            "token": config.txnToken,
-            "tokenType": "TXN_TOKEN",
-            "amount": config.amount
-          },
-          "handler": {
-            "notifyMerchant": function(eventName: string, data: any) {
-              console.log("notifyMerchant handler function called");
-              console.log("eventName => ", eventName);
-              console.log("data => ", data);
-            }
-          }
-        };
+    // Only run in browser
+    if (typeof window === 'undefined') return;
 
-        // @ts-ignore
-        window.Paytm.CheckoutJS.init(paymentConfig).then(function onSuccess() {
-          // @ts-ignore
-          window.Paytm.CheckoutJS.invoke();
-        }).catch(function onError(error: any) {
-          console.log("error => ", error);
-        });
+    const script = document.createElement('script');
+    script.src = config.isStaging
+      ? `https://securestage.paytmpayments.com/merchantpgpui/checkoutjs/merchants/${config.mid}.js`
+      : `https://secure.paytmpayments.com/merchantpgpui/checkoutjs/merchants/${config.mid}.js`;
+
+    script.onload = () => {
+      const paymentConfig = {
+        root: '',
+        flow: 'DEFAULT',
+        data: {
+          orderId: config.orderId,
+          token: config.txnToken,
+          tokenType: 'TXN_TOKEN',
+          amount: config.amount,
+        },
+        handler: {
+          notifyMerchant(eventName: string, data: unknown) {
+            console.log('notifyMerchant:', eventName, data);
+          },
+        },
       };
 
-      document.head.appendChild(script);
-    }
+      window.Paytm?.CheckoutJS.init(paymentConfig)
+        .then(() => window.Paytm?.CheckoutJS.invoke())
+        .catch((err: unknown) => console.error('Paytm init error:', err));
+    };
+
+    document.head.appendChild(script);
   };
 
   return {
     initiatePayment,
     processPayment,
     loading,
-    error
+    error,
   };
 };

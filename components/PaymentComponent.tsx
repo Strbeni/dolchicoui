@@ -1,6 +1,8 @@
 // components/PaymentComponent.tsx
-import React, { useState } from 'react';
-import { usePayment } from '../app/hooks/usePayment';
+"use client";
+
+import { useState } from 'react';
+import { usePayment } from '@/app/hooks/usePayment';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,11 +12,14 @@ interface PaymentComponentProps {
   onError?: (error: string) => void;
 }
 
-const PaymentComponent: React.FC<PaymentComponentProps> = ({ onSuccess, onError }) => {
-  const [amount, setAmount] = useState<string>('');
-  const [customerEmail, setCustomerEmail] = useState<string>('');
-  const [customerPhone, setCustomerPhone] = useState<string>('');
-  
+const PaymentComponent: React.FC<PaymentComponentProps> = ({
+  onSuccess,
+  onError,
+}) => {
+  const [amount, setAmount] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+
   const { initiatePayment, processPayment, loading, error } = usePayment();
 
   const handlePayment = async () => {
@@ -26,11 +31,12 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({ onSuccess, onError 
     const config = await initiatePayment({
       amount: parseFloat(amount),
       customerEmail,
-      customerPhone
+      customerPhone,
     });
 
     if (config) {
       processPayment(config);
+      onSuccess?.();              // <- now used
     } else if (error) {
       onError?.(error);
     }
@@ -39,7 +45,7 @@ const PaymentComponent: React.FC<PaymentComponentProps> = ({ onSuccess, onError 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">Make Payment</h2>
-      
+
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-600">{error}</p>
