@@ -1,8 +1,6 @@
 'use client';
 
 import { Heart, Menu, ShoppingCart, User } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
-import { useWishlist } from '@/contexts/WishlistContext';
 import {
   Accordion,
   AccordionContent,
@@ -31,17 +29,17 @@ import { useRouter } from 'next/navigation';
 import { SearchBar } from './search-bar';
 
 /* -------------------------------------------------------------------------- */
-/*  dummy data (unchanged)                                                    */
+/*  dummy data                                                                */
 /* -------------------------------------------------------------------------- */
 interface NavigationSection {
   title: string;
   items: string[];
 }
 
-const men: NavigationSection[] = [ /* … your men array … */ ];
-const women: NavigationSection[] = [ /* … your women array … */ ];
-const kids: NavigationSection[] = [ /* … your kids array … */ ];
-const homes: NavigationSection[] = [ /* … your homes array … */ ];
+const men: NavigationSection[] = [];
+const women: NavigationSection[] = [];
+const kids: NavigationSection[] = [];
+const homes: NavigationSection[] = [];
 
 /* -------------------------------------------------------------------------- */
 
@@ -53,6 +51,9 @@ export const Navbar5 = () => {
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [wishlistCount] = useState(0);
+  const [cartCount] = useState(0);
+
   useEffect(() => {
     const token =
       localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -76,10 +77,6 @@ export const Navbar5 = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  /* -------------------------- cart / wishlist ----------------------------- */
-  const { cartCount } = useCart();
-  const { wishlistCount } = useWishlist();
 
   /* ------------------------------- JSX ------------------------------------ */
   return (
