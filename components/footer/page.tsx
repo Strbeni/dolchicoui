@@ -9,7 +9,7 @@ const Footer = () => {
         <div>
           <div className="text-3xl font-bold mb-4 text-orange-400">DOLCHI</div>
           <p className="text-gray-300 leading-relaxed">
-            We're always seeking out new ways to improve our sustainability
+            We are always seeking out new ways to improve our sustainability
             efforts eco-friendly production processes.
           </p>
         </div>
@@ -32,9 +32,9 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold mb-4 text-lg">Shop</h3>
           <ul className="space-y-2 text-gray-300">
-            <li>Men's Collection</li>
-            <li>Women's Collection</li>
-            <li>Kid's Collection</li>
+            <li>Mens Collection</li>
+            <li>Womens Collection</li>
+            <li>Kids Collection</li>
             <li>Accessories</li>
             <li>Size Guide</li>
           </ul>
