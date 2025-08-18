@@ -599,13 +599,13 @@ export const Navbar5 = () => {
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50">
                   {isLoggedIn ? (
-                    <>
+                     <>
                       <Link
                         href="/profile"
                         className="block px-4 py-2 hover:bg-gray-100"
                         onClick={() => setUserMenuOpen(false)}
                       >
-                        Profile
+                        Profileaa
                       </Link>
                       <Link
                         href="/profile/orderHistory"
@@ -628,7 +628,10 @@ export const Navbar5 = () => {
                       >
                         Address Book
                       </Link>
-                      <button onClick={handleLogout} className="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                      >
                         Logout
                       </button>
                     </>
@@ -662,6 +665,7 @@ export const Navbar5 = () => {
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
                   {cartCount}
                 </span>
+                
               )}
             </Link>
           </div>
@@ -781,50 +785,42 @@ export const Navbar5 = () => {
                 {userMenuOpen && (
                   <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md text-sm">
                     {isLoggedIn ? (
-                      <>
-                        <button
-                          onClick={() => {
-                            router.push("/profile")
-                            setUserMenuOpen(false)
-                          }}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                        >
-                          Profile
-                        </button>
-                        <button
-                          onClick={() => {
-                            router.push("/profile/orderHistory")
-                            setUserMenuOpen(false)
-                          }}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                        >
-                          Order History
-                        </button>
-                        <button
-                          onClick={() => {
-                            router.push("/profile/paymentMethod")
-                            setUserMenuOpen(false)
-                          }}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                        >
-                          Saved Payment Method
-                        </button>
-                        <button
-                          onClick={() => {
-                            router.push("/profile/addressBook")
-                            setUserMenuOpen(false)
-                          }}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                        >
-                          Address Book
-                        </button>
-                        <button
-                          onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-                        >
-                          Logout
-                        </button>
-                      </>
+                       <>
+                      <Link
+                        href="/profile"
+                        className="block px-4 py-2 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        href="/profile/orderHistory"
+                        className="block px-4 py-2 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Order History
+                      </Link>
+                      <Link
+                        href="/profile/paymentMethod"
+                        className="block px-4 py-2 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Saved Payment Method
+                      </Link>
+                      <Link
+                        href="/profile/addressBook"
+                        className="block px-4 py-2 hover:bg-gray-100"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        Address Book
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                      >
+                        Logout
+                      </button>
+                    </>
                     ) : (
                       <button
                         onClick={() => {
