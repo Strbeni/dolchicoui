@@ -352,7 +352,9 @@ export const Navbar5 = () => {
 
   /* ----------------------- auth / menu state ------------------------------ */
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement | null>(null)
+  const [mobileUserMenuOpen, setMobileUserMenuOpen] = useState(false)
+  const desktopDropdownRef = useRef<HTMLDivElement | null>(null)
+  const mobileDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [wishlistCount] = useState(0)
@@ -371,13 +373,22 @@ export const Navbar5 = () => {
     router.push("/login")
   }
 
-  /* close user dropdown when clicking outside */
+  /* close user dropdown when clicking outside - desktop */
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setUserMenuOpen(false)
+    const handleClickOutsideDesktop = (e: MouseEvent) => {
+      if (desktopDropdownRef.current && !desktopDropdownRef.current.contains(e.target as Node)) setUserMenuOpen(false)
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutsideDesktop)
+    return () => document.removeEventListener("mousedown", handleClickOutsideDesktop)
+  }, [])
+
+  /* close user dropdown when clicking outside - mobile */
+  useEffect(() => {
+    const handleClickOutsideMobile = (e: MouseEvent) => {
+      if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(e.target as Node)) setMobileUserMenuOpen(false)
+    }
+    document.addEventListener("mousedown", handleClickOutsideMobile)
+    return () => document.removeEventListener("mousedown", handleClickOutsideMobile)
   }, [])
 
   /* ------------------------------- JSX ------------------------------------ */
@@ -594,7 +605,7 @@ export const Navbar5 = () => {
             />
 
             {/* User dropdown */}
-            <div className="relative" ref={dropdownRef}>
+            <div className="relative" ref={desktopDropdownRef}>
               <User className="w-5 h-5 cursor-pointer" onClick={() => setUserMenuOpen((p) => !p)} />
               {userMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50">
@@ -777,40 +788,40 @@ export const Navbar5 = () => {
                 )}
               </button>
 
-              <div className="relative flex flex-col items-center w-12" ref={dropdownRef}>
-                <button className="flex flex-col items-center w-full" onClick={() => setUserMenuOpen((p) => !p)}>
+              <div className="relative flex flex-col items-center w-12" ref={mobileDropdownRef}>
+                <button className="flex flex-col items-center w-full" onClick={() => setMobileUserMenuOpen((p) => !p)}>
                   <User className="w-6 h-6 text-gray-700" />
                 </button>
 
-                {userMenuOpen && (
+                {mobileUserMenuOpen && (
                   <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md text-sm">
                     {isLoggedIn ? (
                        <>
                       <Link
                         href="/profile"
                         className="block px-4 py-2 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
+                        onClick={() => setMobileUserMenuOpen(false)}
                       >
                         Profile
                       </Link>
                       <Link
                         href="/profile/orderHistory"
                         className="block px-4 py-2 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
+                        onClick={() => setMobileUserMenuOpen(false)}
                       >
                         Order History
                       </Link>
                       <Link
                         href="/profile/paymentMethod"
                         className="block px-4 py-2 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
+                        onClick={() => setMobileUserMenuOpen(false)}
                       >
                         Saved Payment Method
                       </Link>
                       <Link
                         href="/profile/addressBook"
                         className="block px-4 py-2 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
+                        onClick={() => setMobileUserMenuOpen(false)}
                       >
                         Address Book
                       </Link>
@@ -825,7 +836,7 @@ export const Navbar5 = () => {
                       <button
                         onClick={() => {
                           router.push("/login")
-                          setUserMenuOpen(false)
+                          setMobileUserMenuOpen(false)
                         }}
                         className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                       >
