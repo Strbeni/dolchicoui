@@ -616,7 +616,7 @@ export const Navbar5 = () => {
                         className="block px-4 py-2 hover:bg-gray-100"
                         onClick={() => setUserMenuOpen(false)}
                       >
-                        Profileaa
+                        Profile
                       </Link>
                       <Link
                         href="/profile/orderHistory"
