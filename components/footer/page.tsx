@@ -1,5 +1,5 @@
 // components/footer.tsx
-import React from 'react';
+import React from "react";
 
 const Footer = () => {
   return (
@@ -9,7 +9,8 @@ const Footer = () => {
         <div>
           <div className="text-3xl font-bold mb-4 text-orange-400">DOLCHI</div>
           <p className="text-gray-300 leading-relaxed">
-            We're always seeking out new ways to improve our sustainability efforts eco-friendly production processes.
+            We're always seeking out new ways to improve our sustainability
+            efforts eco-friendly production processes.
           </p>
         </div>
 
@@ -46,7 +47,8 @@ const Footer = () => {
             <div className="flex items-start">
               <span className="mr-2">📍</span>
               <div>
-                123 Fashion St., Suite 456<br />
+                123 Fashion St., Suite 456
+                <br />
                 City, State, ZIP Code
               </div>
             </div>
@@ -96,7 +98,7 @@ const Footer = () => {
         <div className="text-gray-400 text-xs mb-4 sm:mb-0">
           © 2025 Dolchi . All rights reserved .
         </div>
-        
+
         {/* Social Media Icons */}
         <div className="flex space-x-3">
           <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer">
