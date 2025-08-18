@@ -53,16 +53,35 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Preview cards */}
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
+        {/* Preview cards - mobile horizontal scroll */}
+        <div className="mt-10 -mx-6 px-6 sm:hidden">
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2">
+            {["/product.jpg", "/w3.svg", "/w2.svg"].map((src, i) => (
+              <div key={i} className="flex-shrink-0 snap-center">
+                {i === 1 ? (
+                  <div className="relative w-56 h-56 rounded-full overflow-hidden bg-gray-100">
+                    <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
+                  </div>
+                ) : (
+                  <div className="relative w-[260px] h-[180px] rounded-2xl overflow-hidden bg-gray-100">
+                    <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Preview cards - desktop grid */}
+        <div className="mt-10 hidden sm:grid sm:grid-cols-3 gap-8">
           {["/product.jpg", "/w3.svg", "/w2.svg"].map((src, i) => (
             <div key={i} className="flex items-center justify-center">
               {i === 1 ? (
-                <div className="relative w-72 h-72 md:w-80 md:h-80 rounded-full overflow-hidden bg-gray-100 shadow-sm ring-1 ring-gray-200 transition-transform duration-300 hover:scale-[1.02]">
+                <div className="relative w-72 h-72 md:w-80 md:h-80 rounded-full overflow-hidden bg-gray-100">
                   <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
                 </div>
               ) : (
-                <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-sm ring-1 ring-gray-200 transition-transform duration-300 hover:scale-[1.02] w-full max-w-[360px] h-[260px] md:h-[300px] mx-auto">
+                <div className="relative rounded-2xl overflow-hidden bg-gray-100 w-full max-w-[360px] h-[260px] md:h-[300px] mx-auto">
                   <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
                 </div>
               )}
@@ -104,6 +123,13 @@ export default function Home() {
           <div className="relative h-[280px] md:h-[360px]">
             <Image src="/casual.jpg" alt="Offer" fill className="object-cover" />
           </div>
+        </div>
+      </section>
+
+      {/* Small coupon banner for mobile */}
+      <section className="px-4 mb-6 lg:hidden">
+        <div className="relative w-full rounded-xl overflow-hidden ring-1 ring-gray-200">
+          <Image src="/checkout.svg" alt="₹300 OFF coupon" width={1200} height={360} className="w-full h-auto object-cover" />
         </div>
       </section>
 
@@ -160,11 +186,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Brand strip */}
+      {/* Brand strip (logo grid on mobile) */}
       <section className="px-6 lg:px-20 mt-8">
-        <div className="w-full rounded-xl bg-gray-100 px-6 py-4 flex items-center justify-between gap-6 text-gray-500">
-          {['ARMANI JEANS', 'adidas', 'puma', 'nike', 'GUCCI', 'BOSS'].map((brand) => (
-            <span key={brand} className="text-sm opacity-70 tracking-wide">{brand}</span>
+        <div className="w-full rounded-xl bg-gray-100 px-4 py-3 grid grid-cols-3 gap-4 items-center justify-items-center sm:flex sm:justify-between">
+          {['/adidas.svg','/puma.svg','/nike.svg','/paypal.svg','/visa.svg','/mastercard.svg'].map((src, idx) => (
+            <div key={idx} className="h-6 opacity-70">
+              <Image src={src} alt={`brand-${idx}`} width={90} height={24} className="object-contain w-auto h-6" />
+            </div>
           ))}
         </div>
       </section>
@@ -187,8 +215,8 @@ export default function Home() {
             return (
               <Link key={item.id} href={`/productdetail/${item.productId}`}>
                 <Card className="bg-transparent border-none shadow-none p-0">
-                  <div className="relative h-60 md:h-64 lg:h-72 rounded-[18px] overflow-hidden bg-gray-100 ring-1 ring-black/5 shadow-sm">
-                    <Image src={item.image} alt={item.title} fill className="object-contain mix-blend-multiply" />
+                  <div className="relative h-60 md:h-64 lg:h-72 rounded-[18px] overflow-hidden bg-white">
+                    <Image src={item.image} alt={item.title} fill className="object-cover" />
                     <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
                       {item.badge}
                     </div>
@@ -221,8 +249,8 @@ export default function Home() {
             return (
               <Link key={item.id} href={`/productdetail/${item.productId}`}>
                 <Card className="bg-transparent border-none shadow-none p-0">
-                  <div className="relative h-60 md:h-64 lg:h-72 rounded-[18px] overflow-hidden bg-gray-100 ring-1 ring-black/5 shadow-sm">
-                    <Image src={item.image} alt={item.title} fill className="object-contain mix-blend-multiply" />
+                  <div className="relative h-60 md:h-64 lg:h-72 rounded-[18px] overflow-hidden bg-white">
+                    <Image src={item.image} alt={item.title} fill className="object-cover" />
                     <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
                       {item.badge}
                     </div>
@@ -235,6 +263,30 @@ export default function Home() {
               </Link>
             )
           })}
+        </div>
+      </section>
+      {/* Why Choose Us */}
+      <section className="px-4 py-8 bg-[#101820] text-white rounded-t-2xl mt-8">
+        <h3 className="text-3xl font-serif mb-1">Why Choose Us</h3>
+        <p className="text-xs text-gray-300 mb-4">Fashion You Can Feel Good About</p>
+        <div className="space-y-3">
+          {[{
+            title:'Ethical Production', desc:'Our garments are made in fair-trade certified facilities for all involved.', icon:'/globe.svg'
+          },{
+            title:'Innovations', desc:'We\'re always seeking out new ways to improve our sustainability efforts.', icon:'/window.svg'
+          },{
+            title:'Quality You Can Trust', desc:'We take pride in producing high-quality, that stands the test of time.', icon:'/file.svg'
+          },{
+            title:'Sustainable Materials', desc:'We source eco-friendly fabrics, such as organic cotton and recycled.', icon:'/globe.svg'
+          }].map((f, i) => (
+            <div key={i} className="bg-white text-[#0f1520] rounded-xl p-4 flex gap-3 items-start">
+              <Image src={f.icon} alt={f.title} width={28} height={28} className="mt-1" />
+              <div>
+                <p className="font-semibold mb-1">{f.title}</p>
+                <p className="text-xs text-gray-600 leading-relaxed">{f.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     </div>
