@@ -33,7 +33,7 @@ export default function Home() {
             <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
             Discover Fashion with Purpose
           </span>
-        </div>
+              </div>
         <h1 className="text-center text-4xl md:text-6xl font-serif font-bold leading-tight max-w-5xl mx-auto">
           Focuses on comfort and lasting style
         </h1>
@@ -46,11 +46,11 @@ export default function Home() {
               Shop Now →
             </Button>
           </Link>
-          <Link href="/productlist">
+                <Link href="/productlist">
             <Button variant="outline" className="rounded-full px-6 py-5">
               Trendy Collections→
-            </Button>
-          </Link>
+                </Button>
+                </Link>
         </div>
 
         {/* Preview cards - mobile horizontal scroll */}
@@ -69,7 +69,7 @@ export default function Home() {
                 )}
               </div>
             ))}
-          </div>
+            </div>
         </div>
 
         {/* Preview cards - desktop grid */}
@@ -79,11 +79,11 @@ export default function Home() {
               {i === 1 ? (
                 <div className="relative w-72 h-72 md:w-80 md:h-80 rounded-full overflow-hidden bg-gray-100">
                   <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
-                </div>
+      </div>
               ) : (
                 <div className="relative rounded-2xl overflow-hidden bg-gray-100 w-full max-w-[360px] h-[260px] md:h-[300px] mx-auto">
                   <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
-                </div>
+              </div>
               )}
             </div>
           ))}
@@ -106,22 +106,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ₹300 OFF banner */}
-      <section className="px-6 lg:px-20 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 rounded-2xl overflow-hidden">
-          <div className="bg-[#101820] text-white p-8 md:p-12 flex flex-col justify-center">
-            <h2 className="text-3xl md:text-4xl font-serif font-semibold mb-3">Flat ₹300 OFF – on your first purchase</h2>
-            <p className="text-sm text-gray-300 max-w-md">Discover fashion that reflects your values and your style. Sustainably sourced, thoughtfully designed, endlessly stylish.</p>
-            <div className="mt-6">
-              <Link href="/productlist">
-                <Button className="rounded-full bg-[#f05a2b] hover:bg-[#de491a] text-white px-5 py-4">
-                  Shop Now →
-                </Button>
-              </Link>
+      {/* ₹300 OFF banner - overlay style like screenshot */}
+      <section className="px-4 md:px-6 lg:px-20 mb-6">
+        <div className="relative h-[260px] sm:h-[300px] md:h-[360px] rounded-2xl overflow-hidden">
+          <Image src="/casual.jpg" alt="Flat 300 OFF" fill className="object-cover" />
+          <div className="absolute inset-0 bg-black/45" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="px-5 sm:px-8 max-w-xl text-white">
+              <h2 className="text-3xl sm:text-4xl font-serif font-semibold leading-tight">Flat ₹300 OFF - on your first purchase</h2>
+              <p className="mt-2 text-xs sm:text-sm text-gray-200">Discover fashion that reflects your value style. Sustainably sourced, thoughtfully designed, endlessly stylish.</p>
+              <div className="mt-5">
+                <Link href="/productlist">
+                  <Button className="w-full sm:w-auto rounded-full bg-[#f05a2b] hover:bg-[#de491a] text-white px-8 py-5 text-base">Shop Now →</Button>
+            </Link>
+              </div>
             </div>
-          </div>
-          <div className="relative h-[280px] md:h-[360px]">
-            <Image src="/casual.jpg" alt="Offer" fill className="object-cover" />
           </div>
         </div>
       </section>
@@ -180,21 +179,21 @@ export default function Home() {
                   <h4 className="text-white text-lg font-semibold">Denim-Jacket</h4>
                   <span className="text-white text-[10px] underline">Explore Now →</span>
                 </div>
-              </div>
-            </div>
+          </div>
+        </div>
           </div>
         </div>
       </section>
 
       {/* Brand strip (logo grid on mobile) */}
       <section className="px-6 lg:px-20 mt-8">
-        <div className="w-full rounded-xl bg-gray-100 px-4 py-3 grid grid-cols-3 gap-4 items-center justify-items-center sm:flex sm:justify-between">
-          {['/adidas.svg','/puma.svg','/nike.svg','/paypal.svg','/visa.svg','/mastercard.svg'].map((src, idx) => (
+        <div className="w-full rounded-xl bg-gray-100 px-4 py-3 grid grid-cols-3 gap-4 items-center justify-items-center sm:flex sm:justify-around">
+          {['/adidas.svg','/puma.svg','/n.svg','/gucci.svg','/boss.svg'].map((src, idx) => (
             <div key={idx} className="h-6 opacity-70">
               <Image src={src} alt={`brand-${idx}`} width={90} height={24} className="object-contain w-auto h-6" />
             </div>
           ))}
-        </div>
+          </div>
       </section>
 
       {/* Top Deals */}
@@ -224,9 +223,9 @@ export default function Home() {
                   <CardContent className="px-1 pt-3 pb-0">
                     <p className="text-[13px] text-gray-700">{item.title}</p>
                     <p className={`mt-1 text-[26px] leading-tight font-extrabold tracking-tight ${accent ? 'text-[#ff5c39]' : 'text-gray-900'}`}>{item.discount}</p>
-                  </CardContent>
-                </Card>
-              </Link>
+      </CardContent>
+    </Card>
+  </Link>
             )
           })}
         </div>
