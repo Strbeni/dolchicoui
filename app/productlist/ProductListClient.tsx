@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { useSearchParams, useRouter } from "next/navigation"
+import {useRouter } from "next/navigation"
 import { Check, Heart, ChevronDown, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react"
 
 interface Product {
@@ -29,6 +29,10 @@ interface WishlistEntry {
   productId: number
 }
 
+interface ProductListClientProps {
+  category?: "Men" | "Women" | "Kids" | "Home" | "Accessories" | "All";
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
 
 const authHeaders = () => {
@@ -51,7 +55,7 @@ const showToast = (msg: string, success = true) => {
   setTimeout(() => el.remove(), 3000)
 }
 
-export default function ProductListClient() {
+export default function ProductListClient({ category = "Men" }: ProductListClientProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -74,7 +78,7 @@ export default function ProductListClient() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(12) // 12 items per page for better mobile experience
 
-  const searchParams = useSearchParams()
+  // const searchParams = useSearchParams() // Removed unused variable
   const router = useRouter()
 
   useEffect(() => {
@@ -96,7 +100,7 @@ export default function ProductListClient() {
         console.log("[v0] API Response:", data)
 
         if (data.success && Array.isArray(data.products)) {
-          const transformedProducts = data.products.map((product: any, index: number) => ({
+          const transformedProducts = data.products.map((product: Product, index: number) => ({
             id: product.id || index + 1,
             name: product.name || "Product",
             description: product.description || "",
@@ -349,6 +353,10 @@ export default function ProductListClient() {
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...products]
 
+    if (category !== "All") {
+      filtered = filtered.filter((product) => product.category === category)
+    }
+
     // Size filter
     if (selectedSizes.length > 0) {
       filtered = filtered.filter((product) => product.sizes.some((size) => selectedSizes.includes(size)))
@@ -426,6 +434,7 @@ export default function ProductListClient() {
     minPrice,
     maxPrice,
     sortBy,
+    category,
   ])
 
   const paginatedProducts = useMemo(() => {
@@ -462,23 +471,34 @@ export default function ProductListClient() {
 
   return (
     <div className="min-h-screen bg-white">
+     
       <div className="px-3 md:px-4 py-2 md:py-3 border-b border-gray-200">
         <div className="flex items-center text-xs md:text-sm text-gray-600 space-x-1 md:space-x-2">
           <Link href="/" className="hover:text-black truncate">
             Home
           </Link>
           <span>›</span>
-          <Link href="/men" className="hover:text-black truncate">
-            Men
+          <Link href={`/${category.toLowerCase()}`} className="hover:text-black truncate">
+            {category}
           </Link>
           <span>›</span>
-          <span className="text-black truncate">T-Shirt</span>
+          <span className="text-black truncate">
+            {category === "Men" || category === "Women"
+              ? "T-Shirt"
+              : category === "Kids"
+                ? "Kids Wear"
+                : category === "Home"
+                  ? "Home Decor"
+                  : category === "Accessories"
+                    ? "All Accessories"
+                    : "Products"}
+          </span>
         </div>
       </div>
 
       <div className="md:hidden px-3 py-3 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-semibold">T-Shirt</h1>
+          <h1 className="text-xl font-semibold">{category === "All" ? "All Products" : category}</h1>
           <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
             {filteredAndSortedProducts.length} Items
           </span>
@@ -580,17 +600,17 @@ export default function ProductListClient() {
               <ChevronDown className="w-4 h-4" />
             </h3>
             <div className="space-y-3">
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 flex-col">
                 <input
                   type="text"
-                  placeholder="Minimum"
+                  placeholder="Min"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
                   className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
                 />
                 <input
                   type="text"
-                  placeholder="Maximum"
+                  placeholder="Max"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                   className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"

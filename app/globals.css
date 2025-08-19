@@ -1,3 +1,10 @@
+/* Mobile navbar spacing fix */
+.mobile-navbar {
+  margin-bottom: env(safe-area-inset-bottom, 56px);
+}
+.mobile-navbar-spacer {
+  height: 56px;
+}
 @import "tailwindcss";
 @import "tw-animate-css";
 

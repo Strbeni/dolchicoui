@@ -23,10 +23,14 @@ const categories = [
   { id: 'cat-8', productId: 4, title: 'Kurtas', image: '/h4.svg', badge: 'Hot Deal', discount: '60 - 70% OFF' },
 ]
 
+
+
 export default function Home() {
   return (
     <div className="w-full">
-      {/* Hero */}
+      {/* Main Navigation */}
+     
+  {/* Hero */}
       <section className="px-6 lg:px-20 pt-10 pb-8">
         <div className="flex justify-center mb-4">
           <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-gray-600">
