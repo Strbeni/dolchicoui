@@ -1,8 +1,10 @@
-import { Slider } from "@/components/ui/slider";
+"use client"
+
+import { Slider } from "@/components/ui/slider"
 
 interface PriceFilterProps {
-  priceRange: [number, number];
-  setPriceRange: (value: [number, number]) => void;
+  priceRange: [number, number]
+  setPriceRange: (value: [number, number]) => void
 }
 
 export default function PriceFilter({ priceRange, setPriceRange }: PriceFilterProps) {
@@ -23,5 +25,5 @@ export default function PriceFilter({ priceRange, setPriceRange }: PriceFilterPr
         </div>
       </div>
     </div>
-  );
+  )
 }

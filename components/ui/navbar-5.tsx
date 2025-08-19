@@ -849,14 +849,7 @@ export const Navbar5 = () => {
             </div>
           </div>
 
-          {/* Mobile Search Bar */}
-          <div className="fixed top-16 left-0 right-0 px-4 py-2 bg-white border-b border-gray-100 lg:hidden z-40">
-            <SearchBar
-              onSearch={(q) => router.push(`/productlist?q=${encodeURIComponent(q)}`)}
-              placeholder="Search for products..."
-              mobile={true}
-            />
-          </div>
+        
         </nav>
       </div>
     </section>
