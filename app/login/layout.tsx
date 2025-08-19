@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Authentication | Your App Name',
+  title: 'Authentication | Dolchi',
   description: 'Sign in or create an account to get started',
 }
 
@@ -18,7 +18,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div className="flex items-center">
             {/* Replace with your logo */}
             <div className="text-2xl font-bold text-[#d9673f]">
-              YourApp
+              Dolchi
             </div>
           </div>
         </div>
