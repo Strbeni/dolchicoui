@@ -1,322 +1,293 @@
 'use client'
 
 import Image from "next/image"
-// import { CreditCard, Phone, Rocket, ThumbsUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useKeenSlider } from 'keen-slider/react';
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import 'keen-slider/keen-slider.min.css';
-import { useState, useEffect } from 'react';
-import { AutoplayPlugin } from '@/lib/keen-autoplay';
 import Link from "next/link"
 
-const slides = [
-  {
-    image: '/home_main.svg',
-    brand: 'PRADA',
-    offer: 'Big Fashion Festival',
-    discount: '50% - 80% off',
-  },
-  {
-    image: '/home_main.svg',
-    brand: 'GUCCI',
-    offer: 'Mid Season Sale',
-    discount: 'Flat 40% off',
-  },
-  {
-    image: '/home_main.svg',
-    brand: 'ZARA',
-    offer: 'Style Reload',
-    discount: 'Up to 70% off',
-  },
-];
+const topDeals = [
+  { id: 'deal-1', productId: 1, title: 'Ethnic wears', image: '/w1.svg', badge: 'New', discount: '50 - 30% OFF' },
+  { id: 'deal-2', productId: 2, title: 'Casual Wear', image: '/w2.svg', badge: 'Hot Deal', discount: '50 - 30% OFF' },
+  { id: 'deal-3', productId: 3, title: 'Womens active', image: '/w3.svg', badge: 'New', discount: '50 - 30% OFF' },
+  { id: 'deal-4', productId: 4, title: 'Mens active', image: '/w4.svg', badge: 'New', discount: '50 - 30% OFF' },
+]
+
+const categories = [
+  { id: 'cat-1', productId: 1, title: 'T-shirts', image: '/h1.svg', badge: 'New', discount: '50 - 30% OFF' },
+  { id: 'cat-2', productId: 2, title: 'Shirts', image: '/h2.svg', badge: 'Trending', discount: '60 - 70% OFF' },
+  { id: 'cat-3', productId: 3, title: 'Jeans', image: '/h3.svg', badge: 'Trending', discount: '50 - 30% OFF' },
+  { id: 'cat-4', productId: 4, title: 'Trousers', image: '/h4.svg', badge: 'New', discount: '50 - 30% OFF' },
+  { id: 'cat-5', productId: 1, title: 'Sports Shoes', image: '/h1.svg', badge: 'Hot Deal', discount: '60 - 70% OFF' },
+  { id: 'cat-6', productId: 2, title: 'Sneakers', image: '/h2.svg', badge: 'Hot Deal', discount: '60 - 70% OFF' },
+  { id: 'cat-7', productId: 3, title: 'Track Pants', image: '/h3.svg', badge: 'New', discount: '50 - 30% OFF' },
+  { id: 'cat-8', productId: 4, title: 'Kurtas', image: '/h4.svg', badge: 'Hot Deal', discount: '60 - 70% OFF' },
+]
 
 export default function Home() {
-
-  const [sliderRef] = useKeenSlider<HTMLDivElement>({
-    loop: true,
-    slides: { perView: 1 },
-    // autoplay: true,
-    created(s) {
-      s.moveToIdx(0);
-    },
-  }, [AutoplayPlugin]);
-
-  const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 6, minutes: 5, seconds: 30 });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        let { days, hours, minutes, seconds } = prev;
-        if (seconds > 0) seconds--;
-        else {
-          seconds = 59;
-          if (minutes > 0) minutes--;
-          else {
-            minutes = 59;
-            if (hours > 0) hours--;
-            else {
-              hours = 23;
-              if (days > 0) days--;
-            }
-          }
-        }
-        return { days, hours, minutes, seconds };
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
   return (
     <div className="w-full">
-      {/* Hero Section */}
-      <section className="relative w-full h-[90vh] overflow-hidden">
-        <div ref={sliderRef} className="keen-slider h-full">
-          {slides.map((slide, index) => (
-            <div
-              key={index}
-              className="keen-slider__slide flex h-full items-center justify-between"
-            >
-              {/* Left Image */}
-              <div className="relative w-1/2 h-full">
-                <Image
-                  src={slide.image}
-                  alt="Hero"
-                  fill
-                  className="object-cover"
-                  priority
-                />
+      {/* Hero */}
+      <section className="px-6 lg:px-20 pt-10 pb-8">
+        <div className="flex justify-center mb-4">
+          <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-gray-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-black"></span>
+            Discover Fashion with Purpose
+          </span>
               </div>
-
-              {/* Right Content */}
-              <div className="w-1/2 h-full flex flex-col justify-center px-8 bg-[url('/hero-bg.svg')] bg-cover">
-                <h1 className="text-6xl font-serif font-bold mb-4">{slide.brand}</h1>
-                <p className="text-2xl text-gray-700 font-medium">{slide.offer}</p>
-                <p className="text-3xl text-gray-800 font-bold mt-1 mb-6">{slide.discount}</p>
+        <h1 className="text-center text-4xl md:text-6xl font-serif font-bold leading-tight max-w-5xl mx-auto">
+          Focuses on comfort and lasting style
+        </h1>
+        <p className="text-center text-gray-600 mt-3 max-w-3xl mx-auto">
+          Discover fashion that reflects your values and your style. Sustainably sourced, thoughtfully designed, endlessly stylish.
+        </p>
+        <div className="flex justify-center gap-3 mt-6">
+          <Link href="/productlist">
+            <Button className="rounded-full bg-[#f05a2b] hover:bg-[#de491a] text-white px-6 py-5">
+              Shop Now →
+            </Button>
+          </Link>
                 <Link href="/productlist">
-                <Button variant="outline" className="border-black rounded-none px-2 py-2 text-sm">
-                  Explore
+            <Button variant="outline" className="rounded-full px-6 py-5">
+              Trendy Collections→
                 </Button>
+                </Link>
+        </div>
+
+        {/* Preview cards - mobile horizontal scroll */}
+        <div className="mt-10 -mx-6 px-6 sm:hidden">
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2">
+            {["/product.jpg", "/w3.svg", "/w2.svg"].map((src, i) => (
+              <div key={i} className="flex-shrink-0 snap-center">
+                {i === 1 ? (
+                  <div className="relative w-56 h-56 rounded-full overflow-hidden bg-gray-100">
+                    <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
+                  </div>
+                ) : (
+                  <div className="relative w-[260px] h-[180px] rounded-2xl overflow-hidden bg-gray-100">
+                    <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
+                  </div>
+                )}
+              </div>
+            ))}
+            </div>
+        </div>
+
+        {/* Preview cards - desktop grid */}
+        <div className="mt-10 hidden sm:grid sm:grid-cols-3 gap-8">
+          {["/product.jpg", "/w3.svg", "/w2.svg"].map((src, i) => (
+            <div key={i} className="flex items-center justify-center">
+              {i === 1 ? (
+                <div className="relative w-72 h-72 md:w-80 md:h-80 rounded-full overflow-hidden bg-gray-100">
+                  <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
+      </div>
+              ) : (
+                <div className="relative rounded-2xl overflow-hidden bg-gray-100 w-full max-w-[360px] h-[260px] md:h-[300px] mx-auto">
+                  <Image src={src} alt={`preview-${i}`} fill className="object-cover" />
+              </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Stats */}
+        <div className="mt-8 grid grid-cols-3 text-center divide-x divide-gray-200  pt-6">
+          <div className="px-3">
+            <p className="text-2xl md:text-3xl font-semibold">30k+</p>
+            <p className="text-xs text-gray-600">Happy Customers</p>
+          </div>
+          <div className="px-3">
+            <p className="text-2xl md:text-3xl font-semibold">500+</p>
+            <p className="text-xs text-gray-600">New Products</p>
+          </div>
+          <div className="px-3">
+            <p className="text-2xl md:text-3xl font-semibold">50M+</p>
+            <p className="text-xs text-gray-600">Followers</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ₹300 OFF banner - overlay style like screenshot */}
+      <section className="px-4 md:px-6 lg:px-20 mb-6">
+        <div className="relative h-[260px] sm:h-[300px] md:h-[360px] rounded-2xl overflow-hidden">
+          <Image src="/casual.jpg" alt="Flat 300 OFF" fill className="object-cover" />
+          <div className="absolute inset-0 bg-black/45" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="px-5 sm:px-8 max-w-xl text-white">
+              <h2 className="text-3xl sm:text-4xl font-serif font-semibold leading-tight">Flat ₹300 OFF - on your first purchase</h2>
+              <p className="mt-2 text-xs sm:text-sm text-gray-200">Discover fashion that reflects your value style. Sustainably sourced, thoughtfully designed, endlessly stylish.</p>
+              <div className="mt-5">
+                <Link href="/productlist">
+                  <Button className="w-full sm:w-auto rounded-full bg-[#f05a2b] hover:bg-[#de491a] text-white px-8 py-5 text-base">Shop Now →</Button>
+            </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Small coupon banner for mobile */}
+      <section className="px-4 mb-6 lg:hidden">
+        <div className="relative w-full rounded-xl overflow-hidden ring-1 ring-gray-200">
+          <Image src="/checkout.svg" alt="₹300 OFF coupon" width={1200} height={360} className="w-full h-auto object-cover" />
+        </div>
+      </section>
+
+      {/* Collections mosaic */}
+      <section className="px-6 lg:px-20 relative">
+        <div className="hidden lg:block fixed right-0 top-1/2 -translate-y-1/2 bg-[#ff6a1a] text-white px-3 py-2 rounded-l-md font-semibold tracking-wider [writing-mode:vertical-rl]">
+          UPTO ₹300 OFF
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative h-[420px] rounded-2xl overflow-hidden">
+            <Image src="/w1.svg" alt="Long Sleeve T-Shirt" fill className="object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-6 flex items-end">
+              <div>
+                <p className="text-white/80 text-xs mb-1">Women&apos;s Collections</p>
+                <h3 className="text-white text-xl md:text-2xl font-semibold">Long Sleeve T-Shirt</h3>
+                <Link href="/productlist" className="inline-block mt-3">
+                  <span className="text-white text-xs underline">Explore Now →</span>
                 </Link>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Pagination Dots */}
-
-      </section>
-      <div className="absolute bottom-[-3] left-1/2 transform -translate-x-1/2 flex gap-1">
-        {slides.map((_, idx) => (
-          <div key={idx} className="w-2 h-2 rounded-full bg-gray-300 hover:bg-black cursor-pointer"></div>
-        ))}
-      </div>
-
-      {/* Categories Section */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 px-6 lg:px-20 pb-10 mt-12">
-        {/* Left 2 stacked */}
-        <div className="grid grid-rows-2 gap-4">
-          {[
-            { src: "/formal-woman.svg", label: "FORMAL WOMAN" },
-            { src: "/formal-men.jpg", label: "FORMAL MEN" },
-          ].map((item, i) => (
-            <div key={i} className="relative h-full">
-              <Image src={item.src} alt={item.label} fill className="object-cover" />
-              <div className="absolute inset-0 bg-opacity-20 flex items-center justify-center">
-                <p className="text-white text-lg font-semibold">{item.label}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative h-[200px] rounded-2xl overflow-hidden">
+              <Image src="/product.jpg" alt="Half Sleeve Shirt" fill className="object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex items-end">
+                <div>
+                  <p className="text-white/80 text-[10px]">Men&apos;s Collections</p>
+                  <h4 className="text-white text-base font-semibold">Half Sleeve Shirt</h4>
+                  <span className="text-white text-[10px] underline">Explore Now →</span>
+                </div>
               </div>
             </div>
-          ))}
+            <div className="relative h-[200px] rounded-2xl overflow-hidden">
+              <Image src="/w4.svg" alt="Polo T-Shirt" fill className="object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex items-end">
+                <div>
+                  <p className="text-white/80 text-[10px]">T-shirt Collections</p>
+                  <h4 className="text-white text-base font-semibold">Polo T-Shirt</h4>
+                  <span className="text-white text-[10px] underline">Explore Now →</span>
+                </div>
+              </div>
+            </div>
+            <div className="relative h-[200px] md:h-[200px] col-span-2 rounded-2xl overflow-hidden">
+              <Image src="/w3.svg" alt="Denim-Jacket" fill className="object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex items-end">
+                <div>
+                  <p className="text-white/80 text-[10px]">Denim Collections</p>
+                  <h4 className="text-white text-lg font-semibold">Denim-Jacket</h4>
+                  <span className="text-white text-[10px] underline">Explore Now →</span>
+                </div>
+          </div>
         </div>
-
-        {/* Right */}
-        <div className="relative h-220">
-          <Image src="/casual.jpg" alt="Casual Style" fill className="object-cover" />
-          <div className="absolute inset-0  bg-opacity-20 flex items-center justify-center">
-            <p className="text-white text-lg font-semibold">CASUAL STYLE</p>
           </div>
         </div>
       </section>
 
-      {/* Best Dress Section */}
-      <section className="px-6 lg:px-20 py-10">
-        <h2 className="text-3xl font-semibold text-center mb-6">
-          THE BEST DRESS FOR THE BEST WOMAN
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((id) => (
-            <Link key={id} href={`/productdetail/${id}`}>
-            <Card key={id} className="relative p-2">
-              
-                <Image
-                  src={`/w${id}.svg`}
-                  alt={`Product ${id}`}
-                  width={300}
-                  height={400}
-                  className="w-full h-120 object-cover"
-                />
-
-              <Badge className="absolute top-2 right-2 rounded-full px-4 py-2 bg-[#844416] text-white text-xs">
-                ⭐ 4.5
-              </Badge>
-              <CardContent className="mt-2">
-                <p className="text-xs text-gray-500">PRODUCT CATEGORY</p>
-                <p className="text-sm font-medium">Product Name</p>
-                <p className="text-sm text-gray-700">IDR XXX</p>
-              </CardContent>
-            </Card>
-            </Link>
+      {/* Brand strip (logo grid on mobile) */}
+      <section className="px-6 lg:px-20 mt-8">
+        <div className="w-full rounded-xl bg-gray-100 px-4 py-3 grid grid-cols-3 gap-4 items-center justify-items-center sm:flex sm:justify-around">
+          {['/adidas.svg','/puma.svg','/n.svg','/gucci.svg','/boss.svg'].map((src, idx) => (
+            <div key={idx} className="h-6 opacity-70">
+              <Image src={src} alt={`brand-${idx}`} width={90} height={24} className="object-contain w-auto h-6" />
+            </div>
           ))}
-        </div>
+          </div>
+      </section>
 
-        <div className="mt-6 pt-10 flex justify-start">
+      {/* Top Deals */}
+      <section className="px-6 lg:px-20 mt-10">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-2xl font-semibold">Top Deals</h3>
+            <p className="text-sm text-gray-600">Effortless style, inspired by the future of fashion</p>
+          </div>
           <Link href="/productlist">
-            <Button className="bg-[#844416] hover:bg-[#6e3612] text-white text-lg gap-2">
-              SEE MORE
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </Button>
+            <Button variant="outline" className="rounded-full">See More →</Button>
           </Link>
         </div>
-      </section>
-      {/* Deals Countdown Section */}
-      <section className="grid grid-cols-1 md:grid-cols-3 items-center gap-8 px-6 lg:px-20 py-16">
-        <div className="md:col-span-1">
-          <h2 className="text-3xl font-bold mb-2">Deals Of The Month</h2>
-          <p className="text-gray-600 mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-          <Button className="bg-[#d35400] hover:bg-[#b03e00] text-white px-6 py-2 mb-6">Buy Now</Button>
-          <h3 className="text-lg font-medium mb-4">Hurry, Before It&apos;s Too Late!</h3>
-          <div className="flex gap-3">
-            {[['Days', timeLeft.days], ['Hr', timeLeft.hours], ['Mins', timeLeft.minutes], ['Sec', timeLeft.seconds]].map(([label, value]) => (
-              <div key={label as string} className="bg-white shadow-md px-4 py-3 text-center rounded">
-                <p className="text-2xl font-bold">{String(value).padStart(2, '0')}</p>
-                <p className="text-sm text-gray-500">{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="md:col-span-1 relative">
-          <Image src="/w1.svg" alt="Sale 1" width={400} height={500} className="object-cover w-full h-full" />
-          <div className="absolute bottom-4 left-4 bg-white p-3 shadow-md">
-            <p className="text-xs">01 — Spring Sale</p>
-            <p className="text-lg font-semibold">30% OFF</p>
-          </div>
-        </div>
-        <div className="md:col-span-1">
-          <Image src="/w2.svg" alt="Sale 2" width={400} height={500} className="object-cover w-full h-full" />
-        </div>
-      </section>
-      {/* Category Banners Section */}
-      <section className="grid grid-cols-1 sm:grid-cols-3  px-6 lg:px-0 py-10">
-        {[
-          {
-            title: 'Casual Wear',
-            image: '/w1.svg',
-          },
-          {
-            title: '50% Summer Collection',
-            image: '/w3.svg',
-          },
-          {
-            title: 'Sports Ready',
-            image: '/w3.svg',
-          },
-        ].map((item, i) => (
-          <div
-            key={i}
-            className="relative h-[300px] group cursor-pointer overflow-hidden"
-          >
-            <Image
-              src={item.image}
-              alt={item.title}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-            />
 
-            <div className="absolute inset-0  bg-opacity-20 flex items-center justify-center text-center px-4">
-              <h3 className="text-white text-xl sm:text-2xl font-semibold leading-tight">
-                {item.title}
-              </h3>
-            </div>
-          </div>
-        ))}
-      </section>
-
-
-      {/* Best Outfit Section */}
-      <section className="px-6 lg:px-20 py-10">
-        <h2 className="text-2xl lg:text-3xl font-semibold text-center mb-6">
-          BEST OUTFIT FOR YOUR HAPPINESS
-        </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((id) => (
-  <Link key={id} href={`/productdetail/${id}`}>
-    <Card className="relative p-2">
-      <Image
-        src={`/h${id}.svg`}
-        alt={`Product ${id}`}
-        width={300}
-        height={400}
-        className="w-full h-120 object-cover"
-      />
-      <Badge className="absolute top-2 right-2 rounded-full px-4 py-2 bg-[#844416] text-white text-xs">
-        ⭐ 4.8
-      </Badge>
-      <CardContent className="mt-2">
-        <p className="text-xs text-gray-500">PRODUCT CATEGORY</p>
-        <p className="text-sm font-medium">Product Name {id}</p>
-        <p className="text-sm text-gray-700">IDR XXX</p>
+          {topDeals.map((item) => {
+            const accent = item.discount.includes('60')
+            return (
+              <Link key={item.id} href={`/productdetail/${item.productId}`}>
+                <Card className="bg-transparent border-none shadow-none p-0">
+                  <div className="relative h-60 md:h-64 lg:h-72 rounded-[18px] overflow-hidden bg-white">
+                    <Image src={item.image} alt={item.title} fill className="object-cover" />
+                    <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
+                      {item.badge}
+                    </div>
+                  </div>
+                  <CardContent className="px-1 pt-3 pb-0">
+                    <p className="text-[13px] text-gray-700">{item.title}</p>
+                    <p className={`mt-1 text-[26px] leading-tight font-extrabold tracking-tight ${accent ? 'text-[#ff5c39]' : 'text-gray-900'}`}>{item.discount}</p>
       </CardContent>
     </Card>
   </Link>
-))}
-
+            )
+          })}
         </div>
+      </section>
 
-        <div className="mt-6 pt-10 flex justify-start">
+      {/* Shop by Category */}
+      <section className="px-6 lg:px-20 mt-10 mb-14">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-2xl font-semibold">Shop by Category</h3>
+            <p className="text-sm text-gray-600">Style, inspired by the future of fashion</p>
+          </div>
           <Link href="/productlist">
-            <Button className="bg-[#844416] hover:bg-[#6e3612] text-white text-lg gap-2">
-              SEE MORE
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </Button>
+            <Button variant="outline" className="rounded-full">See More →</Button>
           </Link>
         </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {categories.map((item) => {
+            const accent = item.discount.includes('60')
+            return (
+              <Link key={item.id} href={`/productdetail/${item.productId}`}>
+                <Card className="bg-transparent border-none shadow-none p-0">
+                  <div className="relative h-60 md:h-64 lg:h-72 rounded-[18px] overflow-hidden bg-white">
+                    <Image src={item.image} alt={item.title} fill className="object-cover" />
+                    <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
+                      {item.badge}
+                    </div>
+                  </div>
+                  <CardContent className="px-1 pt-3 pb-0">
+                    <p className="text-[13px] text-gray-700">{item.title}</p>
+                    <p className={`mt-1 text-[26px] leading-tight font-extrabold tracking-tight ${accent ? 'text-[#ff5c39]' : 'text-gray-900'}`}>{item.discount}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
       </section>
-      {/* Tips Section */}
-      <section className="relative w-full h-screen bg-gray-50 flex items-center justify-center px-6 lg:px-20">
-        <Image
-          src="/tips.svg"
-          alt="Centered Fullscreen"
-          width={1350}
-          height={1350}
-          className="object-contain"
-          priority
-        />
+      {/* Why Choose Us */}
+      <section className="px-4 py-8 bg-[#101820] text-white rounded-t-2xl mt-8">
+        <h3 className="text-3xl font-serif mb-1">Why Choose Us</h3>
+        <p className="text-xs text-gray-300 mb-4">Fashion You Can Feel Good About</p>
+        <div className="space-y-3">
+          {[{
+            title:'Ethical Production', desc:'Our garments are made in fair-trade certified facilities for all involved.', icon:'/globe.svg'
+          },{
+            title:'Innovations', desc:'We\'re always seeking out new ways to improve our sustainability efforts.', icon:'/window.svg'
+          },{
+            title:'Quality You Can Trust', desc:'We take pride in producing high-quality, that stands the test of time.', icon:'/file.svg'
+          },{
+            title:'Sustainable Materials', desc:'We source eco-friendly fabrics, such as organic cotton and recycled.', icon:'/globe.svg'
+          }].map((f, i) => (
+            <div key={i} className="bg-white text-[#0f1520] rounded-xl p-4 flex gap-3 items-start">
+              <Image src={f.icon} alt={f.title} width={28} height={28} className="mt-1" />
+              <div>
+                <p className="font-semibold mb-1">{f.title}</p>
+                <p className="text-xs text-gray-600 leading-relaxed">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
-      {/* Limited Edition Promo Banner */}
-      <section className="relative w-full h-[550px] mt-12">
-        <Image
-          src="/bottom.svg"
-          alt="Limited Edition Offer"
-          fill
-          className="object-cover"
-        />
-
-        {/* <div className="absolute inset-0 flex flex-col justify-center px-6 lg:px-20 text-white">
-    <p className="text-sm uppercase mb-1">Limited Edition</p>
-    <h2 className="text-4xl font-bold mb-2">50% OFF</h2>
-    <a
-      href="#"
-      className="text-sm underline hover:text-gray-300 transition-all duration-200"
-    >
-      see all collection
-    </a>
-  </div> */}
-      </section>
-
     </div>
   )
 }

@@ -34,9 +34,10 @@ const GooeyFilter = () => (
 interface SearchBarProps {
   placeholder?: string
   onSearch?: (query: string) => void
+  mobile?: boolean
 }
 
-const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
+const SearchBar = ({ placeholder = "Search...", onSearch, mobile = false }: SearchBarProps) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isFocused, setIsFocused] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -182,8 +183,11 @@ const SearchBar = ({ placeholder = "Search...", onSearch }: SearchBarProps) => {
       <motion.form
         onSubmit={handleSubmit}
         className="relative flex items-center justify-center w-full mx-auto"
-        initial={{ width: "240px" }}
-        animate={{ width: isFocused ? "340px" : "240px", scale: isFocused ? 1.05 : 1 }}
+        initial={{ width: mobile ? "auto" : "240px" }}
+        animate={{ 
+          width: mobile ? "auto" : (isFocused ? "340px" : "240px"), 
+          scale: mobile ? 1 : (isFocused ? 1.05 : 1)
+        }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
         onMouseMove={handleMouseMove}
       >
