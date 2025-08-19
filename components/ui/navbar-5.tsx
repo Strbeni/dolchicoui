@@ -1,5 +1,5 @@
 "use client"
-
+import { useCallback } from "react";
 import { Heart, Menu, ShoppingCart, User } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
@@ -21,10 +21,6 @@ import { SearchBar } from "./search-bar"
 interface NavigationSection {
   title: string
   items: string[]
-}
-
-interface WishlistEntry {
-  productId: number
 }
 
 interface CartItem {
@@ -430,7 +426,7 @@ export const Navbar5 = () => {
     }
   }
 
-  const fetchWishlistCount = async () => {
+  const fetchWishlistCount = useCallback(async () => {
     if (!isLoggedIn) {
       setWishlistCount(0)
       return
@@ -446,9 +442,9 @@ export const Navbar5 = () => {
     } catch (err) {
       console.error("Error fetching wishlist count:", err)
     }
-  }
+  }, [isLoggedIn, API_BASE])
 
-  const fetchCartCount = async () => {
+  const fetchCartCount = useCallback(async () => {
     if (!isLoggedIn) {
       setCartCount(0)
       return
@@ -468,7 +464,7 @@ export const Navbar5 = () => {
     } catch (err) {
       console.error("Error fetching cart count:", err)
     }
-  }
+  }, [isLoggedIn, API_BASE])
 
   useEffect(() => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token")
@@ -482,7 +478,7 @@ export const Navbar5 = () => {
       setWishlistCount(0)
       setCartCount(0)
     }
-  }, [])
+  }, [fetchCartCount, fetchWishlistCount])
 
   useEffect(() => {
     if (!isLoggedIn) return
@@ -493,7 +489,7 @@ export const Navbar5 = () => {
     }, 30000) // Refresh every 30 seconds
 
     return () => clearInterval(interval)
-  }, [isLoggedIn])
+  }, [isLoggedIn, fetchCartCount, fetchWishlistCount])
 
   const handleLogout = () => {
     localStorage.removeItem("token")

@@ -1,4 +1,5 @@
 "use client"
+import Image from "next/image"
 import { X } from "lucide-react"
 
 interface PromotionalBannerProps {
@@ -16,6 +17,7 @@ export default function PromotionalBanner({ isOpen, onClose }: PromotionalBanner
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-10 bg-white/80 rounded-full p-2 hover:bg-white transition-colors"
+          title="Close banner"
         >
           <X className="w-4 h-4" />
         </button>
@@ -27,13 +29,15 @@ export default function PromotionalBanner({ isOpen, onClose }: PromotionalBanner
 
         {/* Clothing rack image section */}
         <div className="w-100 relative">
-          <img
+          <Image
             src="https://media.istockphoto.com/id/1125038961/photo/young-man-running-outdoors-in-morning.jpg?s=612x612&w=0&k=20&c=LVAlQIforg7ZRAF-bOvdvoD_k3ejEeimrWbGq2IA5ak="
             alt="Clothing Rack"
-            className="w-[1000px] h-full object-cover object-left"
+            fill={true} 
+            className="object-cover object-left"
             style={{
               clipPath: "polygon(0 0, 70% 0, 85% 50%, 0 200%)",
             }}
+            priority
           />
         </div>
 

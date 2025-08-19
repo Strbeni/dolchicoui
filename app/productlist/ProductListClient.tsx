@@ -75,10 +75,13 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [expandedFilterSection, setExpandedFilterSection] = useState<string | null>(null)
 
+    // Cart count state - used for fetching cart items count
+    const [cartCount, setCartCount] = useState<number>(0)
+
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(12) // 12 items per page for better mobile experience
 
-  // Cart count state
+  // Cart count state - used for fetching cart items count
 
   // const searchParams = useSearchParams() // Removed unused variable
   const router = useRouter()
@@ -127,6 +130,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
         }
       } catch (err) {
         console.error("[v0] Error fetching products:", err)
+        console.log(cartCount);
         setError(err instanceof Error ? err.message : "Failed to load products")
 
         const mockProducts: Product[] = Array.from({ length: 12 }, (_, i) => ({
@@ -499,7 +503,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
           <Link
             href={`/${category.toLowerCase()}`}
             className="hover:text-black truncate"
-            legacyBehavior>
+            >
             {category}
           </Link>
           <span>›</span>
