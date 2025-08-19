@@ -13,13 +13,24 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { SearchBar } from "./search-bar";
+import { SearchBar } from "./search-bar"
+
 /* -------------------------------------------------------------------------- */
 /*  dummy data                                                                */
 /* -------------------------------------------------------------------------- */
 interface NavigationSection {
   title: string
   items: string[]
+}
+
+interface WishlistEntry {
+  productId: number
+}
+
+interface CartItem {
+  id: number
+  productId: number
+  quantity: number
 }
 
 const accessories: NavigationSection[] = [
@@ -398,27 +409,98 @@ export const Navbar5 = () => {
   const mobileDropdownRef = useRef<HTMLDivElement | null>(null)
 
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [wishlistCount] = useState(0)
-  const [cartCount] = useState(0)
+  const [wishlistCount, setWishlistCount] = useState(0)
+  const [cartCount, setCartCount] = useState(0)
 
   const mobileNavData = [
-   
     { id: "men", label: "Men", data: men },
     { id: "women", label: "Women", data: women },
     { id: "kids", label: "Kids", data: kids },
     { id: "home", label: "Home", data: homes },
-     { id: "accessories", label: "Accessories", data: accessories }
+    { id: "accessories", label: "Accessories", data: accessories },
   ]
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
+
+  const authHeaders = () => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+    return {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    }
+  }
+
+  const fetchWishlistCount = async () => {
+    if (!isLoggedIn) {
+      setWishlistCount(0)
+      return
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/user/wishlist`, { headers: authHeaders() })
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.success && Array.isArray(data.data?.wishlist)) {
+        setWishlistCount(data.data.wishlist.length)
+      }
+    } catch (err) {
+      console.error("Error fetching wishlist count:", err)
+    }
+  }
+
+  const fetchCartCount = async () => {
+    if (!isLoggedIn) {
+      setCartCount(0)
+      return
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/cart`, { headers: authHeaders() })
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.success && Array.isArray(data.data?.items)) {
+        // Calculate total quantity of all items in cart
+        const totalQuantity = data.data.items.reduce((total: number, item: CartItem) => total + item.quantity, 0)
+        setCartCount(totalQuantity)
+      } else if (data.success && typeof data.data?.totalItems === "number") {
+        setCartCount(data.data.totalItems)
+      }
+    } catch (err) {
+      console.error("Error fetching cart count:", err)
+    }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-    setIsLoggedIn(!!token)
+    const loggedIn = !!token
+    setIsLoggedIn(loggedIn)
+
+    if (loggedIn) {
+      fetchWishlistCount()
+      fetchCartCount()
+    } else {
+      setWishlistCount(0)
+      setCartCount(0)
+    }
   }, [])
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+
+    const interval = setInterval(() => {
+      fetchWishlistCount()
+      fetchCartCount()
+    }, 30000) // Refresh every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [isLoggedIn])
 
   const handleLogout = () => {
     localStorage.removeItem("token")
     sessionStorage.removeItem("token")
     setIsLoggedIn(false)
+    setWishlistCount(0)
+    setCartCount(0)
     setUserMenuOpen(false)
     router.push("/login")
   }
@@ -443,7 +525,7 @@ export const Navbar5 = () => {
   }, [])
 
   return (
-    <section className="sticky top-0 left-0 right-0 z-50 bg-white shadow-sm">
+    <section className="sticky border-b ">
       <div className="container px-4 lg:px-6">
         <nav className="flex items-center justify-between h-16 md:h-20">
           {/* Logo - Hidden on mobile, shown on desktop */}
@@ -480,19 +562,16 @@ export const Navbar5 = () => {
             </span>
           </Link>
 
-          {/* Desktop mega-menu */}
-          <NavigationMenu className="hidden lg:block max-w-[600px] xl:max-w-[800px] mx-auto mt-0 pt-0">
-            <NavigationMenuList className="gap-6">
-              {/* accessories */}
-              
-
+          {/* Desktop Navigation Menu */}
+          <NavigationMenu className="hidden lg:flex">
+            <NavigationMenuList>
               {/* Men */}
-
               <NavigationMenuItem>
-                <NavigationMenuTrigger asChild className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold">
-                  <Link href="/men">
-                    MEN
-                  </Link>
+                <NavigationMenuTrigger
+                  asChild
+                  className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
+                >
+                  <Link href="/men">MEN</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -507,6 +586,7 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
+                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -518,6 +598,7 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
+                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -536,11 +617,12 @@ export const Navbar5 = () => {
 
               {/* Women */}
               <NavigationMenuItem>
-                <Link href="/women" passHref legacyBehavior>
-                  <NavigationMenuTrigger className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold">
-                    WOMEN
-                  </NavigationMenuTrigger>
-                </Link>
+                <NavigationMenuTrigger
+                  asChild
+                  className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
+                >
+                  <Link href="/women">WOMEN</Link>
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
                     <div className="flex flex-col">
@@ -554,6 +636,7 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
+                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -565,6 +648,7 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
+                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -583,11 +667,12 @@ export const Navbar5 = () => {
 
               {/* Kids */}
               <NavigationMenuItem>
-                <Link href="/kids" passHref legacyBehavior>
-                  <NavigationMenuTrigger className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold">
-                    KIDS
-                  </NavigationMenuTrigger>
-                </Link>
+                <NavigationMenuTrigger
+                  asChild
+                  className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
+                >
+                  <Link href="/kids">KIDS</Link>
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
                     <div className="flex flex-col">
@@ -601,6 +686,7 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
+                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -612,6 +698,7 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
+                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -627,12 +714,15 @@ export const Navbar5 = () => {
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
-<NavigationMenuItem>
-                <Link href="/accessories" passHref legacyBehavior>
-                  <NavigationMenuTrigger className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold">
-                    ACCESSORIES
-                  </NavigationMenuTrigger>
-                </Link>
+
+              {/* Accessories */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger
+                  asChild
+                  className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
+                >
+                  <Link href="/accessories">ACCESSORIES</Link>
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
                     <div className="flex flex-col">
@@ -646,6 +736,7 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
+                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -657,6 +748,7 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
+                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -672,13 +764,15 @@ export const Navbar5 = () => {
                   </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+
               {/* Home */}
               <NavigationMenuItem>
-                <Link href="/home" passHref legacyBehavior>
-                  <NavigationMenuTrigger className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold">
-                    HOME
-                  </NavigationMenuTrigger>
-                </Link>
+                <NavigationMenuTrigger
+                  asChild
+                  className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
+                >
+                  <Link href="/home">HOME LIVING</Link>
+                </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
                     <div className="flex flex-col">
@@ -692,6 +786,7 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
+                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -703,6 +798,7 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
+                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -781,21 +877,19 @@ export const Navbar5 = () => {
                 </div>
               )}
             </div>
-
             <Link href="/wishlist" className="relative">
               <Heart className="w-6 h-6" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-pink-600 text-white rounded-full text-xs px-1">
-                  {wishlistCount}
+                <span className="absolute -top-2 -right-2 bg-pink-600 text-white rounded-full text-xs px-1 min-w-[18px] h-[18px] flex items-center justify-center">
+                  {wishlistCount > 99 ? "99+" : wishlistCount}
                 </span>
               )}
             </Link>
-
             <Link href="/cartpage" className="relative">
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                  {cartCount}
+                  {cartCount > 99 ? "99+" : cartCount}
                 </span>
               )}
             </Link>
@@ -888,7 +982,7 @@ export const Navbar5 = () => {
                 <Heart className="w-6 h-6 text-gray-700" />
                 {wishlistCount > 0 && (
                   <span className="absolute -top-1 right-1 bg-pink-600 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                    {wishlistCount}
+                    {wishlistCount > 9 ? "9+" : wishlistCount}
                   </span>
                 )}
               </button>
@@ -897,7 +991,7 @@ export const Navbar5 = () => {
                 <ShoppingCart className="w-6 h-6 text-gray-700" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 right-1 bg-red-500 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
-                    {cartCount}
+                    {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
               </button>
@@ -939,7 +1033,7 @@ export const Navbar5 = () => {
                         >
                           Address Book
                         </Link>
-                        <button onClick={handleLogout} className="block w-full text-left px-4 py-2 hover:bg-gray-100">
+                        <button onClick={handleLogout} className="block w-full text-red-400 text-left px-4 py-2 hover:bg-gray-100">
                           Logout
                         </button>
                       </>
@@ -961,7 +1055,6 @@ export const Navbar5 = () => {
           </div>
         </nav>
       </div>
-  
     </section>
   )
 }

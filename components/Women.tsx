@@ -134,7 +134,7 @@ export default function Women({ show }: { show: boolean }) {
                       <Link
                         href="#"
                         className="hover:text-black hover:font-medium transition-all duration-200 block"
-                      >
+                        legacyBehavior>
                         {item}
                       </Link>
                     </li>
@@ -148,5 +148,5 @@ export default function Women({ show }: { show: boolean }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

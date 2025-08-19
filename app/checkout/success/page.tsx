@@ -91,14 +91,13 @@ function OrderSuccessContent() {
                             )}
                 </div>
             ) : null}
-
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 {orderId && (
                     <Link
                         href="/orders"
                         className="bg-[#d86538] hover:bg-[#b9552e] text-white px-8 py-3 uppercase text-sm font-semibold tracking-wide transition flex items-center space-x-2"
-                    >
+                        legacyBehavior>
                         <Eye className="w-4 h-4" />
                         <span>Track Order</span>
                     </Link>
@@ -107,7 +106,7 @@ function OrderSuccessContent() {
                 <Link
                     href="/productlist"
                     className="border border-[#d86538] text-[#d86538] hover:bg-[#d86538] hover:text-white px-8 py-3 uppercase text-sm font-semibold tracking-wide transition flex items-center space-x-2"
-                >
+                    legacyBehavior>
                     <Package className="w-4 h-4" />
                     <span>Continue Shopping</span>
                 </Link>

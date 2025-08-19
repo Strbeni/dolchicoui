@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image"
 import Link from "next/link"
 import {useRouter } from "next/navigation"
@@ -77,6 +77,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(12) // 12 items per page for better mobile experience
+
+  // Cart count state
 
   // const searchParams = useSearchParams() // Removed unused variable
   const router = useRouter()
@@ -155,14 +157,14 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   }, [])
 
   useEffect(() => {
-    const fetchWishlistStatus = async () => {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-      if (!token) return
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+    if (!token) return
 
+    // Fetch wishlist
+    const fetchWishlistStatus = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/user/wishlist`, { headers: authHeaders() })
         if (!res.ok) return
-
         const data = await res.json()
         if (data.success && Array.isArray(data.data?.wishlist)) {
           const wishlistProductIds = new Set<number>(
@@ -175,7 +177,24 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
       }
     }
 
+    // Fetch cart count
+    const fetchCartCount = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/cart`, { headers: authHeaders() })
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.success && Array.isArray(data.data?.items)) {
+          setCartCount(data.data.items.length)
+        } else if (data.success && typeof data.data?.totalItems === "number") {
+          setCartCount(data.data.totalItems)
+        }
+      } catch (err) {
+        console.error("[v0] Error fetching cart count:", err)
+      }
+    }
+
     fetchWishlistStatus()
+    fetchCartCount()
   }, [])
 
   const colorOptions = [
@@ -471,14 +490,16 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
 
   return (
     <div className="min-h-screen bg-white">
-     
       <div className="px-3 md:px-4 py-2 md:py-3 border-b border-gray-200">
         <div className="flex items-center text-xs md:text-sm text-gray-600 space-x-1 md:space-x-2">
           <Link href="/" className="hover:text-black truncate">
             Home
           </Link>
           <span>›</span>
-          <Link href={`/${category.toLowerCase()}`} className="hover:text-black truncate">
+          <Link
+            href={`/${category.toLowerCase()}`}
+            className="hover:text-black truncate"
+            legacyBehavior>
             {category}
           </Link>
           <span>›</span>
@@ -495,7 +516,6 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
           </span>
         </div>
       </div>
-
       <div className="md:hidden px-3 py-3 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-semibold">{category === "All" ? "All Products" : category}</h1>
@@ -523,7 +543,6 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
           </button>
         </div>
       </div>
-
       <div className="flex">
         <div className="hidden md:block w-64 border-r border-gray-200 p-6 space-y-6">
           <h2 className="text-lg font-semibold">Filters</h2>
@@ -1063,5 +1082,5 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
         </div>
       </div>
     </div>
-  )
+  );
 }
