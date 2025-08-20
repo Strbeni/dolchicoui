@@ -279,7 +279,7 @@ export default function Home() {
             <h3 className="text-2xl font-semibold">Top Deals</h3>
             <p className="text-sm text-gray-600">Effortless style, inspired by the future of fashion</p>
           </div>
-          <Link href="/productlist">
+          <Link href="/">
             <Button variant="outline" className="rounded-full bg-transparent">
               See More →
             </Button>
@@ -320,7 +320,7 @@ export default function Home() {
             <h3 className="text-2xl font-semibold">Shop by Category</h3>
             <p className="text-sm text-gray-600">Style, inspired by the future of fashion</p>
           </div>
-          <Link href="/productlist">
+          <Link href="/">
             <Button variant="outline" className="rounded-full bg-transparent">
               See More →
             </Button>
