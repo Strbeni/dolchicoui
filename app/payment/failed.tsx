@@ -45,7 +45,7 @@ const PaymentFailed = () => {
           <Button onClick={() => router.back()} className="w-full bg-blue-600 hover:bg-blue-700">
             Try Again
           </Button>
-          <Link href="/home">
+          <Link href="/home" legacyBehavior>
             <Button variant="outline" className="w-full">
               Go to Home
             </Button>

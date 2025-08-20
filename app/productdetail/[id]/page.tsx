@@ -482,13 +482,12 @@ export default function ProductDetail() {
           )}
         </div>
       </div>
-
       {/* Related Products Section */}
       <section className="px-6 lg:px-20 py-10">
         <h2 className="text-3xl font-semibold text-start mb-6">YOU MIGHT ALSO LIKE</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((id) => (
-            <Link key={id} href={`/productdetail/${id}`}>
+            <Link key={id} href={`/productdetail/${id}`} legacyBehavior>
               <Card className="relative p-2 hover:shadow-lg transition-shadow">
                 <Image
                   src={`/h${id}.svg`}
@@ -511,7 +510,7 @@ export default function ProductDetail() {
         </div>
         
         <div className="mt-6 pt-10 flex justify-start">
-          <Link href="/productlist">
+          <Link href="/productlist" legacyBehavior>
             <Button className="bg-[#844416] hover:bg-[#6e3612] text-white text-lg gap-2">
               SEE MORE
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

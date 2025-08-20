@@ -208,7 +208,6 @@ export default function ForgotPassword() {
           priority
         />
       </div>
-
       {/* Right Side Form */}
       <div className="w-full md:w-1/2 flex flex-col justify-center px-8 lg:px-20 h-full">
         <div className="max-w-md w-full mx-auto space-y-6">
@@ -216,7 +215,7 @@ export default function ForgotPassword() {
           <div className="text-center">
             <h2 className="flex items-center justify-center text-3xl font-bold text-gray-800 mb-2">
               {step !== 'success' && (
-                <Link href="/login" className="mr-4">
+                <Link href="/login" className="mr-4" legacyBehavior>
                   <ArrowLeft className="hover:text-orange-600 transition-colors" size={24} />
                 </Link>
               )}
@@ -448,5 +447,5 @@ export default function ForgotPassword() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ReactNode } from "react";
 import { ClientLayoutWrapper } from "@/components/ClientLayoutWrapper";
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -22,6 +21,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
+        <head>
+          <link rel="icon" type="image/png" href="/logo.png" />
+        </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} px-4 sm:px-6 lg:px-20`}
         suppressHydrationWarning={true}
