@@ -521,7 +521,7 @@ export const Navbar5 = () => {
   }, [])
 
   return (
-    <section className="sticky border-b ">
+    <section className="sticky md:border-b ">
       <div className="container px-4 lg:px-6">
         <nav className="flex items-center justify-between h-16 md:h-20">
           {/* Logo - Hidden on mobile, shown on desktop */}
@@ -876,7 +876,7 @@ export const Navbar5 = () => {
             <Link href="/wishlist" className="relative">
               <Heart className="w-6 h-6" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-pink-600 text-white rounded-full text-xs px-1 min-w-[18px] h-[18px] flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-1 min-w-[18px] h-[18px] flex items-center justify-center">
                   {wishlistCount > 99 ? "99+" : wishlistCount}
                 </span>
               )}
@@ -977,7 +977,7 @@ export const Navbar5 = () => {
               <button onClick={() => router.push("/wishlist")} className="flex flex-col items-center w-12 relative">
                 <Heart className="w-6 h-6 text-gray-700" />
                 {wishlistCount > 0 && (
-                  <span className="absolute -top-1 right-1 bg-pink-600 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
+                  <span className="absolute -top-1 right-1 bg-red-500 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
                     {wishlistCount > 9 ? "9+" : wishlistCount}
                   </span>
                 )}

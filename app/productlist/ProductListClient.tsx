@@ -130,7 +130,6 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
         }
       } catch (err) {
         console.error("[v0] Error fetching products:", err)
-        console.log(cartCount);
         setError(err instanceof Error ? err.message : "Failed to load products")
 
         const mockProducts: Product[] = Array.from({ length: 12 }, (_, i) => ({
@@ -158,7 +157,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
     }
 
     fetchProducts()
-  }, [])
+  }, [cartCount])
 
   useEffect(() => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token")

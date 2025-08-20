@@ -6,8 +6,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Search, Grid3X3 } from "lucide-react"
-import { useRouter } from "next/navigation"
 import PromotionalBanner from "@/components/promotional-banner"
+import KidsSection from "@/components/kids-section"
+import MenSection from "@/components/men-section"
+import WomenSection from "@/components/women-section"
 
 const topDeals = [
   { id: "deal-1", productId: 1, title: "Ethnic wears", image: "/w1.svg", badge: "New", discount: "50 - 30% OFF" },
@@ -28,10 +30,9 @@ const categories = [
 ]
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("Men")
+  const [activeTab, setActiveTab] = useState("All")
   const [currentSlide, setCurrentSlide] = useState(0)
   const [showPromoBanner, setShowPromoBanner] = useState(false)
-  const router = useRouter()
 
   const navigationTabs = ["All", "Men", "Women", "Kids"]
   const categoryIcons = [
@@ -85,108 +86,24 @@ export default function Home() {
 
   const handleTabClick = (tab: string) => {
     setActiveTab(tab)
-    // Navigate to respective pages based on tab selection
-    switch (tab) {
-      case "Men":
-        router.push("/men")
-        break
-      case "Women":
-        router.push("/women")
-        break
+  }
+
+  const renderTabContent = () => {
+    switch (activeTab) {
       case "Kids":
-        router.push("/kids")
-        break
+        return <KidsSection />
+      case "Men":
+        return <MenSection />
+      case "Women":
+        return <WomenSection />
       case "All":
-        router.push("/productlist")
-        break
       default:
-        break
+        return renderAllContent()
     }
   }
 
-  return (
-    <div className="w-full">
-      {/* Mobile-only navigation and hero section */}
-      <div className="block sm:hidden">
-        {/* Mobile Navigation Tabs */}
-        <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
-          <div className="flex space-x-6">
-            {navigationTabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => handleTabClick(tab)}
-                className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
-                  activeTab === tab
-                    ? "text-[#f05a2b] border-[#f05a2b]"
-                    : "text-gray-600 border-transparent hover:text-gray-900"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-          <Grid3X3 className="w-5 h-5 text-gray-600" />
-        </div>
-
-        {/* Category Icons */}
-        <div className="flex justify-between px-4 py-4 bg-gray-50">
-          {categoryIcons.map((category) => (
-            <Link key={category.name} href={`/${category.name.toLowerCase()}`}>
-              <div className="flex flex-col items-center space-y-2 cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="w-12 h-12 bg-gray-200 rounded-xl overflow-hidden flex items-center justify-center">
-                  <Image
-                    src={category.icon || "/placeholder.svg"}
-                    alt={category.name}
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className="text-xs text-gray-600">{category.name}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Search Bar */}
-        <div className="px-4 py-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search Product..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#f05a2b] focus:bg-white"
-            />
-          </div>
-        </div>
-
-        {/* Mobile Hero Section */}
-        <div className="relative h-[400px] mx-4 rounded-2xl overflow-hidden">
-          <Image src={heroSlides[currentSlide].image || "/placeholder.svg"} alt="Hero" fill className="object-cover" />
-          <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute bottom-6 left-6 right-6 text-white">
-            <h1 className="text-3xl font-bold mb-2">{heroSlides[currentSlide].title}</h1>
-            <p className="text-sm mb-4 opacity-90">{heroSlides[currentSlide].subtitle}</p>
-            <Button className="bg-[#f05a2b] hover:bg-[#de491a] text-white rounded-full px-6 py-3">
-              {heroSlides[currentSlide].buttonText} →
-            </Button>
-          </div>
-        </div>
-
-        {/* Pagination Dots */}
-        <div className="flex justify-center space-x-2 py-4">
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                currentSlide === index ? "bg-[#f05a2b]" : "bg-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
+  const renderAllContent = () => (
+    <>
       <div className="hidden sm:block">
         {/* Hero */}
         <section className="px-6 lg:px-20 pt-10 pb-8">
@@ -284,7 +201,10 @@ export default function Home() {
 
       {/* Collections mosaic */}
       <section className="px-6 lg:px-20 relative">
-        <div className=" cursor-pointer hidden lg:block fixed right-0 top-1/2 -translate-y-1/2 bg-[#ff6a1a] text-white px-3 py-2 rounded-l-md font-semibold tracking-wider [writing-mode:vertical-rl]" onClick={() => setShowPromoBanner(true)}>
+        <div
+          className=" cursor-pointer hidden lg:block fixed right-0 top-1/2 -translate-y-1/2 bg-[#ff6a1a] text-white px-3 py-2 rounded-l-md font-semibold tracking-wider [writing-mode:vertical-rl]"
+          onClick={() => setShowPromoBanner(true)}
+        >
           UPTO ₹300 OFF
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -470,6 +390,102 @@ export default function Home() {
           ))}
         </div>
       </section>
+    </>
+  )
+
+  return (
+    <div className="w-full">
+      {/* Mobile-only navigation and hero section */}
+      <div className="block sm:hidden">
+        {/* Mobile Navigation Tabs */}
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
+          <div className="flex space-x-6">
+            {navigationTabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => handleTabClick(tab)}
+                className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
+                  activeTab === tab
+                    ? "text-[#f05a2b] border-[#f05a2b]"
+                    : "text-gray-600 border-transparent hover:text-gray-900"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <Grid3X3 className="w-5 h-5 text-gray-600" />
+        </div>
+
+        {activeTab === "All" && (
+          <>
+            {/* Category Icons */}
+            <div className="flex justify-between px-4 py-4 bg-gray-50">
+              {categoryIcons.map((category) => (
+                <Link key={category.name} href={`/${category.name.toLowerCase()}`}>
+                  <div className="flex flex-col items-center space-y-2 cursor-pointer hover:opacity-80 transition-opacity">
+                    <div className="w-12 h-12 bg-gray-200 rounded-xl overflow-hidden flex items-center justify-center">
+                      <Image
+                        src={category.icon || "/placeholder.svg"}
+                        alt={category.name}
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="text-xs text-gray-600">{category.name}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Search Bar */}
+            <div className="px-4 py-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search Product..."
+                  className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#f05a2b] focus:bg-white"
+                />
+              </div>
+            </div>
+
+            {/* Mobile Hero Section */}
+            <div className="relative h-[400px] mx-4 rounded-2xl overflow-hidden">
+              <Image
+                src={heroSlides[currentSlide].image || "/placeholder.svg"}
+                alt="Hero"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-black/20" />
+              <div className="absolute bottom-6 left-6 right-6 text-white">
+                <h1 className="text-3xl font-bold mb-2">{heroSlides[currentSlide].title}</h1>
+                <p className="text-sm mb-4 opacity-90">{heroSlides[currentSlide].subtitle}</p>
+                <Button className="bg-[#f05a2b] hover:bg-[#de491a] text-white rounded-full px-6 py-3">
+                  {heroSlides[currentSlide].buttonText} →
+                </Button>
+              </div>
+            </div>
+
+            {/* Pagination Dots */}
+            <div className="flex justify-center space-x-2 py-4">
+              {heroSlides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    currentSlide === index ? "bg-[#f05a2b]" : "bg-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      {renderTabContent()}
     </div>
   )
 }

@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
         <head>
-          <link rel="icon" type="image/png" href="/logo.png" />
+          <link rel="icon" type="image/png" href="/icon.png" />
         </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} px-4 sm:px-6 lg:px-20`}
