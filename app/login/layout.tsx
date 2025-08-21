@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-
+import DolchiLogo from '@/components/DolchiLogo'
+import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'Authentication | Dolchi',
   description: 'Sign in or create an account to get started',
@@ -11,17 +12,13 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white mt-[-12px] md:mt-0">
       {/* Optional: Add a header with logo */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center">
-            {/* Replace with your logo */}
-            <div className="text-2xl font-bold text-[#d9673f]">
-              Dolchi
-            </div>
-          </div>
-        </div>
+      <div className="absolute top-0 left-0 right-0 z-10 p-3">
+    <Link href="/">
+    <DolchiLogo className="h-12 w-auto mb-6" width={100} height={52} />
+    </Link>
+
       </div>
 
       {/* Main content */}

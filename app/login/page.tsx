@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import DolchiLogo from '@/components/DolchiLogo'
 import Link from 'next/link'
 import { ArrowRight, Eye, EyeOff, ChevronDown, Check, Edit3 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -98,6 +99,8 @@ export default function UnifiedAuthComponent() {
   const [countryCode, setCountryCode] = useState('+91')
   const [showCountryDropdown, setShowCountryDropdown] = useState(false)
   const [otp, setOtp] = useState('')
+  const [otpBoxes, setOtpBoxes] = useState<string[]>(['', '', '', '', '', ''])
+  const otpRefs = React.useRef<Array<HTMLInputElement | null>>([])
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [fullName, setFullName] = useState('')
@@ -125,6 +128,7 @@ export default function UnifiedAuthComponent() {
   const [error, setError] = useState('')
   const [redirecting, setRedirecting] = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
+  const RESEND_SECONDS = 24
 
   // Enhanced token storage and management helper
   const setAuthTokens = React.useCallback((token: string, user?: User) => {
@@ -314,7 +318,7 @@ export default function UnifiedAuthComponent() {
     }
 
     setOtpSent(true)
-    setResendTimer(30)
+    setResendTimer(RESEND_SECONDS)
   }, [contactType])
 
   // Send OTP for existing users
@@ -338,7 +342,7 @@ export default function UnifiedAuthComponent() {
     }
 
     setOtpSent(true)
-    setResendTimer(30)
+    setResendTimer(RESEND_SECONDS)
   }, [])
 
   // Main entry point: Handle continue from step 1
@@ -579,13 +583,45 @@ export default function UnifiedAuthComponent() {
       } else {
         await handleSendOTPForNewUser(verifiedContact)
       }
-      setResendTimer(30)
+      setResendTimer(RESEND_SECONDS)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to resend OTP')
     } finally {
       setLoading(false)
     }
   }, [resendTimer, userExists, verifiedContact, handleSendOTPForExistingUser, handleSendOTPForNewUser])
+
+  // OTP box handlers (mobile design)
+  const handleOtpBoxChange = React.useCallback((index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(0, 1)
+    setOtpBoxes((prev) => {
+      const next = [...prev]
+      next[index] = digit
+      const joined = next.join('')
+      setOtp(joined)
+      return next
+    })
+    if (digit && otpRefs.current[index + 1]) {
+      otpRefs.current[index + 1]?.focus()
+    }
+  }, [])
+
+  const handleOtpKeyDown = React.useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpBoxes[index] && otpRefs.current[index - 1]) {
+      otpRefs.current[index - 1]?.focus()
+    }
+  }, [otpBoxes])
+
+  const handleOtpPaste = React.useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    const next = ['', '', '', '', '', '']
+    for (let i = 0; i < text.length; i++) next[i] = text[i]
+    setOtpBoxes(next)
+    setOtp(text)
+    const nextIndex = Math.min(text.length, 5)
+    otpRefs.current[nextIndex]?.focus()
+  }, [])
 
   // Handle request OTP for existing users
   const handleRequestOTP = React.useCallback(async (): Promise<void> => {
@@ -640,34 +676,57 @@ export default function UnifiedAuthComponent() {
   }, [handleEditCountrySelect])
 
   return (
-    <div className="min-h-screen bg-[url('/login.svg')] md:bg-none bg-cover bg-center bg-no-repeat relative">
-      <div className="absolute inset-0 bg-black/30 md:bg-transparent">
+    <div className="min-h-screen md:bg-none bg-white relative">
+      <div className="">
         <div className="flex min-h-screen">
           {/* Left Image */}
           <div className="relative w-1/2 hidden lg:block">
             <Image 
-              src="/login.svg" 
+              src="/banner.svg" 
               alt="Auth Visual" 
               fill 
               className="object-cover" 
               priority 
             />
+            <div className="absolute inset-0 bg-black/35" />
+            <div className="absolute inset-0 flex flex-col justify-center px-14 text-white">
+              <DolchiLogo className="h-12 w-auto mb-6" width={160} height={52} />
+              <h1 className="text-5xl font-semibold leading-tight max-w-xl">
+                Fashion Moves Fast
+                <br />
+                 Stay Ahead
+              </h1>
+              <p className="mt-6 text-lg max-w-lg opacity-90">
+                Discover fashion that reflects your values and your style. Sustainably sourced, thoughtfully designed, endlessly stylish.
+              </p>
+            </div>
           </div>
 
           {/* Right Form */}
-          <div className="w-full lg:w-1/2 flex flex-col justify-center p-4 sm:p-6 md:p-8 lg:px-20">
+          <div className="w-full lg:w-1/2 flex flex-col justify-center p-3 sm:p-6 md:p-8 lg:px-20">
             <div className="max-w-md w-full mx-auto space-y-6 relative z-10">
+              {/* Mobile hero header */}
+              <div className="lg:hidden relative h-70 -mx-5 sm:-mx-6 md:-mx-8 mb-2 overflow-hidden rounded-b-md">
+                <Image src="/banner.svg" alt="Welcome" fill className="object-cover" />
+                <div className="absolute inset-0 bg-black/30" />
+                <div className="relative z-10 h-full flex flex-col items-center justify-center text-white">
+                  <Link href="/home" aria-label="Go to Home">
+                    <DolchiLogo className="h-8 w-auto mb-0" width={120} height={40} />
+                  </Link>
+                  <p className="text-white text-base font-medium">Welcome to the DOLCHI</p>
+                  <p className="text-white/80 text-xs">One Account. Endless Style.</p>
+                </div>
+              </div>
               
               {/* Step 1: Unified Contact Input & User Detection */}
               {step === 1 && (
                 <>
-                  <div className="text-center space-y-3">
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-                      Welcome
-                    </h1>
-                    <p className="text-sm text-gray-600">
-                      Enter your email or mobile number to continue
-                    </p>
+                  <div className="hidden lg:block text-center space-y-1">
+                    <Link href="/home" aria-label="Go to Home">
+                      <DolchiLogo className="h-10 w-auto mx-auto mb-2" width={120} height={40} />
+                    </Link>
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Welcome to the DOLCHI</h1>
+                    <p className="text-gray-500 text-sm">One Account. Endless Style.</p>
                   </div>
 
                   {error && (
@@ -676,9 +735,30 @@ export default function UnifiedAuthComponent() {
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="contact" className="uppercase text-xs text-orange-600 font-semibold tracking-wide">
-                      Email/Mobile No.
+                  {/* Social Login Buttons */}
+                  <div className="space-y-3">
+                    <Button 
+                      type="button"
+                      onClick={() => handleSocialLogin('google')}
+                      variant="outline"
+                      className="w-full h-12 flex items-center justify-center gap-3 hover:bg-gray-50 transition-all duration-200 border-2 font-medium"
+                    >
+                      <Image src="/google.svg" alt="Google" width={20} height={20} />
+                      <span>Continue with Google</span>
+                    </Button>
+                    <Button 
+                      type="button"
+                      onClick={() => handleSocialLogin('facebook')}
+                      className="w-full h-12 flex items-center justify-center gap-3 bg-[#1877f2] hover:bg-[#166fe0] text-white font-medium"
+                    >
+                      <Image src="/facebook.svg" alt="Facebook" width={20} height={20} />
+                      <span>Continue with Facebook</span>
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="contact" className="text-sm font-medium text-gray-700">
+                      Email / mobile no.
                     </Label>
                     <div className="flex">
                       {contactType === 'mobile' && (
@@ -686,13 +766,12 @@ export default function UnifiedAuthComponent() {
                           <button
                             type="button"
                             onClick={toggleCountryDropdown}
-                            className="flex items-center gap-2 px-3 py-2 border border-r-0 rounded-l-md bg-gray-50 hover:bg-gray-100 transition-colors min-w-[80px] h-10"
+                            className="flex items-center gap-2 px-3 py-2 border border-r-0 rounded-l-md bg-gray-50 hover:bg-gray-100 transition-colors min-w-[80px] h-12"
                           >
                             <span className="text-lg">{countryCodes.find(c => c.code === countryCode)?.flag}</span>
                             <span className="text-sm font-medium">{countryCode}</span>
                             <ChevronDown size={14} className={`transition-transform ${showCountryDropdown ? 'rotate-180' : ''}`} />
                           </button>
-                          
                           {showCountryDropdown && (
                             <div className="absolute top-full left-0 mt-1 bg-white border rounded-md shadow-lg z-20 w-48 max-h-48 overflow-y-auto">
                               {countryCodes.map((country) => (
@@ -716,31 +795,13 @@ export default function UnifiedAuthComponent() {
                         type="text"
                         value={contactInput}
                         onChange={(e) => setContactInput(e.target.value)}
-                        className={`${contactType === 'mobile' ? 'rounded-l-none' : ''} h-10`}
+                        className={`${contactType === 'mobile' ? 'rounded-l-none' : ''} h-12`}
                         autoComplete={contactType === 'mobile' ? 'tel' : 'email'}
                         onBlur={handleContactBlur}
-                        placeholder={contactType === 'mobile' ? 'Enter mobile number' : 'Enter email address'}
+                        placeholder={contactType === 'mobile' ? 'Enter mobile number*' : 'Enter your email / mobile number*'}
                       />
                     </div>
                   </div>
-
-                  <Button
-                    onClick={handleContinue}
-                    disabled={loading || !contactInput.trim()}
-                    className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white disabled:opacity-50 h-12 font-semibold tracking-wide text-base transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Checking...
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Continue
-                        <ArrowRight size={18} />
-                      </span>
-                    )}
-                  </Button>
 
                   {/* Terms and Conditions */}
                   <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border">
@@ -751,54 +812,29 @@ export default function UnifiedAuthComponent() {
                         onCheckedChange={setAcceptTerms}
                       />
                     </div>
-                    <div className="text-sm text-gray-700 leading-relaxed flex-1">
+                    <div className="text-xs text-gray-700 leading-relaxed flex-1">
                       <Label htmlFor="terms" className="cursor-pointer block">
-                        By continuing, I agree to the{' '}
-                        <Link 
-                          href="/terms" 
-                          className="text-[#d9673f] hover:text-[#c2552d] underline font-semibold transition-colors duration-200 hover:decoration-2"
-                        >
-                          Terms of Use
-                        </Link>{' '}
-                        and{' '}
-                        <Link 
-                          href="/privacy" 
-                          className="text-[#d9673f] hover:text-[#c2552d] underline font-semibold transition-colors duration-200 hover:decoration-2"
-                        >
-                          Privacy Policy
-                        </Link>
+                        By continuing you agree to the{' '}
+                        <Link href="/terms" className="text-[#d9673f] underline font-semibold">Terms of Uses</Link>
+                        {' '} & Privacy Policy and I am above 18 years old.
                       </Label>
                     </div>
                   </div>
 
-                  {/* Divider */}
-                  <div className="flex items-center gap-4 text-gray-500 text-sm">
-                    <hr className="flex-grow border-gray-300" />
-                    <span className="px-2 bg-white text-gray-400 font-medium">Continue with</span>
-                    <hr className="flex-grow border-gray-300" />
-                  </div>
-
-                  {/* Social Login Buttons */}
-                  <div className="space-y-3">
-                    <Button 
-                      type="button"
-                      onClick={() => handleSocialLogin('google')}
-                      variant="outline"
-                      className="w-full h-12 flex items-center justify-center gap-3 hover:bg-gray-50 transition-all duration-200 border-2 font-medium"
-                    >
-                      <Image src="/google.svg" alt="Google" width={20} height={20} />
-                      <span>Continue with Google</span>
-                    </Button>
-                    <Button 
-                      type="button"
-                      onClick={() => handleSocialLogin('facebook')}
-                      variant="outline"
-                      className="w-full h-12 flex items-center justify-center gap-3 hover:bg-gray-50 transition-all duration-200 border-2 font-medium"
-                    >
-                      <Image src="/facebook.svg" alt="Facebook" width={20} height={20} />
-                      <span>Continue with Facebook</span>
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={handleContinue}
+                    disabled={loading || !contactInput.trim() || !acceptTerms}
+                    className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white disabled:opacity-50 h-12 font-semibold tracking-wide text-base"
+                  >
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Checking...
+                      </span>
+                    ) : (
+                      'Continue'
+                    )}
+                  </Button>
                 </>
               )}
 
@@ -807,20 +843,10 @@ export default function UnifiedAuthComponent() {
                 <>
                   <div className="text-center space-y-2">
                     <h2 className="text-3xl md:text-4xl font-bold text-gray-800">
-                      {userExists ? 'Welcome Back' : 'Create Account'}
+                      {userExists ? 'Welcome back to the DOLCHI' : 'Create your profile'}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      {userExists ? (
-                        'Sign in to your account'
-                      ) : (
-                        <>
-                          We&apos;ve sent a verification code to
-                          <br />
-                          <span className="font-semibold text-[#d9673f]">
-                            {verifiedContact}
-                          </span>
-                        </>
-                      )}
+                      {userExists ? 'Sign in your account' : 'Please provide your full name and create a password'}
                     </p>
                   </div>
 
@@ -980,18 +1006,24 @@ export default function UnifiedAuthComponent() {
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="otp" className="uppercase text-xs text-orange-600 font-medium">
-                          Enter OTP
+                          Verification code
                         </Label>
-                        <Input
-                          id="otp"
-                          type="text"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          maxLength={6}
-                          className="text-center text-lg tracking-widest h-12 font-medium"
-                          autoComplete="one-time-code"
-                          placeholder="000000"
-                        />
+                        <div className="flex items-center gap-3" onPaste={handleOtpPaste}>
+                          {otpBoxes.map((val, idx) => (
+                            <Input
+                              key={idx}
+                              ref={(el) => { otpRefs.current[idx] = el }}
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              className="w-12 h-12 text-center text-lg"
+                              value={val}
+                              onChange={(e) => handleOtpBoxChange(idx, e.target.value)}
+                              onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                              maxLength={1}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500">Please enter the one-time password sent to your phone.</p>
                       </div>
 
                       <div className="text-center">
@@ -1001,13 +1033,13 @@ export default function UnifiedAuthComponent() {
                           disabled={resendTimer > 0 || loading}
                           className="text-sm text-orange-600 hover:text-orange-700 underline disabled:text-gray-400 disabled:no-underline transition-colors"
                         >
-                          {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+                          {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP in ${RESEND_SECONDS}s`}
                         </button>
                       </div>
 
                       <Button
                         onClick={handleVerifyOTP}
-                        disabled={loading || !otp.trim()}
+                        disabled={loading || otp.length !== 6}
                         className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                       >
                         {loading ? 'Verifying...' : 'Verify OTP'}
@@ -1022,10 +1054,8 @@ export default function UnifiedAuthComponent() {
               {step === 3 && (
                 <>
                   <div className="text-center space-y-2">
-                    <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Complete Your Profile</h2>
-                    <p className="text-sm text-gray-600">
-                      Please provide your full name and create a password
-                    </p>
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Create your profile</h2>
+                    <p className="text-sm text-gray-600">Please provide your full name and create a password</p>
                   </div>
 
                   {error && (
@@ -1064,6 +1094,7 @@ export default function UnifiedAuthComponent() {
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
+                      <p className="text-xs text-gray-600">Password must be at least 1 number, 1 capital letter, and 6 - 12 character long</p>
                     </div>
                   </div>
 
@@ -1084,7 +1115,7 @@ export default function UnifiedAuthComponent() {
       {/* Loading overlay during redirect */}
       {redirecting && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3">
+          <div className="bg-white p-0 rounded-lg shadow-lg flex items-center gap-3">
             <div className="w-6 h-6 border-2 border-[#d9673f] border-t-transparent rounded-full animate-spin" />
             <span className="text-gray-700 font-medium">Logging you in...</span>
           </div>
