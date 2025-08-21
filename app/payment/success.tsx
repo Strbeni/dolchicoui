@@ -32,7 +32,7 @@ const PaymentSuccess = () => {
           </div>
         )}
 
-        <Link href="/home">
+        <Link href="/home" legacyBehavior>
           <Button className="w-full">Continue Shopping</Button>
         </Link>
       </div>

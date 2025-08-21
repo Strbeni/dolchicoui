@@ -1,0 +1,240 @@
+ .filterBarWrapper {
+  display: flex;
+  width: 400px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  font-family: 'Inter', sans-serif;
+}
+
+@media (max-width: 600px) {
+  .filterBarWrapper {
+    flex-direction: column;
+    width: 100vw;
+    min-height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    background: #fff;
+  }
+  .sidebar {
+    width: 100vw;
+    flex-direction: column;
+    border-right: none;
+    border-bottom: none;
+    padding: 0;
+    background: #fff;
+    box-shadow: none;
+  }
+  .sidebarItem, .sidebarItemActive {
+    width: 100vw;
+    min-width: unset;
+    padding: 18px 20px;
+    font-size: 17px;
+    border-left: none;
+    border-bottom: 1px solid #f2f2f2;
+    border-radius: 0;
+    justify-content: flex-start;
+    color: #222;
+    font-weight: 600;
+    background: #fff;
+  }
+  .sidebarItemActive {
+    background: #f7f7f7;
+    color: #e91e63;
+    border-bottom: 2px solid #e91e63;
+  }
+  .optionCount {
+    font-size: 13px;
+    color: #aaa;
+    margin-left: 8px;
+  }
+  .mainPanel {
+    padding: 0 20px;
+    min-height: 60vh;
+    width: 100vw;
+    box-sizing: border-box;
+  }
+  .header {
+    margin-bottom: 18px;
+    padding-top: 18px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .clearAll {
+    color: #e91e63;
+    font-size: 16px;
+    font-weight: 700;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .optionsList {
+    margin-bottom: 24px;
+    gap: 18px;
+  }
+  .optionItem {
+    font-size: 16px;
+    padding: 12px 0;
+    gap: 16px;
+    align-items: center;
+  }
+  .count {
+    font-size: 15px;
+    color: #aaa;
+    margin-left: auto;
+  }
+  .footer {
+    padding: 16px 20px;
+    font-size: 16px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    z-index: 10000;
+  }
+  .close {
+    background: none;
+    border: none;
+    color: #222;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .apply {
+    background: #e91e63;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(233,30,99,0.08);
+  }
+}
+
+.sidebar {
+  width: 140px;
+  background: #f7f7f7;
+  border-right: 1px solid #eee;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarItem {
+  padding: 10px 20px;
+  cursor: pointer;
+  color: #333;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 3px solid transparent;
+}
+
+.sidebarItemActive {
+  background: #fff;
+  border-left: 3px solid #e91e63;
+  color: #e91e63;
+}
+
+.optionCount {
+  font-size: 12px;
+  color: #aaa;
+  margin-left: 8px;
+}
+
+.mainPanel {
+  flex: 1;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #222;
+}
+
+.clearAll {
+  background: none;
+  border: none;
+  color: #e91e63;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.optionsList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.optionItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #333;
+  font-weight: 500;
+}
+
+.count {
+  margin-left: auto;
+  color: #aaa;
+  font-size: 13px;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+}
+
+.close {
+  background: none;
+  border: none;
+  color: #222;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.apply {
+  background: #e91e63;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
