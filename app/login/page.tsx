@@ -258,7 +258,7 @@ export default function UnifiedAuthComponent() {
     if (!emailOrPhone.trim()) return { exists: false }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
 
       const res = await fetch(`${API_BASE_URL}/api/user/auth/check-user`, {
         method: "POST",
@@ -291,7 +291,7 @@ export default function UnifiedAuthComponent() {
   // Send OTP for new user registration
   const handleSendOTPForNewUser = React.useCallback(
     async (cleanContact: string): Promise<void> => {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
 
       const payload = contactType === "mobile" ? { phoneNumber: cleanContact } : { email: cleanContact }
 
@@ -319,7 +319,7 @@ export default function UnifiedAuthComponent() {
 
   // Send OTP for existing users
   const handleSendOTPForExistingUser = React.useCallback(async (cleanContact: string): Promise<void> => {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
 
     const res = await fetch(`${API_BASE_URL}/api/user/auth/send-otp`, {
       method: "POST",
@@ -430,7 +430,7 @@ export default function UnifiedAuthComponent() {
     setError("")
     setLoading(true)
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
     const endpoint = verifiedContactType === "mobile" ? "verify-phone-otp" : "verify-email-otp"
 
     const payload =
@@ -479,7 +479,7 @@ export default function UnifiedAuthComponent() {
     setError("")
     setLoading(true)
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
     const payload = { emailOrPhone: verifiedContact, password }
 
     try {
@@ -518,7 +518,7 @@ export default function UnifiedAuthComponent() {
     setError("")
     setLoading(true)
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
     const payload = {
       userId: userId,
       name: fullName.trim(),
@@ -556,41 +556,32 @@ export default function UnifiedAuthComponent() {
     }
   }, [userId, fullName, password, setAuthTokens])
 
-  // Improved: Use env variable for Google OAuth endpoint and handle redirect
-  const handleSocialLogin = React.useCallback((provider: "google" | "facebook"): void => {
-    if (provider === "google") {
-      // Try multiple fallback URLs for Google OAuth
-      let GOOGLE_OAUTH_URL = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL
+  // Enhanced: Use env variable for Google OAuth endpoint and handle redirect
+  const handleSocialLogin = React.useCallback(async (provider: "google" | "facebook"): void => {
+    try {
+      console.log(`[v0] Starting ${provider} OAuth login`)
 
-      if (!GOOGLE_OAUTH_URL) {
-        // Fallback to standard API endpoint
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
-        GOOGLE_OAUTH_URL = `${API_BASE_URL}/api/user/auth/google`
+      let OAUTH_URL =
+        provider === "google" ? process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL : process.env.NEXT_PUBLIC_FACEBOOK_OAUTH_URL
+
+      console.log(`[v0] ${provider} OAuth URL from env:`, OAUTH_URL)
+
+      if (!OAUTH_URL) {
+        // Fallback to standard API endpoint with correct base URL
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+        OAUTH_URL = `${API_BASE_URL}/api/user/auth/${provider}`
+        console.log(`[v0] Using fallback ${provider} OAuth URL:`, OAUTH_URL)
       }
 
-      try {
-        console.log("Redirecting to Google OAuth:", GOOGLE_OAUTH_URL)
-        window.location.href = GOOGLE_OAUTH_URL
-      } catch (error) {
-        console.error("Google OAuth redirect failed:", error)
-        setError("Google login is currently unavailable. Please try again or use email/phone login.")
-      }
-    } else if (provider === "facebook") {
-      // Facebook OAuth implementation
-      let FACEBOOK_OAUTH_URL = process.env.NEXT_PUBLIC_FACEBOOK_OAUTH_URL
-
-      if (!FACEBOOK_OAUTH_URL) {
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
-        FACEBOOK_OAUTH_URL = `${API_BASE_URL}/api/user/auth/facebook`
-      }
-
-      try {
-        console.log("Redirecting to Facebook OAuth:", FACEBOOK_OAUTH_URL)
-        window.location.href = FACEBOOK_OAUTH_URL
-      } catch (error) {
-        console.error("Facebook OAuth redirect failed:", error)
-        setError("Facebook login is currently unavailable. Please try again or use email/phone login.")
-      }
+      // Add current page as redirect parameter
+      const redirectUrl = `${OAUTH_URL}?redirect=${encodeURIComponent(window.location.origin + "/home")}`
+      console.log(`[v0] Final redirect URL:`, redirectUrl)
+      window.location.href = redirectUrl
+    } catch (error) {
+      console.error(`[v0] ${provider} OAuth redirect failed:`, error)
+      setError(
+        `${provider.charAt(0).toUpperCase() + provider.slice(1)} login is currently unavailable. Please try again or use email/phone login.`,
+      )
     }
   }, [])
 

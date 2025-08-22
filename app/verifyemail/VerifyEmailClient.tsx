@@ -25,11 +25,11 @@ export default function VerifyEmailClient() {
       setError("")
 
       try {
-        const API_BASE_URL =
-          typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL
-            ? process.env.NEXT_PUBLIC_API_BASE_URL
-            : "http://localhost:4000"
-        console.log("Verifying email token:", urlToken)
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+
+        console.log(`[v0] Environment variable NEXT_PUBLIC_API_BASE_URL:`, process.env.NEXT_PUBLIC_API_BASE_URL)
+        console.log(`[v0] Verifying email token:`, urlToken)
+        console.log(`[v0] Using API base URL:`, API_BASE_URL)
 
         const res = await fetch(`${API_BASE_URL}/api/user/verify-email`, {
           method: "POST",
@@ -39,16 +39,27 @@ export default function VerifyEmailClient() {
           body: JSON.stringify({ token: urlToken }),
         })
 
+        console.log(`[v0] Verify email response status:`, res.status)
+        console.log(`[v0] Verify email response headers:`, Object.fromEntries(res.headers.entries()))
+
         let data
         try {
-          data = await res.json()
+          const responseText = await res.text()
+          console.log(`[v0] Raw response text:`, responseText)
+
+          if (!responseText) {
+            throw new Error("Empty response from server")
+          }
+
+          data = JSON.parse(responseText)
+          console.log(`[v0] Parsed response data:`, data)
         } catch (jsonErr) {
-          console.error("JSON parsing error:", jsonErr)
+          console.error(`[v0] JSON parsing error:`, jsonErr)
           throw new Error("Invalid server response. Please try again.")
         }
 
         if (!res.ok) {
-          console.error("Verification API error:", res.status, data)
+          console.error(`[v0] Verification API error:`, res.status, data)
           throw new Error(data?.message || `Verification failed (${res.status}). Please try again.`)
         }
 
@@ -56,11 +67,11 @@ export default function VerifyEmailClient() {
           throw new Error(data?.message || "Email verification failed")
         }
 
-        console.log("Email verified successfully")
+        console.log(`[v0] Email verified successfully`)
         setSuccess(true)
         setTimeout(() => router.push("/login"), 2000)
       } catch (err) {
-        console.error("Email verification error:", err)
+        console.error(`[v0] Email verification error:`, err)
         setError(err instanceof Error ? err.message : "An unexpected error occurred during verification")
       } finally {
         setLoading(false)

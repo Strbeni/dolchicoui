@@ -37,11 +37,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // API Configuration
-  const API_BASE =
-    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL
-      ? process.env.NEXT_PUBLIC_API_BASE_URL
-      : "http://localhost:4000") + "/api/user"
+  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com") + "/api/user"
   const RESEND_SECONDS = 24
 
   // Password validation
@@ -70,6 +66,10 @@ export default function ForgotPassword() {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout
 
+    console.log(`[v0] Environment variable NEXT_PUBLIC_API_BASE_URL:`, process.env.NEXT_PUBLIC_API_BASE_URL)
+    console.log(`[v0] Making API call to: ${API_BASE}${endpoint}`)
+    console.log(`[v0] Request body:`, body)
+
     try {
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
@@ -81,23 +81,34 @@ export default function ForgotPassword() {
       })
 
       clearTimeout(timeoutId)
+      console.log(`[v0] API response status:`, response.status)
+      console.log(`[v0] API response headers:`, Object.fromEntries(response.headers.entries()))
 
       let data
       try {
-        data = await response.json()
+        const responseText = await response.text()
+        console.log(`[v0] Raw response text:`, responseText)
+
+        if (!responseText) {
+          throw new Error("Empty response from server")
+        }
+
+        data = JSON.parse(responseText)
+        console.log(`[v0] Parsed response data:`, data)
       } catch (jsonErr) {
-        console.error("JSON parsing error:", jsonErr)
+        console.error(`[v0] JSON parsing error:`, jsonErr)
         throw new Error("Invalid server response. Please try again.")
       }
 
       if (!response.ok) {
-        console.error("API Error:", response.status, data)
+        console.error(`[v0] API Error:`, response.status, data)
         throw new Error(data?.message || `Server error (${response.status}). Please try again.`)
       }
 
       return data
     } catch (err) {
       clearTimeout(timeoutId)
+      console.error(`[v0] API call failed:`, err)
       if (err instanceof Error) {
         if (err.name === "AbortError") {
           throw new Error("Request timeout. Please check your connection and try again.")

@@ -53,8 +53,11 @@ function VerifyEmailClient() {
       setMessage("")
 
       try {
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
-        console.log("Verifying token:", urlToken)
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+
+        console.log(`[v0] Environment variable NEXT_PUBLIC_API_BASE_URL:`, process.env.NEXT_PUBLIC_API_BASE_URL)
+        console.log(`[v0] Verifying token:`, urlToken)
+        console.log(`[v0] Using API base URL:`, API_BASE_URL)
 
         const res = await fetch(`${API_BASE_URL}/api/user/verify-email`, {
           method: "POST",
@@ -64,16 +67,42 @@ function VerifyEmailClient() {
           body: JSON.stringify({ token: urlToken }),
         })
 
+        console.log(`[v0] Token verification response status:`, res.status)
+        console.log(`[v0] Token verification response headers:`, Object.fromEntries(res.headers.entries()))
+
         let data
         try {
-          data = await res.json()
+          const responseText = await res.text()
+          console.log(`[v0] Raw response text:`, responseText)
+
+          if (!responseText) {
+            throw new Error("Empty response from server")
+          }
+
+          if (responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
+            console.error(`[v0] Server returned HTML instead of JSON:`, responseText.substring(0, 200))
+            throw new Error(
+              "Server error: The verification endpoint is not available. Please try again later or contact support.",
+            )
+          }
+
+          data = JSON.parse(responseText)
+          console.log(`[v0] Parsed response data:`, data)
         } catch (jsonErr) {
-          console.error("JSON parsing error:", jsonErr)
+          console.error(`[v0] JSON parsing error:`, jsonErr)
+          if (jsonErr instanceof SyntaxError) {
+            throw new Error("Server returned invalid response format. Please try again or contact support.")
+          }
           throw new Error("Invalid server response. Please try again.")
         }
 
         if (!res.ok) {
-          console.error("Verification API error:", res.status, data)
+          console.error(`[v0] Verification API error:`, res.status, data)
+          if (res.status === 404) {
+            throw new Error("Verification endpoint not found. Please check your email link or contact support.")
+          } else if (res.status === 500) {
+            throw new Error("Server error occurred. Please try again later.")
+          }
           throw new Error(data?.message || `Verification failed (${res.status}). Please try again.`)
         }
 
@@ -81,14 +110,14 @@ function VerifyEmailClient() {
           throw new Error(data?.message || "Email verification failed")
         }
 
-        console.log("Email verified successfully")
+        console.log(`[v0] Email verified successfully`)
         setStatus("verified")
         setMessage("Email verified successfully!")
 
         // Redirect after 2 seconds
         setTimeout(() => router.push("/login"), 2000)
       } catch (err) {
-        console.error("Token verification error:", err)
+        console.error(`[v0] Token verification error:`, err)
         setStatus("invalid")
         if (err instanceof Error) {
           setMessage(err.message)
@@ -115,8 +144,11 @@ function VerifyEmailClient() {
     }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
-      console.log("Resending verification token to:", email)
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+
+      console.log(`[v0] Environment variable NEXT_PUBLIC_API_BASE_URL:`, process.env.NEXT_PUBLIC_API_BASE_URL)
+      console.log(`[v0] Resending verification token to:`, email)
+      console.log(`[v0] Using API base URL:`, API_BASE_URL)
 
       const res = await fetch(`${API_BASE_URL}/api/user/resend-verification-token`, {
         method: "POST",
@@ -126,16 +158,42 @@ function VerifyEmailClient() {
         body: JSON.stringify({ email }),
       })
 
+      console.log(`[v0] Resend token response status:`, res.status)
+      console.log(`[v0] Resend token response headers:`, Object.fromEntries(res.headers.entries()))
+
       let data
       try {
-        data = await res.json()
+        const responseText = await res.text()
+        console.log(`[v0] Raw response text:`, responseText)
+
+        if (!responseText) {
+          throw new Error("Empty response from server")
+        }
+
+        if (responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
+          console.error(`[v0] Server returned HTML instead of JSON:`, responseText.substring(0, 200))
+          throw new Error(
+            "Server error: The resend token endpoint is not available. Please try again later or contact support.",
+          )
+        }
+
+        data = JSON.parse(responseText)
+        console.log(`[v0] Parsed response data:`, data)
       } catch (jsonErr) {
-        console.error("JSON parsing error:", jsonErr)
+        console.error(`[v0] JSON parsing error:`, jsonErr)
+        if (jsonErr instanceof SyntaxError) {
+          throw new Error("Server returned invalid response format. Please try again or contact support.")
+        }
         throw new Error("Invalid server response. Please try again.")
       }
 
       if (!res.ok) {
-        console.error("Resend token API error:", res.status, data)
+        console.error(`[v0] Resend token API error:`, res.status, data)
+        if (res.status === 404) {
+          throw new Error("Resend token endpoint not found. Please contact support.")
+        } else if (res.status === 500) {
+          throw new Error("Server error occurred. Please try again later.")
+        }
         throw new Error(data?.message || `Failed to resend token (${res.status}). Please try again.`)
       }
 
@@ -143,11 +201,11 @@ function VerifyEmailClient() {
         throw new Error(data?.message || "Failed to resend verification token")
       }
 
-      console.log("Verification token resent successfully")
+      console.log(`[v0] Verification token resent successfully`)
       setMessage("A new verification token has been sent to your email.")
       setResendCooldown(24)
     } catch (err) {
-      console.error("Resend token error:", err)
+      console.error(`[v0] Resend token error:`, err)
       if (err instanceof Error) {
         setMessage(err.message)
       } else {
@@ -170,8 +228,11 @@ function VerifyEmailClient() {
     }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
-      console.log("Verifying OTP for:", email)
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+
+      console.log(`[v0] Environment variable NEXT_PUBLIC_API_BASE_URL:`, process.env.NEXT_PUBLIC_API_BASE_URL)
+      console.log(`[v0] Verifying OTP for:`, email)
+      console.log(`[v0] Using API base URL:`, API_BASE_URL)
 
       const res = await fetch(`${API_BASE_URL}/api/user/verify-otp`, {
         method: "POST",
@@ -181,16 +242,42 @@ function VerifyEmailClient() {
         body: JSON.stringify({ email, otp }),
       })
 
+      console.log(`[v0] OTP verification response status:`, res.status)
+      console.log(`[v0] OTP verification response headers:`, Object.fromEntries(res.headers.entries()))
+
       let data
       try {
-        data = await res.json()
+        const responseText = await res.text()
+        console.log(`[v0] Raw response text:`, responseText)
+
+        if (!responseText) {
+          throw new Error("Empty response from server")
+        }
+
+        if (responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
+          console.error(`[v0] Server returned HTML instead of JSON:`, responseText.substring(0, 200))
+          throw new Error(
+            "Server error: The OTP verification endpoint is not available. Please try again later or contact support.",
+          )
+        }
+
+        data = JSON.parse(responseText)
+        console.log(`[v0] Parsed response data:`, data)
       } catch (jsonErr) {
-        console.error("JSON parsing error:", jsonErr)
+        console.error(`[v0] JSON parsing error:`, jsonErr)
+        if (jsonErr instanceof SyntaxError) {
+          throw new Error("Server returned invalid response format. Please try again or contact support.")
+        }
         throw new Error("Invalid server response. Please try again.")
       }
 
       if (!res.ok) {
-        console.error("OTP verification API error:", res.status, data)
+        console.error(`[v0] OTP verification API error:`, res.status, data)
+        if (res.status === 404) {
+          throw new Error("OTP verification endpoint not found. Please contact support.")
+        } else if (res.status === 500) {
+          throw new Error("Server error occurred. Please try again later.")
+        }
         throw new Error(data?.message || `OTP verification failed (${res.status}). Please try again.`)
       }
 
@@ -198,14 +285,14 @@ function VerifyEmailClient() {
         throw new Error(data?.message || "OTP verification failed")
       }
 
-      console.log("OTP verified successfully")
+      console.log(`[v0] OTP verified successfully`)
       setStatus("verified")
       setMessage("Email verified successfully!")
 
       // Redirect after 2 seconds
       setTimeout(() => router.push("/login"), 2000)
     } catch (err) {
-      console.error("OTP verification error:", err)
+      console.error(`[v0] OTP verification error:`, err)
       if (err instanceof Error) {
         setMessage(err.message)
       } else {
