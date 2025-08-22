@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -127,22 +126,22 @@ export default function ProductDetailPage() {
   const [reviewFilter, setReviewFilter] = useState("all")
 
   // Related products state
-  const [relatedProducts, setRelatedProducts] = useState([])
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
   const [relatedLoading, setRelatedLoading] = useState(false)
-  const [menProducts, setMenProducts] = useState([])
-  const [womenProducts, setWomenProducts] = useState([])
+  const [menProducts, setMenProducts] = useState<Product[]>([])
+  const [womenProducts, setWomenProducts] = useState<Product[]>([])
 
   // Wishlist state for related/popular products
-  const [wishlistMap, setWishlistMap] = useState({})
+  const [wishlistMap, setWishlistMap] = useState<Record<string, boolean>>({})
 
   // Handle wishlist toggle for related/popular products
-  const handleProductWishlistToggle = async (productId) => {
+  const handleProductWishlistToggle = async (productId: string) => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token")
     if (!token) {
       router.push("/login")
       return
     }
-    const isWishlisted = wishlistMap[productId]
+  const isWishlisted = (wishlistMap as Record<string, any>)[productId];
     try {
       if (isWishlisted) {
         // Remove from wishlist
@@ -172,7 +171,7 @@ export default function ProductDetailPage() {
   const [addingToWishlist, setAddingToWishlist] = useState(false)
   const [removingFromWishlist, setRemovingFromWishlist] = useState(false)
   // Utility to get random items from array
-  function getRandomItems(arr, count) {
+  function getRandomItems(arr: any[], count: number) {
     const shuffled = arr.slice().sort(() => 0.5 - Math.random())
     return shuffled.slice(0, count)
   }
@@ -185,8 +184,8 @@ export default function ProductDetailPage() {
       if (!response.ok) throw new Error("Failed to fetch products")
       const data = await response.json()
       const allProducts = Array.isArray(data.products) ? data.products : []
-      const men = allProducts.filter((p) => p.category?.toLowerCase() === "men")
-      const women = allProducts.filter((p) => p.category?.toLowerCase() === "women")
+  const men = allProducts.filter((p: any) => p.category?.toLowerCase() === "men")
+  const women = allProducts.filter((p: any) => p.category?.toLowerCase() === "women")
       setMenProducts(getRandomItems(men, 4))
       setWomenProducts(getRandomItems(women, 4))
       setRelatedProducts(getRandomItems(allProducts, 8))
@@ -686,7 +685,7 @@ export default function ProductDetailPage() {
                           handleProductWishlistToggle(relatedProduct.id)
                         }}
                       >
-                        <Heart className={`h-4 w-4 ${wishlistMap[relatedProduct.id] ? "fill-red-500 text-red-500" : ""}`} />
+                         <Heart className={`h-4 w-4 ${wishlistMap[relatedProduct.id] ? "fill-red-500 text-red-500" : ""}`} />
                       </Button>
                     </div>
 
@@ -706,7 +705,7 @@ export default function ProductDetailPage() {
                           ))}
                         </div>
                         <span className="text-xs text-gray-600">
-                          {relatedProduct.rating || 0} ({relatedProduct.reviewCount || relatedProduct.reviews || 0}{" "}
+                          {relatedProduct.rating || 0} ({relatedProduct.reviewCount || 0}{" "}
                           Reviews)
                         </span>
                         <Badge variant="secondary" className="text-xs text-green-600 bg-green-50">
@@ -903,7 +902,7 @@ export default function ProductDetailPage() {
                             ))}
                           </div>
                           <span className="text-xs text-gray-600">
-                            {relatedProduct.rating || 0} ({relatedProduct.reviewCount || relatedProduct.reviews || 0} Reviews)
+                            {relatedProduct.rating || 0} ({relatedProduct.reviewCount || 0} Reviews)
                           </span>
                           <Badge variant="secondary" className="text-xs text-green-600 bg-green-50">
                             {relatedProduct.stock || "In Stock"}
@@ -1295,7 +1294,7 @@ export default function ProductDetailPage() {
                         <div className="flex items-center gap-1 mb-1">
                           <Star size={16} className="fill-yellow-400 text-yellow-400" />
                           <span className="text-xs font-medium">{item.rating?.toFixed(1) || "0.0"}</span>
-                          <span className="text-xs text-gray-500">({item.reviewCount || item.reviews || 0})</span>
+                          <span className="text-xs text-gray-500">({item.reviewCount || 0})</span>
                         </div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-bold text-lg">₹ {item.price}</span>
@@ -1318,7 +1317,10 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-8">Product Reviews</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Product Reviews</h2>
+              <button className="text-sm text-blue-600 hover:underline">View All</button>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left Column - Rating Overview and Filters */}
@@ -1537,7 +1539,7 @@ export default function ProductDetailPage() {
                         <div className="flex items-center gap-1 mb-1">
                           <Star size={16} className="fill-yellow-400 text-yellow-400" />
                           <span className="text-xs font-medium">{item.rating?.toFixed(1) || "0.0"}</span>
-                          <span className="text-xs text-gray-500">({item.reviewCount || item.reviews || 0})</span>
+                          <span className="text-xs text-gray-500">({item.reviewCount || 0})</span>
                         </div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-bold text-lg">₹ {item.price}</span>

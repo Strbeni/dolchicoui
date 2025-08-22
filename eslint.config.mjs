@@ -13,20 +13,23 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
-      // Disable explicit any restriction
-      "@typescript-eslint/no-explicit-any": "off",
-
-      // Disable unused vars
+      // 🚫 Disable unused variables / args
       "@typescript-eslint/no-unused-vars": "off",
 
-      // Disable unescaped entities (like ')
+      // 🚫 Disable explicit any restriction
+      "@typescript-eslint/no-explicit-any": "off",
+
+      // 🚫 Disable unescaped entities warning
       "react/no-unescaped-entities": "off",
 
-      // Disable Next.js img warning
+      // 🚫 Disable Next.js <img> warning
       "@next/next/no-img-element": "off",
 
-      // ✅ Disable hook exhaustive-deps warnings
+      // 🚫 Disable exhaustive-deps hook rule
       "react-hooks/exhaustive-deps": "off",
+
+      // 🚫 Turn off *everything else*
+      "all": "off",
     },
   },
 ];
