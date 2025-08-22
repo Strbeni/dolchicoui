@@ -1,11 +1,13 @@
 
 "use client"
-// Password validation for new user profile
+// Enhanced password validation for new user profile
 const validatePassword = (password: string): string[] => {
   const errors: string[] = [];
   if (password.length < 10) errors.push("At least 10 characters");
-  if (!/[A-Z]/.test(password)) errors.push("One capital letter");
-  if (!/\d/.test(password)) errors.push("One number");
+  if (!/[A-Z]/.test(password)) errors.push("At least one uppercase letter");
+  if (!/[a-z]/.test(password)) errors.push("At least one lowercase letter");
+  if (!/\d/.test(password)) errors.push("At least one digit");
+  if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) errors.push("At least one special character");
   return errors;
 };
 
@@ -163,6 +165,7 @@ export default function UnifiedAuthComponent() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [fullName, setFullName] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [acceptTerms, setAcceptTerms] = useState(false)
 
   // User and auth state
@@ -599,6 +602,11 @@ export default function UnifiedAuthComponent() {
       setLoading(false);
       return;
     }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
     setError("")
     setLoading(true)
 
@@ -638,7 +646,7 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }, [userId, fullName, password, setAuthTokens])
+  }, [userId, fullName, password, confirmPassword, setAuthTokens])
 
   // Enhanced Google OAuth login with better error handling and debugging
  const handleSocialLogin = React.useCallback(
@@ -1178,7 +1186,7 @@ export default function UnifiedAuthComponent() {
                           disabled={resendTimer > 0 || loading}
                           className="text-sm text-orange-600 hover:text-orange-700 underline disabled:text-gray-400 disabled:no-underline transition-colors"
                         >
-                          {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP in ${RESEND_SECONDS}s`}
+                          {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP`}
                         </button>
                       </div>
 
@@ -1239,15 +1247,50 @@ export default function UnifiedAuthComponent() {
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
-                      <p className="text-xs text-gray-600">
-                        Password must be at least 10 characters, 1 capital letter, and 1 number.
-                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="uppercase text-xs text-orange-600 font-medium">Confirm Password</Label>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter your password"
+                        className="h-10"
+                        autoComplete="new-password"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-gray-600 font-medium">Password must contain:</p>
+                      <ul className="text-xs text-gray-500 list-disc ml-5">
+                        <li>At least 10 characters</li>
+                        <li>At least one uppercase letter</li>
+                        <li>At least one lowercase letter</li>
+                        <li>At least one digit</li>
+                        <li>At least one special character</li>
+                      </ul>
+                      {password && confirmPassword && password !== confirmPassword && (
+                        <p className="text-xs text-red-600 font-medium mt-1">Passwords do not match.</p>
+                      )}
+                      {password && validatePassword(password).length > 0 && (
+                        <ul className="text-xs text-red-600 list-disc ml-5 mt-1">
+                          {validatePassword(password).map((err, idx) => (
+                            <li key={idx}>{err}</li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
                   </div>
 
                   <Button
                     onClick={handleCompleteProfile}
-                    disabled={loading || !fullName.trim() || !password.trim()}
+                    disabled={
+                      loading ||
+                      !fullName.trim() ||
+                      !password.trim() ||
+                      !confirmPassword.trim() ||
+                      password !== confirmPassword ||
+                      validatePassword(password).length > 0
+                    }
                     className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                   >
                     {loading ? "Creating Account..." : "Complete Setup"}

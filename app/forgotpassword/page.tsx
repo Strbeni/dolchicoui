@@ -21,20 +21,28 @@ import DolchiLogo from "@/components/DolchiLogo"
       test: (pwd: string) => pwd.length >= 10,
     },
     {
-      label: "One capital letter",
+      label: "At least one uppercase letter",
       test: (pwd: string) => /[A-Z]/.test(pwd),
     },
     {
-      label: "One number",
+      label: "At least one lowercase letter",
+      test: (pwd: string) => /[a-z]/.test(pwd),
+    },
+    {
+      label: "At least one number",
       test: (pwd: string) => /\d/.test(pwd),
+    },
+    {
+      label: "At least one special character",
+      test: (pwd: string) => /[!@#$%^&*(),.?\":{}|<>]/.test(pwd),
     },
   ];
 
   const getPasswordStrength = (pwd: string) => {
     const passed = passwordChecklist.filter(item => item.test(pwd)).length;
-    if (passed === 3) return { label: "Strong", color: "green" };
-    if (passed === 2) return { label: "Medium", color: "orange" };
-    if (passed === 1) return { label: "Weak", color: "red" };
+    if (passed === 5) return { label: "Strong", color: "green" };
+    if (passed >= 3) return { label: "Medium", color: "orange" };
+    if (passed >= 1) return { label: "Weak", color: "red" };
     return { label: "Very Weak", color: "gray" };
   }
 // Types for better type safety
@@ -78,11 +86,11 @@ export default function ForgotPassword() {
 
   const validatePassword = (password: string): string[] => {
     const errors: string[] = []
-    if (password.length < 8) errors.push("At least 8 characters")
-    if (!/[A-Z]/.test(password)) errors.push("One uppercase letter")
-    if (!/[a-z]/.test(password)) errors.push("One lowercase letter")
-    if (!/\d/.test(password)) errors.push("One number")
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push("One special character")
+    if (password.length < 10) errors.push("At least 10 characters")
+    if (!/[A-Z]/.test(password)) errors.push("At least one uppercase letter")
+    if (!/[a-z]/.test(password)) errors.push("At least one lowercase letter")
+    if (!/\d/.test(password)) errors.push("At least one number")
+    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) errors.push("At least one special character")
     return errors
   }
 
@@ -501,6 +509,14 @@ export default function ForgotPassword() {
                         {getPasswordStrength(newPassword).label}
                       </span>
                     </div>
+                    {/* Show all validation errors */}
+                    {newPassword && validatePassword(newPassword).length > 0 && (
+                      <ul className="text-xs text-red-600 list-disc ml-5 mt-1">
+                        {validatePassword(newPassword).map((err, idx) => (
+                          <li key={idx}>{err}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
 
                   <div>
@@ -523,13 +539,17 @@ export default function ForgotPassword() {
                         {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
+                    {/* Password mismatch error */}
+                    {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                      <p className="text-xs text-red-600 font-medium mt-1">Passwords do not match.</p>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
                     disabled={
                       loading ||
-                      passwordChecklist.some(item => !item.test(newPassword)) ||
+                      validatePassword(newPassword).length > 0 ||
                       newPassword !== confirmPassword
                     }
                     className="w-full h-12 bg-[#ff6b35] hover:bg-[#e55a2b] text-white font-medium rounded-lg"
