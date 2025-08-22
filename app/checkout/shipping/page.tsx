@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
 // API Configuration
-API_BASE_URL = 'https://valyris-i.onrender.com/api';
+const API_BASE_URL = 'https://valyris-i.onrender.com/api';
 
 // Types
 interface CartItem {
