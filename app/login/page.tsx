@@ -1,4 +1,13 @@
+
 "use client"
+// Password validation for new user profile
+const validatePassword = (password: string): string[] => {
+  const errors: string[] = [];
+  if (password.length < 10) errors.push("At least 10 characters");
+  if (!/[A-Z]/.test(password)) errors.push("One capital letter");
+  if (!/\d/.test(password)) errors.push("One number");
+  return errors;
+};
 
 import React, { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
@@ -84,6 +93,64 @@ interface SendOTPResponse {
 export default function UnifiedAuthComponent() {
   const router = useRouter()
 
+  // Handle Google OAuth redirect: extract token/user from URL or cookies
+  useEffect(() => {
+    // Check URL params for token and user
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search)
+      const token = urlParams.get("token")
+      const userStr = urlParams.get("user")
+
+      console.log("[OAuth] Checking URL params - token:", !!token, "user:", !!userStr)
+
+      if (token) {
+        console.log("[OAuth] Token found in URL, storing and redirecting...")
+        
+        // Store tokens with multiple persistence layers
+        localStorage.setItem("token", token)
+        sessionStorage.setItem("token", token)
+        document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
+        
+        if (userStr) {
+          try {
+            const decodedUser = decodeURIComponent(userStr)
+            localStorage.setItem("user", decodedUser)
+            sessionStorage.setItem("user", decodedUser)
+            console.log("[OAuth] User data stored")
+          } catch (error) {
+            console.error("[OAuth] Error decoding user data:", error)
+          }
+        }
+        
+        // Remove token/user from URL for cleanliness
+        const url = new URL(window.location.href)
+        url.searchParams.delete("token")
+        url.searchParams.delete("user")
+        window.history.replaceState({}, document.title, url.pathname)
+        
+        // Set redirecting state and redirect
+        setRedirecting(true)
+        setTimeout(() => {
+          router.push("/home")
+        }, 500)
+        
+        return
+      }
+
+      // Check for token in cookies as fallback
+      const cookieToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('token='))
+        ?.split('=')[1]
+      
+      if (cookieToken && !localStorage.getItem("token")) {
+        console.log("[OAuth] Token found in cookies, storing...")
+        localStorage.setItem("token", cookieToken)
+        sessionStorage.setItem("token", cookieToken)
+      }
+    }
+  }, [router])
+
   // Step and form state
   const [step, setStep] = useState(1) // 1: Contact Check, 2: Auth Flow, 3: Profile Setup
   const [contactInput, setContactInput] = useState("")
@@ -120,7 +187,7 @@ export default function UnifiedAuthComponent() {
   const [error, setError] = useState("")
   const [redirecting, setRedirecting] = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
-  const RESEND_SECONDS = 24
+  const RESEND_SECONDS = 30;
 
   // Enhanced token storage and management helper
   const setAuthTokens = React.useCallback((token: string, user?: User) => {
@@ -351,6 +418,11 @@ export default function UnifiedAuthComponent() {
       setVerifiedContact(cleanContact)
       setVerifiedContactType(contactType)
 
+      // Store contact for autofill in forgot password
+      if (typeof window !== "undefined") {
+        localStorage.setItem("dolchi_last_contact", contactInput)
+      }
+
       // Check if user exists first
       const userStatus = await checkUserExists(cleanContact)
 
@@ -390,33 +462,38 @@ export default function UnifiedAuthComponent() {
       return
     }
 
-    setError("")
     setLoading(true)
-
+    setError("")
     try {
-      const cleanContact = formatContactForAPI(editContactInput, editContactType, editCountryCode)
-
-      // Update all contact states
-      setContactInput(editContactInput)
-      setContactType(editContactType)
-      setCountryCode(editCountryCode)
-      setVerifiedContact(cleanContact)
+      // Validate contact
+      if (!editContactInput.trim()) {
+        setError("Contact cannot be empty.")
+        setLoading(false)
+        return
+      }
+      // Check if contact is valid
+      const formattedContact = formatContactForAPI(editContactInput, editContactType, editCountryCode)
+      if (!formattedContact) {
+        setError("Invalid contact format.")
+        setLoading(false)
+        return
+      }
+      // Update contact in state
+      setVerifiedContact(formattedContact)
       setVerifiedContactType(editContactType)
-
-      // Re-check user existence with new contact
-      await checkUserExists(cleanContact)
-
-      // Reset auth states
-      setPassword("")
-      setOtp("")
-      setOtpSent(false)
+      setCountryCode(editCountryCode)
+      setContactInput(editContactInput)
       setIsEditingContact(false)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
-    } finally {
-      setLoading(false)
+      // For new user creation, send OTP to new contact and start timer
+      if (!userExists) {
+        await handleSendOTPForNewUser(formattedContact)
+        // setOtpSent and setResendTimer are already called inside handleSendOTPForNewUser
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to update contact.")
     }
-  }, [editContactInput, editContactType, editCountryCode, formatContactForAPI, checkUserExists])
+    setLoading(false)
+  }, [editContactInput, editContactType, editCountryCode, userExists, formatContactForAPI, handleSendOTPForNewUser])
 
   // Cancel edit contact
   const handleCancelEditContact = React.useCallback((): void => {
@@ -515,6 +592,13 @@ export default function UnifiedAuthComponent() {
 
   // Handle profile completion with improved token handling
   const handleCompleteProfile = React.useCallback(async (): Promise<void> => {
+    // Validate password rules before API call
+    const passwordErrors = validatePassword(password);
+    if (passwordErrors.length > 0) {
+      setError(`Password requirements: ${passwordErrors.join(", ")}`);
+      setLoading(false);
+      return;
+    }
     setError("")
     setLoading(true)
 
@@ -556,34 +640,64 @@ export default function UnifiedAuthComponent() {
     }
   }, [userId, fullName, password, setAuthTokens])
 
-  // Enhanced: Use env variable for Google OAuth endpoint and handle redirect
-  const handleSocialLogin = React.useCallback(async (provider: "google" | "facebook"): void => {
+  // Enhanced Google OAuth login with better error handling and debugging
+ const handleSocialLogin = React.useCallback(
+  async (provider: "google" | "facebook"): Promise<void> => {
     try {
-      console.log(`[v0] Starting ${provider} OAuth login`)
+      console.log(`[OAuth] Starting ${provider} OAuth login`)
 
+      // Get the OAuth URL from environment variables
       let OAUTH_URL =
-        provider === "google" ? process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL : process.env.NEXT_PUBLIC_FACEBOOK_OAUTH_URL
+        provider === "google"
+          ? process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL
+          : process.env.NEXT_PUBLIC_FACEBOOK_OAUTH_URL
 
-      console.log(`[v0] ${provider} OAuth URL from env:`, OAUTH_URL)
+      console.log(`[OAuth] ${provider} OAuth URL from env:`, OAUTH_URL)
 
+      // Fallback to constructing URL if env variable is not set
       if (!OAUTH_URL) {
-        // Fallback to standard API endpoint with correct base URL
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
-        OAUTH_URL = `${API_BASE_URL}/api/user/auth/${provider}`
-        console.log(`[v0] Using fallback ${provider} OAuth URL:`, OAUTH_URL)
+        const API_BASE_URL =
+          process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+        OAUTH_URL = `${API_BASE_URL}/api/auth/${provider}`
+        console.log(`[OAuth] Using constructed ${provider} OAuth URL:`, OAUTH_URL)
       }
 
-      // Add current page as redirect parameter
-      const redirectUrl = `${OAUTH_URL}?redirect=${encodeURIComponent(window.location.origin + "/home")}`
-      console.log(`[v0] Final redirect URL:`, redirectUrl)
-      window.location.href = redirectUrl
+      // Validate URL format
+      try {
+        new URL(OAUTH_URL)
+      } catch (urlError) {
+        console.error(`[OAuth] Invalid URL format:`, OAUTH_URL)
+        throw new Error(`Invalid ${provider} OAuth URL configuration`)
+      }
+
+      // Get current page URL for redirect
+      const currentOrigin = window.location.origin
+      const redirectUrl = `${currentOrigin}/home`
+
+      // Add redirect parameter to OAuth URL
+      const finalUrl = `${OAUTH_URL}?redirect=${encodeURIComponent(redirectUrl)}`
+
+      console.log(`[OAuth] Final ${provider} OAuth URL:`, finalUrl)
+      console.log(`[OAuth] Redirect URL:`, redirectUrl)
+
+      // Show loading state
+      setLoading(true)
+      setError("")
+
+      // Perform redirect
+      console.log(`[OAuth] Redirecting to ${provider} OAuth...`)
+      window.location.href = finalUrl
     } catch (error) {
-      console.error(`[v0] ${provider} OAuth redirect failed:`, error)
+      console.error(`[OAuth] ${provider} OAuth redirect failed:`, error)
       setError(
-        `${provider.charAt(0).toUpperCase() + provider.slice(1)} login is currently unavailable. Please try again or use email/phone login.`,
+        `${provider.charAt(0).toUpperCase() + provider.slice(1)} login is currently unavailable. Please try again or use email/phone login.`
       )
+      setLoading(false)
     }
-  }, [])
+  },
+  []
+)
+
 
   // Handle resend OTP with proper endpoint selection
   const handleResendOTP = React.useCallback(async (): Promise<void> => {
@@ -704,7 +818,6 @@ export default function UnifiedAuthComponent() {
     },
     [handleEditCountrySelect],
   )
-
   return (
     <div className="min-h-screen md:bg-none bg-white relative">
       <div className="">
@@ -1127,7 +1240,7 @@ export default function UnifiedAuthComponent() {
                         </button>
                       </div>
                       <p className="text-xs text-gray-600">
-                        Password must be at least 1 number, 1 capital letter, and 6 - 12 character long
+                        Password must be at least 10 characters, 1 capital letter, and 1 number.
                       </p>
                     </div>
                   </div>

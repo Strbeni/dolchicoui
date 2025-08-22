@@ -1,7 +1,7 @@
+
 "use client"
 
 import type React from "react"
-
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,32 @@ import { Eye, EyeOff, CheckCircle } from "lucide-react"
 import { useState, useCallback, useEffect } from "react"
 import DolchiLogo from "@/components/DolchiLogo"
 
+
+// Password checklist and strength
+  
+  
+  const passwordChecklist = [
+    {
+      label: "At least 10 characters",
+      test: (pwd: string) => pwd.length >= 10,
+    },
+    {
+      label: "One capital letter",
+      test: (pwd: string) => /[A-Z]/.test(pwd),
+    },
+    {
+      label: "One number",
+      test: (pwd: string) => /\d/.test(pwd),
+    },
+  ];
+
+  const getPasswordStrength = (pwd: string) => {
+    const passed = passwordChecklist.filter(item => item.test(pwd)).length;
+    if (passed === 3) return { label: "Strong", color: "green" };
+    if (passed === 2) return { label: "Medium", color: "orange" };
+    if (passed === 1) return { label: "Weak", color: "red" };
+    return { label: "Very Weak", color: "gray" };
+  }
 // Types for better type safety
 interface ApiResponse {
   success: boolean
@@ -25,6 +51,16 @@ export default function ForgotPassword() {
   // State management
   const [step, setStep] = useState<StepType>("emailInput")
   const [email, setEmail] = useState("")
+
+  // Autofill from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const lastContact = localStorage.getItem("dolchi_last_contact") || ""
+      if (lastContact && !email) {
+        setEmail(lastContact)
+      }
+    }
+  }, [])
   const [otp, setOtp] = useState("")
   const [otpBoxes, setOtpBoxes] = useState<string[]>(["", "", "", "", "", ""])
   const otpRefs = useState<Array<HTMLInputElement | null>>([])[0]
@@ -40,7 +76,6 @@ export default function ForgotPassword() {
   const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com") + "/api/user"
   const RESEND_SECONDS = 24
 
-  // Password validation
   const validatePassword = (password: string): string[] => {
     const errors: string[] = []
     if (password.length < 8) errors.push("At least 8 characters")
@@ -443,6 +478,29 @@ export default function ForgotPassword() {
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
+                    {/* Password checklist */}
+                    <ul className="mt-2 mb-2 space-y-1">
+                      {passwordChecklist.map((item, idx) => {
+                        const passed = item.test(newPassword);
+                        return (
+                          <li key={idx} className="flex items-center text-sm">
+                            {passed ? (
+                              <span className="text-green-600 mr-2">&#10003;</span>
+                            ) : (
+                              <span className="text-red-500 mr-2">&#10007;</span>
+                            )}
+                            <span className={passed ? "text-green-700" : "text-gray-700"}>{item.label}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {/* Password strength */}
+                    <div className="mb-2 text-xs">
+                      <span>Password strength: </span>
+                      <span style={{ color: getPasswordStrength(newPassword).color }}>
+                        {getPasswordStrength(newPassword).label}
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -469,7 +527,11 @@ export default function ForgotPassword() {
 
                   <Button
                     type="submit"
-                    disabled={loading || validatePassword(newPassword).length > 0 || newPassword !== confirmPassword}
+                    disabled={
+                      loading ||
+                      passwordChecklist.some(item => !item.test(newPassword)) ||
+                      newPassword !== confirmPassword
+                    }
                     className="w-full h-12 bg-[#ff6b35] hover:bg-[#e55a2b] text-white font-medium rounded-lg"
                   >
                     {loading ? "Resetting..." : "Continue"}

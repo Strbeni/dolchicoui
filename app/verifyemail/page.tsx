@@ -14,12 +14,21 @@ import DolchiLogo from "@/components/DolchiLogo"
 function VerifyEmailClient() {
   const [status, setStatus] = useState<"idle" | "loading" | "verified" | "invalid" | "error">("idle")
   const [email, setEmail] = useState("")
+
+  // Autofill from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const lastContact = localStorage.getItem("dolchi_last_contact") || ""
+      if (lastContact && !email) {
+        setEmail(lastContact)
+      }
+    }
+  }, [])
   const [otp, setOtp] = useState("")
   const [otpBoxes, setOtpBoxes] = useState<string[]>(["", "", "", "", "", ""])
   const otpRefs = useState<Array<HTMLInputElement | null>>([])[0]
   const [message, setMessage] = useState("")
   const [resendCooldown, setResendCooldown] = useState(0)
-
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -415,7 +424,7 @@ function VerifyEmailClient() {
                 <div className="space-y-4">
                   <div className="text-center mb-4">
                     <p className="text-sm text-gray-600 mb-2">
-                      <span className="text-[#ff6b35] font-medium">{email || "sujalbendre2526@gmail.com"}</span>
+                      <span className="text-[#ff6b35] font-medium">{email}</span>
                     </p>
                   </div>
 

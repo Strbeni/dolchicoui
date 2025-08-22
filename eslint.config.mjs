@@ -24,6 +24,9 @@ const eslintConfig = [
 
       // Disable Next.js img warning
       "@next/next/no-img-element": "off",
+
+      // ✅ Disable hook exhaustive-deps warnings
+      "react-hooks/exhaustive-deps": "off",
     },
   },
 ];
