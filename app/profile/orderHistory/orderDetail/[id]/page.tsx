@@ -1,322 +1,260 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Star, Download } from "lucide-react";
+import { ArrowLeft, Package, Calendar, MapPin, CreditCard } from "lucide-react";
 import Image from "next/image";
 
-// Mock data - in a real app, you'd fetch this based on the orderId
-const getOrderById = (orderId: string) => {
-  const orders = [
-  {
-    id: "#406-9025561-0841152",
-    orderId: "406-9025561-0841152",
-    placed: "6 July 2025",
-    datePlaced: "6 July, 2025",
-    time: "2:45 PM",
-    placedDate: new Date("2025-07-06"),
-    total: "₹699.00",
-    totalAmount: 744.92,
-    subtotal: 699,
-    shippingCost: 40,
-    tax: 55.92,
-    couponDiscount: 50,
-    couponCode: "SAVE50",
-    shipTo: "Akash Kulshrestha",
-    delivered: "9 July",
-    expectedDate: "9 July, 2025",
-    status: "Delivered",
-    productsCount: 1,
-    products: [
-      {
-        title: "Weavers Villa Beads Hanging Curtain",
-        name: "Weavers Villa Beads Hanging Curtain",
-        description: "20 Strings, 7 Ft - Sparkling Decor for Doors/Windows",
-        image: "/curtain.jpg",
-        quantity: 2,
-        price: 699,
-        returnWindow: "18 July 2025",
-        status: "delivered",
-        isBroadband: false,
-      },
-      {
-        title:
-          "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
-        name: "BNSN Pure & Original Kala Gond",
-        description:
-          "Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis",
-        image: "/gond.jpg",
-        quantity: 1,
-        price: 699,
-        returnWindow: "19 July 2025",
-        status: "delivered",
-        isBroadband: false,
-      },
-    ],
-  },
-  {
-    id: "#406-3908338-4442743",
-    orderId: "406-3908338-4442743",
-    placed: "6 July 2025",
-    datePlaced: "6 July, 2025",
-    time: "3:20 PM",
-    placedDate: new Date("2025-07-06"),
-    total: "₹699.00",
-    totalAmount: 754.92,
-    subtotal: 699,
-    shippingCost: 0,
-    tax: 55.92,
-    couponDiscount: 0,
-    couponCode: null,
-    shipTo: "Akash Kulshrestha",
-    delivered: "8 July",
-    expectedDate: "8 July, 2025",
-    status: "Delivered",
-    productsCount: 1,
-    products: [
-      {
-        title:
-          "BNSN Pure & Original Kala Gond | Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis...",
-        name: "BNSN Pure & Original Kala Gond",
-        description:
-          "Gond Siyah | Pure Jadibooti | for Joint Pain & Arthritis",
-        image: "/gond.jpg",
-        quantity: 3,
-        price: 699,
-        returnWindow: "18 July 2025",
-        status: "delivered",
-        isBroadband: false,
-      },
-    ],
-  },
-  {
-    id: "#406-3396058-1809901",
-    orderId: "406-3396058-1809901",
-    placed: "27 June 2025",
-    datePlaced: "27 June, 2025",
-    time: "10:30 AM",
-    placedDate: new Date("2025-06-27"),
-    total: "₹588.82",
-    totalAmount: 535.93,
-    subtotal: 588.82,
-    shippingCost: 0,
-    tax: 47.11,
-    couponDiscount: 100,
-    couponCode: "NEWUSER100",
-    shipTo: "Akash Kulshrestha",
-    delivered: null,
-    expectedDate: "30 June, 2025",
-    status: "Processing",
-    productsCount: 1,
-    products: [
-      {
-        title: "Broadband - Airtel",
-        name: "Broadband - Airtel",
-        description: "Monthly broadband service",
-        image: "/airtel.png",
-        quantity: 1,
-        price: 588.82,
-        returnWindow: "",
-        status: "not_shipped",
-        isBroadband: true,
-      },
-    ],
-  },
-];
+// API Configuration
+const API_BASE_URL = 'http://localhost:4000/api';
 
-  return orders.find(order => order.orderId === orderId) || null;
-};
-
-type Feedback = {
-  userName: string;
-  rating: number;
-  description: string;
-  images: File[];
-};
-
-type FeedbackMap = {
-  [productIndex: number]: {
-    product?: Feedback;
-    delivery?: Feedback;
+// Types
+interface OrderItem {
+  id: number;
+  quantity: number;
+  size: string;
+  price: number;
+  product: {
+    id: number;
+    name: string;
+    image: string[];
+    category?: string;
+    subCategory?: string;
   };
-};
+}
 
-const OrderDetail = () => {
+interface Order {
+  id: number;
+  status: string;
+  amount: number;
+  date: number;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    phoneNumber?: string;
+  };
+  items: OrderItem[];
+}
+
+export default function OrderDetail() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.id as string;
 
-  // Move all hooks to the top, before any conditional logic
-  const [feedbacks, setFeedbacks] = useState<FeedbackMap>({});
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<"delivery" | "product" | null>(null);
-  const [selectedProductIdx, setSelectedProductIdx] = useState<number | null>(null);
-  const [feedbackForm, setFeedbackForm] = useState<Omit<Feedback, "userName">>({
-    rating: 0,
-    description: "",
-    images: [],
-  });
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Get order data based on the ID
-  const order = getOrderById(orderId);
+  // Authentication check
+  const checkAuth = useCallback(() => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return false;
+    }
+    return true;
+  }, [router]);
 
-  if (!order) {
+  // Get auth headers
+  const getAuthHeaders = useCallback(() => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+  }, []);
+
+  // Fetch order details from backend
+  const fetchOrderDetail = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!checkAuth()) return;
+
+      const response = await fetch(`${API_BASE_URL}/order/${orderId}`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Order not found');
+        } else if (response.status === 401) {
+          throw new Error('Authentication required');
+        } else {
+          throw new Error(`Failed to fetch order: ${response.statusText}`);
+        }
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.order) {
+        setOrder(result.order);
+      } else {
+        throw new Error(result.message || 'Failed to load order details');
+      }
+    } catch (err) {
+      console.error('Error fetching order details:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load order details');
+    } finally {
+      setLoading(false);
+    }
+  }, [orderId, checkAuth, getAuthHeaders]);
+
+  // Load order details on component mount
+  useEffect(() => {
+    if (orderId) {
+      fetchOrderDetail();
+    }
+  }, [orderId, fetchOrderDetail]);
+
+  // Format date from timestamp
+  const formatDate = useCallback((timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }, []);
+
+  // Format status for display
+  const formatStatus = useCallback((status: string) => {
+    return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  }, []);
+
+  // Get status progress
+  const getStatusStep = useCallback((status: string) => {
+    switch (status.toUpperCase()) {
+      case 'ORDER_PLACED':
+        return 1;
+      case 'CONFIRMED':
+        return 2;
+      case 'SHIPPED':
+        return 3;
+      case 'DELIVERED':
+        return 4;
+      default:
+        return 1;
+    }
+  }, []);
+
+  // Get status color
+  const getStatusColor = useCallback((status: string) => {
+    switch (status.toLowerCase()) {
+      case 'order_placed':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'confirmed':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'shipped':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'delivered':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  }, []);
+
+  // Calculate estimated delivery
+  const getEstimatedDelivery = useCallback((orderDate: number, status: string) => {
+    const date = new Date(orderDate);
+    let deliveryDays = 3; // Default 3 days
+
+    if (status.toLowerCase() === 'shipped') {
+      deliveryDays = 1; // 1 day if already shipped
+    } else if (status.toLowerCase() === 'confirmed') {
+      deliveryDays = 2; // 2 days if confirmed
+    }
+
+    const estimatedDate = new Date(date.getTime() + (deliveryDays * 24 * 60 * 60 * 1000));
+    return estimatedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }, []);
+
+  // Loading state
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Order Not Found</h2>
-            <p className="text-gray-600 mb-4">
-              The order with ID {orderId} could not be found.
-            </p>
-            <Button onClick={() => router.push("/profile/orderHistory")}>
-              Back to Order History
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gray-100 p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading order details...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const getStatusStep = () => {
-    switch (order.status) {
-      case "Order Placed":
-        return 1;
-      case "Processing":
-      case "Packaging":
-        return 2;
-      case "On The Road":
-        return 3;
-      case "Delivered":
-        return 4;
-      default:
-        return 0;
-    }
-  };
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center max-w-md mx-auto">
+            <div className="text-red-500 mb-4">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Error Loading Order</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="space-y-3">
+              <Button onClick={fetchOrderDetail} className="w-full">
+                Try Again
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/profile/orderHistory')} className="w-full">
+                Back to Order History
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const statusStep = getStatusStep();
+  // Order not found state
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center max-w-md mx-auto">
+            <div className="text-gray-400 mb-6">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Order Not Found</h2>
+            <p className="text-gray-600 mb-6">
+              The order with ID #{orderId} could not be found.
+            </p>
+            <Button onClick={() => router.push('/profile/orderHistory')}>
+              Back to Order History
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  const statusStep = getStatusStep(order.status);
   const steps = [
     { label: "Order Placed", icon: "📦" },
-    { label: "Processing", icon: "📦" },
-    { label: "On The Road", icon: "🚚" },
+    { label: "Confirmed", icon: "✅" },
+    { label: "Shipped", icon: "🚚" },
     { label: "Delivered", icon: "📬" },
   ];
-
-  const handleDownloadInvoice = () => {
-    // In a real application, this would generate and download a PDF invoice
-    // For now, we'll simulate the download process
-
-    // Create a blob with invoice data (in real app, this would be a PDF)
-    const invoiceContent = `
-INVOICE - Order #${order.id}
-Date: ${order.datePlaced}
-Customer: Akash Kulshrestha
-
-Products:
-${order.products
-  .map(
-    (p) => `${p.name} - ₹${p.price} x ${p.quantity} = ₹${p.price * p.quantity}`
-  )
-  .join("\n")}
-
-Subtotal: ₹${order.subtotal}
-Tax: ₹${order.tax}
-Shipping: ${order.shippingCost === 0 ? "Free" : `₹${order.shippingCost}`}
-${
-  order.couponDiscount > 0
-    ? `Discount (${order.couponCode}): -₹${order.couponDiscount}`
-    : ""
-}
-Grand Total: ₹${order.total}
-    `;
-
-    const blob = new Blob([invoiceContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `invoice_${order.id}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  // Get user's name from shipping address
-  const userName = "Akash Kulshrestha"; // Replace with dynamic value if needed
-
-  // Open modal for feedback (only for add, not edit)
-  const handleOpenFeedbackModal = (type: "delivery" | "product") => {
-    setModalType(type);
-    setSelectedProductIdx(null);
-    setModalOpen(true);
-  };
-
-  // Handle feedback form changes
-  const handleFeedbackChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    if (
-      name === "images" &&
-      e.target instanceof HTMLInputElement &&
-      e.target.files
-    ) {
-      const files = Array.from(e.target.files).slice(0, 3);
-      setFeedbackForm({ ...feedbackForm, images: files });
-    } else {
-      setFeedbackForm({ ...feedbackForm, [name]: value });
-    }
-  };
-
-  // Handle star rating
-  const handleStarClick = (star: number) => {
-    setFeedbackForm({ ...feedbackForm, rating: star });
-  };
-
-  // Submit feedback
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedProductIdx === null) return;
-    const feedback: Feedback = { ...feedbackForm, userName };
-    setFeedbacks(prev => ({
-      ...prev,
-      [selectedProductIdx]: {
-        ...prev[selectedProductIdx],
-        [modalType!]: feedback,
-      },
-    }));
-    setModalOpen(false);
-  };
-
-  // Edit feedback (open modal with existing data)
-  const handleEditFeedback = (
-    type: "delivery" | "product",
-    productIdx: number,
-    feedback: Feedback
-  ) => {
-    setModalType(type);
-    setSelectedProductIdx(productIdx);
-    setFeedbackForm({
-      rating: feedback.rating,
-      description: feedback.description,
-      images: feedback.images || [],
-    });
-    setModalOpen(true);
-  };
-
-  // Delete feedback
-  const handleDeleteFeedback = (type: "delivery" | "product", productIdx: number) => {
-    setFeedbacks(prev => {
-      const updated = { ...prev };
-      if (updated[productIdx]) {
-        updated[productIdx][type] = undefined;
-      }
-      return updated;
-    });
-  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -340,81 +278,70 @@ Grand Total: ₹${order.total}
             </button>
             <button
               type="button"
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push("/profile/paymentMethod")}
               className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
             >
               Saved Payment Method
             </button>
             <button
               type="button"
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push("/profile/addressBook")}
               className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
             >
               Address Book
             </button>
-            
           </div>
         </div>
 
         {/* Order Detail Content */}
         <div className="w-3/4">
           <Card>
-            <div className="p-4">
+            <div className="p-6">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-6">
                 <div
                   className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline"
                   onClick={() => router.back()}
                 >
                   <ArrowLeft className="w-4 h-4 mr-1" />
-                  Order Details
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="link"
-                    className="text-sm text-red-500 hover:underline flex items-center gap-1"
-                    onClick={() => handleOpenFeedbackModal("product")}
-                  >
-                    Leave a Product Feedback <Star className="w-4 h-4" />
-                  </Button>
+                  Back to Order History
                 </div>
               </div>
 
               {/* Order Info Card */}
-              <Card className="mb-6 shadow-md bg-yellow-50">
-                <CardContent className="p-4 flex items-center justify-between">
+              <Card className="mb-6 shadow-md bg-gradient-to-r from-blue-50 to-purple-50">
+                <CardContent className="p-6 flex items-center justify-between">
                   <div>
-                    <div className="text-lg font-semibold">#{order.id}</div>
-                    <div className="text-sm text-gray-600">
-                      {order.productsCount} Product
-                      {order.productsCount > 1 ? "s" : ""} • Order Placed on{" "}
-                      {order.datePlaced} at {order.time}
+                    <div className="text-2xl font-bold text-gray-800 mb-2">Order #{order.id}</div>
+                    <div className="text-sm text-gray-600 mb-2">
+                      {order.items.length} Product{order.items.length > 1 ? "s" : ""} • 
+                      Placed on {formatDate(order.date)}
+                    </div>
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(order.status)}`}>
+                      {formatStatus(order.status)}
                     </div>
                   </div>
-                  <div className="text-xl font-bold text-green-700">
-                    {order.total}
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-green-700">
+                      IDR {order.amount.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Amount</div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Expected Date */}
-              <div className="text-sm text-gray-600 mb-2">
-                Order expected arrival{" "}
-                <span className="font-semibold text-black">
-                  {order.expectedDate}
-                </span>
-              </div>
-          <Button
-            variant="link"
-            className="text-sm text-red-500 hover:underline flex items-center gap-1"
-            onClick={() => handleOpenFeedbackModal("delivery")}
-          >
-            Leave a Delivery Feedback <Star className="w-4 h-4" />
-          </Button>
+              {/* Estimated Delivery */}
+              {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
+                <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <div className="text-sm text-blue-600 mb-1">📅 Estimated Delivery</div>
+                  <div className="text-lg font-semibold text-blue-800">
+                    {getEstimatedDelivery(order.date, order.status)}
+                  </div>
+                </div>
+              )}
 
               {/* Order Progress */}
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center justify-between mb-8 bg-gray-50 rounded-lg p-6">
                 {steps.map((step, index) => {
                   const isCompleted = index < statusStep;
                   const isCurrent = index + 1 === statusStep;
@@ -425,20 +352,20 @@ Grand Total: ₹${order.total}
                       className="flex flex-col items-center flex-1 relative"
                     >
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center z-10 ${
+                        className={`w-10 h-10 rounded-full flex items-center justify-center z-10 text-lg ${
                           isCompleted || isCurrent
-                            ? "bg-orange-600 text-white"
+                            ? "bg-orange-600 text-white shadow-lg"
                             : "bg-gray-200 text-gray-500"
                         }`}
                       >
                         {step.icon}
                       </div>
-                      <div className="text-xs mt-2 text-center">
+                      <div className="text-xs mt-2 text-center font-medium">
                         {step.label}
                       </div>
                       {index < steps.length - 1 && (
                         <div
-                          className={`absolute top-4 left-1/2 right-[-50%] h-1 ${
+                          className={`absolute top-5 left-1/2 right-[-50%] h-1 ${
                             isCompleted ? "bg-orange-600" : "bg-gray-200"
                           }`}
                         />
@@ -451,102 +378,72 @@ Grand Total: ₹${order.total}
           </Card>
 
           {/* Product List Section */}
-          <Card className="mt-8">
+          <Card className="mt-6">
             <CardContent className="p-6">
               <div className="mb-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  Product{order.productsCount > 1 ? "s" : ""} (
-                  {order.productsCount.toString().padStart(2, "0")})
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Order Items ({order.items.length})
                 </h2>
-                <div className="grid grid-cols-5 gap-4 text-sm font-medium border-b pb-2">
-                  <div className="col-span-2">PRODUCTS</div>
-                  <div>PRICE</div>
-                  <div>QUANTITY</div>
-                  <div>SUBTOTAL</div>
-                </div>
-
-                {order.products.map((product, index) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-5 gap-4 py-4 border-b items-center text-sm"
-                  >
-                    <div className="col-span-2 flex gap-4">
-                      <Image
-                        src={product.image}
-                        alt={product.name}
-                        width={56}
-                        height={56}
-                        className="w-14 h-14 object-contain border rounded"
-                      />
-                      <div>
-                        <p className="font-semibold text-sm">
-                          {product.name.toUpperCase()}
-                        </p>
-                        <p className="text-gray-600">{product.description}</p>
+                
+                <div className="space-y-4">
+                  {order.items.map((item, index) => (
+                    <div
+                      key={`${item.id}-${index}`}
+                      className="flex gap-4 p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
+                    >
+                      <div className="relative w-20 h-20 flex-shrink-0">
+                        <Image
+                          src={item.product.image[0] || '/placeholder.png'}
+                          alt={item.product.name}
+                          fill
+                          className="object-contain rounded border"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-2">
+                          {item.product.name}
+                        </h3>
+                        <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">Size:</span> {item.size}
+                          </div>
+                          <div>
+                            <span className="font-medium">Quantity:</span> {item.quantity}
+                          </div>
+                          <div>
+                            <span className="font-medium">Unit Price:</span> IDR {item.price.toLocaleString()}
+                          </div>
+                          <div>
+                            <span className="font-medium">Subtotal:</span> 
+                            <span className="font-bold text-gray-900"> IDR {(item.price * item.quantity).toLocaleString()}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div>₹{product.price.toFixed(2)}</div>
-                    <div>x{product.quantity}</div>
-                    <div className="font-medium">
-                      ₹{(product.price * product.quantity).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              {/* Order Summary / Grand Total */}
-              <div className="border-t pt-6 mb-6">
+              {/* Order Summary */}
+              <div className="border-t pt-6">
                 <div className="flex justify-end">
                   <div className="w-80">
-                    <h3 className="text-lg font-semibold mb-4">
-                      Order Summary
-                    </h3>
-
-                    <div className="space-y-2 text-sm">
+                    <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
+                    <div className="space-y-3 text-sm">
                       <div className="flex justify-between">
                         <span>Subtotal:</span>
-                        <span>₹{order.subtotal.toFixed(2)}</span>
+                        <span>IDR {order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString()}</span>
                       </div>
-
                       <div className="flex justify-between">
                         <span>Shipping:</span>
-                        <span>
-                          {order.shippingCost === 0
-                            ? "Free"
-                            : `₹${order.shippingCost.toFixed(2)}`}
-                        </span>
+                        <span>Free</span>
                       </div>
-
-                      <div className="flex justify-between">
-                        <span>Tax:</span>
-                        <span>₹{order.tax.toFixed(2)}</span>
-                      </div>
-
-                      {order.couponDiscount > 0 && (
-                        <div className="flex justify-between text-green-600">
-                          <span>Coupon Discount ({order.couponCode}):</span>
-                          <span>-₹{order.couponDiscount.toFixed(2)}</span>
+                      <div className="border-t pt-3">
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>Total:</span>
+                          <span className="text-green-700">IDR {order.amount.toLocaleString()}</span>
                         </div>
-                      )}
-
-                      <div className="border-t pt-2 mt-3">
-                        <div className="flex justify-between font-semibold text-lg">
-                          <span>Grand Total:</span>
-                          <span className="text-green-700">
-                            {order.total}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Download Invoice Button in Summary */}
-                      <div className="mt-4 pt-3 border-t">
-                        <Button
-                          onClick={handleDownloadInvoice}
-                          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Download className="w-4 h-4" />
-                          Download Invoice
-                        </Button>
                       </div>
                     </div>
                   </div>
@@ -555,249 +452,41 @@ Grand Total: ₹${order.total}
             </CardContent>
           </Card>
 
-          {/* Addresses, Billing and Notes */}
-          <Card className="mt-8">
-            <CardContent className="p-6">
-              {/* Addresses and Notes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Billing Address Card */}
-                <Card className="shadow-sm border-l-4 border-l-blue-500">
-                  <CardContent className="p-4">
-                    <div className="flex items-center mb-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-blue-600 text-sm font-semibold">
-                          💳
-                        </span>
-                      </div>
-                      <h3 className="font-semibold text-gray-800">
-                        Delivery Address
-                      </h3>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <p className="font-medium text-gray-900">
-                        Akash Kulshrestha
-                      </p>
-                      <p className="text-gray-600 leading-relaxed">
-                        Sector 22, Chandigarh, Punjab - 160022, India
-                      </p>
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-gray-600">
-                          <span className="font-medium text-gray-700">
-                            Phone:
-                          </span>{" "}
-                          +91-98765-43210
-                        </p>
-                        <p className="text-gray-600">
-                          <span className="font-medium text-gray-700">
-                            Email:
-                          </span>{" "}
-                          akash.kulshrestha@gmail.com
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="shadow-sm border-l-4 border-l-green-500">
-                  <CardContent className="p-4">
-                    <div className="flex items-center mb-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-green-600 text-sm font-semibold">
-                          💵
-                        </span>
-                      </div>
-                      <h3 className="font-semibold text-gray-800">
-                        Payment Method
-                      </h3>
-                    </div>
-                    <div className="bg-blue-800 text-white rounded-lg p-4 space-y-2 mt-3">
-                      <p className="text-sm font-semibold">HSBC</p>
-                      <p className="text-sm">Kartik@axis</p>
-                      <div className="flex justify-between text-sm font-medium pt-1">
-                        <div className="text-white">
-                          <span className="font-semibold">UPI</span>
-                        </div>
-                        <div className="text-white">Google Pay (GPay)</div>
-                      </div>
-                      <p className="text-sm font-bold pt-1">Kevin Gilbert</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Order Notes Card */}
-                <Card className="shadow-sm border-l-4 border-l-orange-500">
-                  <CardContent className="p-4">
-                    <div className="flex items-center mb-3">
-                      <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-orange-600 text-sm font-semibold">
-                          📝
-                        </span>
-                      </div>
-                      <h3 className="font-semibold text-gray-800">
-                        Order Notes
-                      </h3>
-                    </div>
-                    <div className="text-sm">
-                      <p className="text-gray-600 leading-relaxed bg-gray-50 p-3 rounded-md italic">
-                        &quot;Please handle with care. Delivery to be made during
-                        daytime hours only.&quot;
-                      </p>
-                      <div className="mt-3 pt-2 border-t border-gray-100">
-                        <p className="text-xs text-gray-500">
-                          Special instructions for delivery
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Product Feedback provided By User */}
-          <Card className="mt-8">
-            <CardContent className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Product Feedback provided By You</h2>
-              {order.products.map((product, idx) => {
-                const feedback = feedbacks[idx]?.product;
-                return feedback ? (
-                  <div className="mb-4" key={idx}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Image src={product.image} alt={product.name} width={32} height={32} className="w-8 h-8 object-contain rounded border" />
-                      <span className="font-medium">{product.name}</span>
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-4 h-4 ${i < feedback.rating ? "text-yellow-400" : "text-gray-300"}`} />
-                      ))}
-                    </div>
-                    <div className="text-sm text-gray-700 mb-2">{feedback.description}</div>
-                    {feedback.images && feedback.images.length > 0 && (
-                      <div className="flex gap-2 mb-2 flex-wrap">
-                        {feedback.images.map((img, imgIdx) => (
-                          <Image key={imgIdx} src={URL.createObjectURL(img)} alt="Feedback" width={96} height={96} className="w-24 h-24 object-cover rounded" />
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleEditFeedback("product", idx, feedback)}>Edit</Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteFeedback("product", idx)}>Delete</Button>
-                    </div>
-                  </div>
-                ) : null;
-              })}
-            </CardContent>
-          </Card>
-
-          {/* Delivery Feedback provided By User */}
-          <Card className="mt-8">
-            <CardContent className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Delivery Feedback provided By You</h2>
-              {order.products.map((product, idx) => {
-                const feedback = feedbacks[idx]?.delivery;
-                return feedback ? (
-                  <div className="mb-4" key={idx}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Image src={product.image} alt={product.name} width={32} height={32} className="w-8 h-8 object-contain rounded border" />
-                      <span className="font-medium">{product.name}</span>
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-4 h-4 ${i < feedback.rating ? "text-yellow-400" : "text-gray-300"}`} />
-                      ))}
-                    </div>
-                    <div className="text-sm text-gray-700 mb-2">{feedback.description}</div>
-                    {feedback.images && feedback.images.length > 0 && (
-                      <div className="flex gap-2 mb-2 flex-wrap">
-                        {feedback.images.map((img, imgIdx) => (
-                          <Image key={imgIdx} src={URL.createObjectURL(img)} alt="Feedback" width={96} height={96} className="w-24 h-24 object-cover rounded" />
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleEditFeedback("delivery", idx, feedback)}>Edit</Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDeleteFeedback("delivery", idx)}>Delete</Button>
-                    </div>
-                  </div>
-                ) : null;
-              })}
-            </CardContent>
-          </Card>
-
-          {/* Feedback Modal */}
-          {modalOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 min-w-[350px] shadow-lg">
-                <h2 className="text-xl font-semibold mb-4">
-                  {modalType === "delivery" ? "Delivery" : "Product"} Feedback
+          {/* Customer Information */}
+          {order.user && (
+            <Card className="mt-6">
+              <CardContent className="p-6">
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Customer Information
                 </h2>
-                {!selectedProductIdx && (
-                  <div>
-                    <p className="mb-2 text-sm font-medium">Select a product to provide feedback:</p>
-                    <div className="flex flex-col gap-3">
-                      {order.products.map((product, idx) => {
-                        const alreadySubmitted = !!feedbacks[idx]?.[modalType!];
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            disabled={alreadySubmitted}
-                            className={`flex items-center gap-3 p-2 border rounded hover:bg-gray-50 ${alreadySubmitted ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                            onClick={() => setSelectedProductIdx(idx)}
-                          >
-                            <Image src={product.image} alt={product.name} width={40} height={40} className="w-10 h-10 object-contain rounded border" />
-                            <span className="font-medium">{product.name}</span>
-                            {alreadySubmitted && <span className="text-xs text-green-600 ml-2">Feedback Submitted</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                {selectedProductIdx !== null && (
-                  <form onSubmit={handleFeedbackSubmit} className="flex flex-col gap-3 mt-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Image src={order.products[selectedProductIdx].image} alt={order.products[selectedProductIdx].name} width={40} height={40} className="w-10 h-10 object-contain rounded border" />
-                      <span className="font-medium">{order.products[selectedProductIdx].name}</span>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Your Name</label>
-                      <input type="text" value={userName} disabled className="border rounded px-2 py-1 w-full bg-gray-100" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Rating</label>
-                      <div className="flex gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <button type="button" key={i} onClick={() => handleStarClick(i + 1)}>
-                            <Star className={`w-6 h-6 ${i < feedbackForm.rating ? "text-yellow-400" : "text-gray-300"}`} />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Feedback Description</label>
-                      <textarea name="description" value={feedbackForm.description} onChange={handleFeedbackChange} className="border rounded px-2 py-1 w-full" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Upload Images (max 3)</label>
-                      <input type="file" name="images" accept="image/*" multiple onChange={handleFeedbackChange} className="border rounded px-2 py-1 w-full" />
-                      {feedbackForm.images.length > 0 && (
-                        <div className="flex gap-2 mt-2 flex-wrap">
-                          {feedbackForm.images.map((img, idx) => (
-                            <Image key={idx} src={URL.createObjectURL(img)} alt="Preview" width={64} height={64} className="w-16 h-16 object-cover rounded" />
-                          ))}
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-800 mb-2">Delivery Details</h3>
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium text-gray-900">{order.user.name}</p>
+                      <p className="text-gray-600">{order.user.email}</p>
+                      {order.user.phoneNumber && (
+                        <p className="text-gray-600">Phone: {order.user.phoneNumber}</p>
                       )}
                     </div>
-                    <div className="flex gap-2 mt-2">
-                      <Button type="submit" className="bg-blue-600 text-white px-4 py-1 rounded">Submit</Button>
-                      <Button type="button" className="bg-gray-300 px-4 py-1 rounded" onClick={() => setModalOpen(false)}>Cancel</Button>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      Payment Method
+                    </h3>
+                    <div className="text-sm">
+                      <p className="text-gray-600">Cash on Delivery (COD)</p>
+                      <p className="text-xs text-gray-500 mt-1">Pay when your order arrives</p>
                     </div>
-                  </form>
-                )}
-              </div>
-            </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
     </div>
   );
-};
-
-export default OrderDetail;
+}

@@ -270,7 +270,7 @@ export default function CartPage() {
 
   // Calculate totals from current state
   const subtotal = summary.subtotal
-  const discount = 50000
+  const discount = 0
   const total = Math.max(0, subtotal - discount) // Ensure non-negative total
 
   if (loading) {

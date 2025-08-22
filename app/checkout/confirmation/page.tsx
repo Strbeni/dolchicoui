@@ -1,11 +1,14 @@
-'use client'
+'use client';
 
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import Image from 'next/image';
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
-// Types
+// API base URL
+const API_BASE_URL = 'http://localhost:4000/api';
+
+// --- Types ---
 interface CartItem {
   id: number;
   productId: number;
@@ -17,7 +20,6 @@ interface CartItem {
     image: string[];
   };
 }
-
 interface CartData {
   items: CartItem[];
   summary: {
@@ -25,7 +27,6 @@ interface CartData {
     subtotal: number;
   };
 }
-
 interface CheckoutFormData {
   name: string;
   email: string;
@@ -35,91 +36,87 @@ interface CheckoutFormData {
   country: string;
   zipCode: string;
 }
-
 interface CheckoutPaymentData {
   method: string;
+  [key: string]: any;
 }
 
 export default function ConfirmationPage() {
-  const [cartData, setCartData] = useState<CartData | null>(null)
-  const [formData, setFormData] = useState<CheckoutFormData | null>(null)
-  const [paymentData, setPaymentData] = useState<CheckoutPaymentData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [placingOrder, setPlacingOrder] = useState(false)
-  
-  const router = useRouter()
+  const [cartData, setCartData] = useState<CartData | null>(null);
+  const [formData, setFormData] = useState<CheckoutFormData | null>(null);
+  const [paymentData, setPaymentData] = useState<CheckoutPaymentData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  const router = useRouter();
+
+  // Load cart and form/payment data from storage and backend
   useEffect(() => {
     const loadData = async () => {
       try {
+        setError(null);
+        setLoading(true);
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if (!token) {
           router.push('/login');
           return;
         }
-
-        // Fetch cart data
-        const response = await fetch('http://localhost:3000/api/cart', {
-          method: 'GET',
+        // Fetch cart items
+        const cartRes = await fetch(`${API_BASE_URL}/cart`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch cart');
+        const cartJson = await cartRes.json();
+        if (cartJson.success) {
+          setCartData(cartJson.data);
         }
 
-        const result = await response.json();
-        if (result.success) {
-          setCartData(result.data);
-        }
-
-        // Load saved form data
-        const savedFormData = localStorage.getItem('checkoutFormData');
-        const savedPaymentData = localStorage.getItem('checkoutPaymentData');
-        
-        if (savedFormData) {
-          setFormData(JSON.parse(savedFormData));
-        } else {
+        // Load form and payment data from localStorage
+        const savedForm = localStorage.getItem('checkoutFormData');
+        const savedPayment = localStorage.getItem('checkoutPaymentData');
+        if (savedForm) setFormData(JSON.parse(savedForm));
+        else {
           router.push('/checkout');
           return;
         }
-
-        if (savedPaymentData) {
-          setPaymentData(JSON.parse(savedPaymentData));
-    } else {
-      router.push('/checkout/shipping');
-      return;
-    }
-
-  } catch (error) {
-        console.error('Error loading data:', error);
+        if (savedPayment) setPaymentData(JSON.parse(savedPayment));
+        else {
+          router.push('/checkout/shipping');
+          return;
+        }
+      } catch (err) {
+        setError('Failed to load confirmation data.');
       } finally {
         setLoading(false);
       }
     };
-
     loadData();
   }, [router]);
 
-  // Function removed as it's not being used
+  // Helper for totals
+  const calculateTotal = useCallback(() => {
+    if (!cartData) return 0;
+    const discount = 0;
+    const shipping = 100;
+    const subtotal = cartData.summary.subtotal;
+    return Math.max(0, subtotal - discount + shipping);
+  }, [cartData]);
 
-  const handlePlaceOrder = async () => {
+  // Place order on backend
+  const handlePlaceOrder = useCallback(async () => {
     if (!cartData || !formData) return;
-    
+    setError(null);
     setPlacingOrder(true);
-
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      
-      // Prepare order data
       const orderData = {
         items: cartData.items.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
-          size: item.size
+          size: item.size,
         })),
         amount: calculateTotal(),
         address: {
@@ -128,13 +125,11 @@ export default function ConfirmationPage() {
           state: formData.province,
           zipCode: formData.zipCode,
           country: formData.country,
-          phone: formData.phone
+          phone: formData.phone,
         }
       };
 
-      console.log('🔍 Placing order:', orderData);
-
-      const response = await fetch('http://localhost:3000/api/order/place', {
+      const response = await fetch(`${API_BASE_URL}/order/place`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -144,35 +139,28 @@ export default function ConfirmationPage() {
       });
 
       const result = await response.json();
-      console.log('🔍 Order result:', result);
 
       if (!response.ok || !result.success) {
         throw new Error(result.message || 'Failed to place order');
       }
-
-      // Clear checkout data
+      // Clear checkout data in localStorage
       localStorage.removeItem('checkoutFormData');
       localStorage.removeItem('checkoutPaymentData');
-
-      // Redirect to success page with order ID
+      // Navigate to success page
       router.push(`/checkout/success?orderId=${result.orderId}`);
-
-    } catch (error) {
-      console.error('Failed to place order:', error);
-      alert('Failed to place order. Please try again.');
+    } catch (err) {
+      setError('Failed to place order. Please try again.');
     } finally {
       setPlacingOrder(false);
     }
-  };
+  }, [cartData, formData, calculateTotal, router]);
 
-  const calculateTotal = () => {
-    if (!cartData) return 0;
-    const discount = 50000;
-    const shipping = 39000;
-    const subtotal = cartData.summary.subtotal;
-    return Math.max(0, subtotal - discount + shipping);
-  };
+  const discount = 0;
+  const shipping = 0;
+  const subtotal = cartData?.summary.subtotal ?? 0;
+  const total = calculateTotal();
 
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -184,23 +172,33 @@ export default function ConfirmationPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-6">
+          <div className="text-red-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Error</h2>
+          <p className="mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!cartData || !formData) {
     router.push('/checkout');
     return null;
   }
-
-  const discount = 50000;
-  const shipping = 39000;
-  const subtotal = cartData.summary.subtotal;
-  const total = calculateTotal();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 px-6 lg:px-20 py-10 gap-10">
       {/* LEFT */}
       <div>
         <h1 className="text-3xl font-bold mb-6">CONFIRMATION</h1>
-
-        {/* Steps */}
         <div className="flex items-center gap-6 mb-10">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">✓</div>
@@ -226,7 +224,6 @@ export default function ConfirmationPage() {
             </div>
           </div>
         </div>
-
         {/* Order Details */}
         <div className="bg-gray-50 p-4 rounded mb-6">
           <h3 className="font-semibold mb-2">Order Details</h3>
@@ -234,13 +231,16 @@ export default function ConfirmationPage() {
             <p><span className="font-medium">Name:</span> {formData.name}</p>
             <p><span className="font-medium">Email:</span> {formData.email}</p>
             <p><span className="font-medium">Phone:</span> {formData.phone}</p>
-            <p><span className="font-medium">Address:</span> {formData.street}, {formData.province}, {formData.country} {formData.zipCode}</p>
+            <p>
+              <span className="font-medium">Address:</span> {formData.street}, {formData.province}, {formData.country} {formData.zipCode}
+            </p>
             {paymentData && (
-              <p><span className="font-medium">Payment Method:</span> {paymentData.method.toUpperCase()}</p>
+              <p>
+                <span className="font-medium">Payment Method:</span> {paymentData.method.toUpperCase()}
+              </p>
             )}
           </div>
         </div>
-
         {/* Order Status */}
         <div className="flex justify-between items-center mb-4">
           <div>
@@ -254,7 +254,6 @@ export default function ConfirmationPage() {
             Ready to Place
           </span>
         </div>
-
         {/* Payment Info */}
         <div className="mt-4 text-sm text-gray-700">
           <p className="font-semibold mb-1">Payment Information</p>
@@ -263,10 +262,9 @@ export default function ConfirmationPage() {
             You will receive an order confirmation email with all the details.
           </p>
         </div>
-
-        {/* Centered Button */}
+        {/* Place Order Button */}
         <div className="mt-10 flex justify-center">
-          <Button 
+          <Button
             className="bg-[#d9673f] hover:bg-[#c2552d] text-white px-8 py-2"
             onClick={handlePlaceOrder}
             disabled={placingOrder}
@@ -282,25 +280,23 @@ export default function ConfirmationPage() {
           </Button>
         </div>
       </div>
-
-      {/* RIGHT */}
+      {/* RIGHT SUMMARY */}
       <div>
         <h2 className="text-2xl font-semibold mb-4">ORDER SUMMARY</h2>
-
-        <div className="bg-[#f5f1ec] border border-gray-300 text-sm px-4 py-2 flex justify-between items-center mb-4">
+        <div className="bg-[#f5f1ec] border border-gray-300 text-sm px-4 py-2 flex justify-between items-center mb-4 rounded">
           <span>Hooray! You use promo code!</span>
-          <button className="text-gray-400 text-lg">×</button>
+          <button className="text-gray-400 text-lg" aria-label="Remove promo code">×</button>
         </div>
-
         {/* Products from Cart */}
         <div className="space-y-4 mb-6">
           {cartData.items.map((item) => (
-            <div key={item.id} className="flex gap-4 items-start">
-              <Image 
-                src={item.product.image[0] || '/p1.svg'} 
-                alt={item.product.name} 
-                width={70} 
-                height={70} 
+            <div key={`${item.id}-${item.size}`} className="flex gap-4 items-start">
+              <Image
+                src={item.product.image[0] || '/p1.svg'}
+                alt={item.product.name}
+                width={70}
+                height={70}
+                className="object-cover rounded"
               />
               <div>
                 <h4 className="font-semibold text-sm">{item.product.name}</h4>
@@ -310,7 +306,6 @@ export default function ConfirmationPage() {
             </div>
           ))}
         </div>
-
         {/* Price Summary */}
         <div className="space-y-2 text-sm border-t pt-4">
           <div className="flex justify-between">
@@ -332,5 +327,5 @@ export default function ConfirmationPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
