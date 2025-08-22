@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Image from "next/image"
@@ -13,7 +15,7 @@ function VerifyEmailClient() {
   const [status, setStatus] = useState<"idle" | "loading" | "verified" | "invalid" | "error">("idle")
   const [email, setEmail] = useState("")
   const [otp, setOtp] = useState("")
-  const [otpBoxes, setOtpBoxes] = useState<string[]>(["", "", "", "", "", ""]) 
+  const [otpBoxes, setOtpBoxes] = useState<string[]>(["", "", "", "", "", ""])
   const otpRefs = useState<Array<HTMLInputElement | null>>([])[0]
   const [message, setMessage] = useState("")
   const [resendCooldown, setResendCooldown] = useState(0)
@@ -42,15 +44,18 @@ function VerifyEmailClient() {
 
     if (!urlToken) {
       setStatus("invalid")
-      setMessage("Verification token not found in URL.")
+      setMessage("Verification token not found in URL. Please check your email link.")
       return
     }
 
     const verifyToken = async () => {
       setStatus("loading")
+      setMessage("")
 
       try {
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+        console.log("Verifying token:", urlToken)
+
         const res = await fetch(`${API_BASE_URL}/api/user/verify-email`, {
           method: "POST",
           headers: {
@@ -59,20 +64,36 @@ function VerifyEmailClient() {
           body: JSON.stringify({ token: urlToken }),
         })
 
-        const data = await res.json()
-
-        if (!res.ok) {
-          throw new Error(data?.message || "Verification failed")
+        let data
+        try {
+          data = await res.json()
+        } catch (jsonErr) {
+          console.error("JSON parsing error:", jsonErr)
+          throw new Error("Invalid server response. Please try again.")
         }
 
+        if (!res.ok) {
+          console.error("Verification API error:", res.status, data)
+          throw new Error(data?.message || `Verification failed (${res.status}). Please try again.`)
+        }
+
+        if (!data.success) {
+          throw new Error(data?.message || "Email verification failed")
+        }
+
+        console.log("Email verified successfully")
         setStatus("verified")
+        setMessage("Email verified successfully!")
+
+        // Redirect after 2 seconds
         setTimeout(() => router.push("/login"), 2000)
       } catch (err) {
+        console.error("Token verification error:", err)
         setStatus("invalid")
         if (err instanceof Error) {
           setMessage(err.message)
         } else {
-          setMessage("An unexpected error occurred")
+          setMessage("An unexpected error occurred during verification")
         }
       }
     }
@@ -81,13 +102,22 @@ function VerifyEmailClient() {
   }, [searchParams, router])
 
   const handleResendToken = async () => {
-    if (!email) {
-      setMessage("Please enter your email address.")
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!email || !emailRegex.test(email)) {
+      setMessage("Please enter a valid email address.")
+      return
+    }
+
+    if (resendCooldown > 0) {
+      setMessage(`Please wait ${resendCooldown} seconds before requesting another token.`)
       return
     }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+      console.log("Resending verification token to:", email)
+
       const res = await fetch(`${API_BASE_URL}/api/user/resend-verification-token`, {
         method: "POST",
         headers: {
@@ -96,29 +126,53 @@ function VerifyEmailClient() {
         body: JSON.stringify({ email }),
       })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to resend token")
+      let data
+      try {
+        data = await res.json()
+      } catch (jsonErr) {
+        console.error("JSON parsing error:", jsonErr)
+        throw new Error("Invalid server response. Please try again.")
       }
 
-      setMessage("A new token has been sent to your email.")
+      if (!res.ok) {
+        console.error("Resend token API error:", res.status, data)
+        throw new Error(data?.message || `Failed to resend token (${res.status}). Please try again.`)
+      }
+
+      if (!data.success) {
+        throw new Error(data?.message || "Failed to resend verification token")
+      }
+
+      console.log("Verification token resent successfully")
+      setMessage("A new verification token has been sent to your email.")
       setResendCooldown(24)
     } catch (err) {
+      console.error("Resend token error:", err)
       if (err instanceof Error) {
         setMessage(err.message)
+      } else {
+        setMessage("Failed to resend verification token. Please try again.")
       }
     }
   }
 
   const handleVerifyOtp = async () => {
-    if (!email || !otp) {
-      setMessage("Please enter both email and OTP.")
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!email || !emailRegex.test(email)) {
+      setMessage("Please enter a valid email address.")
+      return
+    }
+
+    if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+      setMessage("Please enter a valid 6-digit OTP.")
       return
     }
 
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+      console.log("Verifying OTP for:", email)
+
       const res = await fetch(`${API_BASE_URL}/api/user/verify-otp`, {
         method: "POST",
         headers: {
@@ -127,17 +181,35 @@ function VerifyEmailClient() {
         body: JSON.stringify({ email, otp }),
       })
 
-      const data = await res.json()
+      let data
+      try {
+        data = await res.json()
+      } catch (jsonErr) {
+        console.error("JSON parsing error:", jsonErr)
+        throw new Error("Invalid server response. Please try again.")
+      }
 
       if (!res.ok) {
+        console.error("OTP verification API error:", res.status, data)
+        throw new Error(data?.message || `OTP verification failed (${res.status}). Please try again.`)
+      }
+
+      if (!data.success) {
         throw new Error(data?.message || "OTP verification failed")
       }
 
+      console.log("OTP verified successfully")
       setStatus("verified")
+      setMessage("Email verified successfully!")
+
+      // Redirect after 2 seconds
       setTimeout(() => router.push("/login"), 2000)
     } catch (err) {
+      console.error("OTP verification error:", err)
       if (err instanceof Error) {
         setMessage(err.message)
+      } else {
+        setMessage("OTP verification failed. Please try again.")
       }
     }
   }
@@ -173,9 +245,14 @@ function VerifyEmailClient() {
         <div className="absolute inset-0 bg-black/35" />
         <div className="absolute inset-0 flex flex-col justify-center px-14 text-white">
           <DolchiLogo className="h-12 w-auto mb-6" width={160} height={52} />
-          <h1 className="text-5xl font-semibold leading-tight max-w-xl">Fashion Moves Fast<br />
-             Stay Ahead</h1>
-          <p className="mt-6 text-lg max-w-lg opacity-90">Discover fashion that reflects your values and your style. Sustainably sourced, thoughtfully designed, endlessly stylish.</p>
+          <h1 className="text-5xl font-semibold leading-tight max-w-xl">
+            Fashion Moves Fast
+            <br /> Stay Ahead
+          </h1>
+          <p className="mt-6 text-lg max-w-lg opacity-90">
+            Discover fashion that reflects your values and your style. Sustainably sourced, thoughtfully designed,
+            endlessly stylish.
+          </p>
         </div>
       </div>
 
@@ -261,7 +338,9 @@ function VerifyEmailClient() {
                       {otpBoxes.map((val, idx) => (
                         <Input
                           key={idx}
-                          ref={(el) => { otpRefs[idx] = el }}
+                          ref={(el) => {
+                            otpRefs[idx] = el
+                          }}
                           inputMode="numeric"
                           pattern="[0-9]*"
                           className="w-12 h-12 text-center text-lg"
@@ -282,7 +361,7 @@ function VerifyEmailClient() {
                       disabled={resendCooldown > 0}
                       className="text-[#ff6b35] hover:underline text-sm disabled:text-gray-400 disabled:no-underline"
                     >
-                      {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP in 24s"}
+                      {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Resend OTP"}
                     </button>
                   </div>
 
