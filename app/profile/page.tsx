@@ -509,7 +509,7 @@ export default function AccountSettings() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="phone">Phone Number (Read Only)</Label>
+                      <Label htmlFor="phone">Phone Number</Label>
                       <Input
                         id="phone"
                         value={phone}
