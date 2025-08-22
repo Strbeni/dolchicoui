@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense, useCallback } from "react";
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:4000/api';
+API_BASE_URL = 'https://valyris-i.onrender.com/api';
 
 // Types
 interface OrderDetails {

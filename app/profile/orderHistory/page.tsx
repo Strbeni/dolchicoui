@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 // API Configuration
-const API_BASE_URL = 'http://localhost:4000/api';
+API_BASE_URL = 'https://valyris-i.onrender.com/api';
 
 // Types
 interface OrderItem {
