@@ -1,6 +1,36 @@
+
 "use client";
 
+interface Address {
+  name?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  phone?: string;
+  // Add other fields as needed
+}
+
+interface Order {
+  id?: string;
+  status?: string;
+  date?: string | number;
+  amount?: number;
+  // Add other fields as needed
+}
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
+
+interface Profile {
+  email?: string;
+  name?: string;
+  displayName?: string;
+  country?: string;
+  state?: string;
+  phoneNumber?: string;
+  // Add other fields as needed
+}
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,17 +120,17 @@ export default function AccountDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // States
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const [addresses, setAddresses] = useState([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressLoading, setAddressLoading] = useState(true);
 
-  const [cards, setCards] = useState([]);
-  const [upis, setUpis] = useState([]);
+  const [cards, setCards] = useState<typeof mockCards>([]);
+  const [upis, setUpis] = useState<typeof mockUpis>([]);
   const [paymentLoading, setPaymentLoading] = useState(true);
 
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
   const [stats, setStats] = useState({ total: 0, pending: 0, completed: 0 });
@@ -108,7 +138,7 @@ export default function AccountDashboard() {
 
   const [settingsAction, setSettingsAction] = useState(""); // "edit", "password", "delete"
   const [isEditing, setIsEditing] = useState(false);
-  const [editProfile, setEditProfile] = useState({});
+  const [editProfile, setEditProfile] = useState<any>(null);
   const [editLoading, setEditLoading] = useState(false);
 
   const [showPasswordReset, setShowPasswordReset] = useState(false);
@@ -264,7 +294,11 @@ export default function AccountDashboard() {
       setSettingsAction("");
       fetchProfile();
     } catch (err) {
-      setError(err.message || "Failed to update profile");
+      if (err instanceof Error) {
+        setError(err.message || "Failed to update profile");
+      } else {
+        setError("Failed to update profile");
+      }
     } finally {
       setEditLoading(false);
     }
