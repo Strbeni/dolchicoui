@@ -13,6 +13,7 @@ import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { Stepper } from "@/components/ui/stepper";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 // API Configuration
 const API_BASE_URL = 'https://valyris-i.onrender.com/api';
@@ -88,7 +89,7 @@ export default function Checkout() {
 
   // Get auth headers (memoized for stability)
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = localStorage?.getItem('token') || sessionStorage?.getItem('token');
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -112,7 +113,6 @@ export default function Checkout() {
         const defaultAddress = addresses.find((addr: AddressType) => addr.isDefault);
         if (defaultAddress && !selectedAddressId) {
           setSelectedAddressId(defaultAddress.id);
-          // *** FIX: Use a functional update to prevent dependency on formData ***
           setFormData(prev => ({
             ...prev,
             name: defaultAddress.name,
@@ -129,7 +129,7 @@ export default function Checkout() {
     } finally {
       setAddressesLoading(false);
     }
-  }, [getAuthHeaders, selectedAddressId]); // *** FIX: Removed formData.email dependency ***
+  }, [getAuthHeaders, selectedAddressId]);
 
   // Fetch cart data
   const fetchCart = useCallback(async () => {
@@ -156,9 +156,9 @@ export default function Checkout() {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = localStorage?.getItem('token') || sessionStorage?.getItem('token');
       if (!token) {
-        router.push('/login');
+        router?.push('/login');
         return;
       }
 
@@ -176,7 +176,7 @@ export default function Checkout() {
 
         setCartData(cartResult);
 
-        const savedFormData = localStorage.getItem('checkoutFormData');
+        const savedFormData = localStorage?.getItem('checkoutFormData');
         if (savedFormData) {
           const parsedData = JSON.parse(savedFormData) as FormData;
           setFormData(prev => ({ ...prev, ...parsedData }));
@@ -190,7 +190,7 @@ export default function Checkout() {
     };
     
     initializeCheckout();
-  }, [router, fetchCart, fetchAddresses]); // Dependencies are stable now
+  }, [router, fetchCart, fetchAddresses]);
 
   // Handle address selection
   const handleAddressSelect = useCallback((addressId: number) => {
@@ -217,7 +217,7 @@ export default function Checkout() {
     setFormData(prev => ({
       name: '',
       phone: '',
-      email: prev.email, // Preserve email
+      email: prev.email,
       street: '',
       country: 'Indonesia',
       province: '',
@@ -262,16 +262,16 @@ export default function Checkout() {
     }
     
     setError(null);
-    localStorage.setItem('checkoutFormData', JSON.stringify(formData));
-    router.push('/checkout/shipping');
+    localStorage?.setItem('checkoutFormData', JSON.stringify(formData));
+    router?.push('/checkout/shipping');
 
   }, [isFormValid, formData, router]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading checkout...</p>
         </div>
       </div>
@@ -280,11 +280,11 @@ export default function Checkout() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Oops! Something went wrong</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <Button onClick={() => window.location.reload()} className="w-full">
+          <Button onClick={() => window.location.reload()} className="w-full bg-orange-500 hover:bg-orange-600">
             Try Again
           </Button>
         </div>
@@ -294,11 +294,11 @@ export default function Checkout() {
   
   if (!cartData || cartData.items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Your cart is empty</h2>
           <p className="text-gray-600 mb-6">Add items to your cart before checking out.</p>
-          <Button onClick={() => router.push('/productlist')} className="w-full">
+          <Button onClick={() => router?.push('/productlist')} className="w-full bg-orange-500 hover:bg-orange-600">
             Continue Shopping
           </Button>
         </div>
@@ -307,238 +307,286 @@ export default function Checkout() {
   }
 
   // Calculate totals
-  const discount = 0;
+  const discount = 0; // Mock discount from image
   const shipping = 0;
   const subtotal = cartData.summary.subtotal;
   const total = Math.max(0, subtotal - discount + shipping);
 
   return (
-    <div className="min-h-screen bg-white px-6 lg:px-20 py-12 flex flex-col lg:flex-row gap-10">
-      <div className="w-full lg:w-2/3">
-        <h1 className="text-3xl font-serif mb-2">
-          <span className="text-[#844416] font-bold">M</span>
-          <span className="text-black font-medium">ODEVA</span>
-        </h1>
-        <h2 className="text-4xl font-serif font-bold text-gray-800 mb-6">Checkout Form</h2>
-        <Stepper
-          steps={[
-            { title: "1", label: "PERSONAL INFO" },
-            { title: "2", label: "SHIPPING DELIVERY" },
-            { title: "3", label: "CONFIRMATION" },
-          ]}
-          currentStep={currentStep}
-          onStepChange={setCurrentStep}
-        />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+          {/* Left Column - Form */}
+          <div className="lg:col-span-7">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">CHECKOUT FORM</h2>
+              
 
-        <div className="space-y-8 mt-8">
-          {savedAddresses.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Select Delivery Address</h3>
-              <div className="space-y-3 mb-4">
-                {savedAddresses.map((address) => (
-                  <div
-                    key={address.id}
-                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                      selectedAddressId === address.id
-                        ? 'border-[#844416] bg-[#844416]/5'
-                        : 'border-gray-300 hover:border-[#844416]/50'
-                    }`}
-                    onClick={() => handleAddressSelect(address.id)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+              {/* Progress Steps */}
+              <div className="flex items-center justify-between  mb-8">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-medium">
+                    1
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">PERSONAL INFO</p>
+                  </div>
+                </div>
+                <div className="flex-1 h-px bg-gray-200 mx-4"></div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium">
+                    2
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">PAYMENT</p>
+                  </div>
+                </div>
+                <div className="flex-1 h-px bg-gray-200 mx-4"></div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium">
+                    3
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">CONFIRMATION</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Selection for existing users */}
+              {savedAddresses.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Delivery Address</h3>
+                  <div className="space-y-3">
+                    {savedAddresses.map((address) => (
+                      <label
+                        key={address.id}
+                        className={`block border rounded-lg p-4 cursor-pointer transition-colors ${
+                          selectedAddressId === address.id
+                            ? 'border-orange-500 bg-orange-50'
+                            : 'border-gray-300 hover:border-orange-300'
+                        }`}
+                      >
+                        <div className="flex items-start">
                           <input
                             type="radio"
                             name="address"
                             checked={selectedAddressId === address.id}
                             onChange={() => handleAddressSelect(address.id)}
-                            className="form-radio text-[#844416] focus:ring-[#844416]"
+                            className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                           />
-                          <span className="font-semibold">{address.name}</span>
-                          {address.isDefault && (
-                            <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">
-                              Default
-                            </span>
-                          )}
+                          <div className="ml-3 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-gray-900">{address.name}</span>
+                              {address.isDefault && (
+                                <Badge className="bg-green-100 text-green-800 text-xs">Default</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {address.street}, {address.city}, {address.state} {address.zip}
+                            </p>
+                            <p className="text-sm text-gray-600">Phone: {address.phone}</p>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-600 ml-6">
-                          {address.street}, {address.city}, {address.state} {address.zip}
-                        </p>
-                        <p className="text-sm text-gray-600 ml-6">
-                          Phone: {address.phone}
-                        </p>
+                      </label>
+                    ))}
+                    
+                    <label
+                      className={`block border rounded-lg p-4 cursor-pointer transition-colors ${
+                        useNewAddress
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-300 hover:border-orange-300'
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <input
+                          type="radio"
+                          name="address"
+                          checked={useNewAddress}
+                          onChange={handleUseNewAddress}
+                          className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
+                        />
+                        <span className="ml-3 font-semibold text-gray-900">Use a new address</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Contact Person */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">CONTACT PERSON</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">NAME</label>
+                    <Input 
+                      placeholder="Eg: John Doe"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      className="focus:ring-orange-500 focus:border-orange-500"
+                      disabled={selectedAddressId !== null && !useNewAddress}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">PHONE NUMBER</label>
+                    <div className="flex gap-2">
+                      <Select defaultValue="+62">
+                        <SelectTrigger className="w-20 focus:ring-orange-500 focus:border-orange-500">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="+62">(+62)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input 
+                        placeholder="111-2222-33333"
+                        className="flex-1 focus:ring-orange-500 focus:border-orange-500"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        disabled={selectedAddressId !== null && !useNewAddress}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">EMAIL</label>
+                    <Input 
+                      placeholder="Eg: example@example.com"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Detail - Show when using new address or no saved addresses */}
+              {(useNewAddress || savedAddresses.length === 0) && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">ADDRESS DETAIL</h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ADDRESS</label>
+                      <Input 
+                        placeholder="Eg: ABC Street 12A, West Java, Indonesia"
+                        value={formData.street}
+                        onChange={(e) => handleInputChange('street', e.target.value)}
+                        className="focus:ring-orange-500 focus:border-orange-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">COUNTRY</label>
+                      <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
+                        <SelectTrigger className="focus:ring-orange-500 focus:border-orange-500">
+                          <SelectValue placeholder="--Choose Country--" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Indonesia">Indonesia</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">STATE/PROVINCE</label>
+                        <Select value={formData.province} onValueChange={(value) => handleInputChange('province', value)}>
+                          <SelectTrigger className="focus:ring-orange-500 focus:border-orange-500">
+                            <SelectValue placeholder="--Choose Province--" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Jakarta">Jakarta</SelectItem>
+                            <SelectItem value="West Java">West Java</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ZIP CODE</label>
+                        <Input
+                          placeholder="--Choose ZIP Code--"
+                          value={formData.zipCode}
+                          onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                          className="focus:ring-orange-500 focus:border-orange-500"
+                        />
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              <Button 
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 font-medium"
+                onClick={handleContinue}
+                disabled={!isFormValid()}
+              >
+                CONTINUE TO SHIPPING
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Column - Order Summary */}
+          <div className="lg:col-span-5">
+            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 sticky top-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">ORDER SUMMARY</h3>
+              
+             
+
+              {/* Product Items */}
+              <div className="space-y-4 mb-6">
+                {cartData.items.map((item) => (
+                  <div key={`${item.productId}-${item.size}`} className="flex iitems-center gap-3">
+                    <div className="relative">
+                      <Image
+                        src={item.product.image[0] || "/placeholder.svg"}
+                        alt={item.product.name}
+                        width={60}
+                        height={60}
+                        className="object-cover rounded-lg"
+                      />
+                      <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                        {item.quantity}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900 truncate">{item.product.name}</p>
+                      <p className="text-xs text-gray-500">Size: {item.size}</p>
+                      <p className="text-sm text-gray-700 font-medium">IDR {item.price.toLocaleString()}</p>
+                    </div>
+                  </div>
                 ))}
-                
-                <div
-                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                    useNewAddress
-                      ? 'border-[#844416] bg-[#844416]/5'
-                      : 'border-gray-300 hover:border-[#844416]/50'
-                  }`}
-                  onClick={handleUseNewAddress}
-                >
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="address"
-                      checked={useNewAddress}
-                      onChange={handleUseNewAddress}
-                      className="form-radio text-[#844416] focus:ring-[#844416]"
-                    />
-                    <span className="font-semibold">Use a new address</span>
-                  </div>
+              </div>
+
+              {/* Order Totals */}
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="text-gray-900">IDR {subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm text-red-600">
+                 
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Shipping</span>
+                  <span className="text-gray-900">IDR {shipping.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold pt-2 border-t">
+                  <span className="text-gray-900">Total</span>
+                  <span className="text-orange-600">IDR {total.toLocaleString()}</span>
                 </div>
               </div>
             </div>
-          )}
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
-            <Input 
-              placeholder="Eg: example@example.com"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              required
-              aria-label="Email Address"
-              className="focus:ring-2 focus:ring-[#844416] focus:border-[#844416]"
-            />
-          </div>
-
-          {(useNewAddress || savedAddresses.length === 0) && (
-            <>
-              <div>
-                <h3 className="text-lg font-semibold mb-4">
-                  {savedAddresses.length > 0 ? 'New Address Details' : 'Address Details'}
-                </h3>
-                <div className="space-y-4">
-                  <Input 
-                    placeholder="Eg: John Doe" 
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    required
-                    aria-label="Full Name"
-                    className="focus:ring-2 focus:ring-[#844416] focus:border-[#844416]"
-                  />
-                  
-                  <div className="flex gap-2">
-                    <Select defaultValue="+62">
-                      <SelectTrigger className="w-24">
-                        <SelectValue placeholder="(+62)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="+62">+62</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input 
-                      placeholder="111-2222-33333" 
-                      className="flex-1 focus:ring-2 focus:ring-[#844416] focus:border-[#844416]"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      required
-                      aria-label="Phone Number"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Address Detail</h3>
-                <div className="space-y-4">
-                  <Input 
-                    placeholder="Eg: ABC Street 12A"
-                    value={formData.street}
-                    onChange={(e) => handleInputChange('street', e.target.value)}
-                    required
-                    aria-label="Street Address"
-                    className="focus:ring-2 focus:ring-[#844416] focus:border-[#844416]"
-                  />
-                  
-                  <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
-                    <SelectTrigger><SelectValue placeholder="--Choose Country--" /></SelectTrigger>
-                    <SelectContent><SelectItem value="Indonesia">Indonesia</SelectItem></SelectContent>
-                  </Select>
-
-                  <div className="flex gap-4">
-                    <Select value={formData.province} onValueChange={(value) => handleInputChange('province', value)}>
-                      <SelectTrigger><SelectValue placeholder="--Choose Province--" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Jakarta">Jakarta</SelectItem>
-                        <SelectItem value="West Java">West Java</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    
-                    <Input
-                      placeholder="ZIP Code"
-                      value={formData.zipCode}
-                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                      required
-                      aria-label="ZIP Code"
-                      className="focus:ring-2 focus:ring-[#844416] focus:border-[#844416]"
-                    />
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          <Button 
-            className="mt-8 bg-[#844416] hover:bg-[#6f3612] text-white w-full"
-            onClick={handleContinue}
-            disabled={!isFormValid()}
-          >
-            Continue to Shipping
-          </Button>
-
-        </div>
-      </div>
-      
-      {/* Right Order Summary */}
-      <div className="w-full lg:w-1/3 bg-white border border-gray-200 p-6 rounded-lg shadow-sm h-fit">
-        <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
-        <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
-          {cartData.items.map((item) => (
-            <div key={`${item.productId}-${item.size}`} className="flex items-start gap-4">
-              <div className="relative flex-shrink-0">
-                <Image
-                  src={item.product.image[0] || "/placeholder.svg"}
-                  alt={item.product.name}
-                  width={64}
-                  height={64}
-                  className="object-cover rounded"
-                />
-                <span className="absolute -top-2 -right-2 bg-[#844416] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                  {item.quantity}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{item.product.name}</p>
-                <p className="text-sm text-gray-600">{item.quantity} × IDR {item.price.toLocaleString()}</p>
-                <p className="text-xs text-gray-500 mt-1">Size: {item.size}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="text-sm space-y-2 border-t pt-4 mt-4">
-          <div className="flex justify-between">
-            <span>Subtotal ({cartData.summary.totalItems} items)</span>
-            <span>IDR {subtotal.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-red-600">
-            <span>Voucher</span>
-            <span>-IDR {discount.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Shipping</span>
-            <span>IDR {shipping.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between font-semibold text-lg pt-2 border-t">
-            <span>Total</span>
-            <span className="text-[#844416]">IDR {total.toLocaleString()}</span>
           </div>
         </div>
       </div>

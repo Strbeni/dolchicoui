@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { CheckCircle, Package, Eye, AlertCircle, RefreshCw } from "lucide-react";
+import { CheckCircle, Package, Eye, AlertCircle, RefreshCw, Home, Mail, Phone, HelpCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, Suspense, useCallback } from "react";
 
@@ -42,7 +42,7 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
   const [error, setError] = useState<string | null>(null);
 
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || sessionStorage.getItem('token')) : null;
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -51,8 +51,7 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
 
   // Clear checkout data after successful order
   useEffect(() => {
-    if (orderDetails) {
-      // Clean up checkout data from localStorage
+    if (orderDetails && typeof window !== 'undefined') {
       localStorage.removeItem('checkoutFormData');
       localStorage.removeItem('checkoutPaymentData');
       localStorage.removeItem('checkoutSessionId');
@@ -70,7 +69,7 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
       setError(null);
       setLoading(true);
       
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || sessionStorage.getItem('token')) : null;
       if (!token) {
         setError('Authentication required to view order details');
         setLoading(false);
@@ -120,37 +119,37 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
     switch (status.toLowerCase()) {
       case 'order_placed':
         return {
-          color: 'bg-blue-100 text-blue-800 border-blue-200',
+          color: 'bg-blue-50 text-blue-700 border-blue-200',
           icon: '📋',
           description: 'Your order has been received and is being processed'
         };
       case 'confirmed':
         return {
-          color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+          color: 'bg-orange-50 text-orange-700 border-orange-200',
           icon: '✅',
           description: 'Your order has been confirmed and will be prepared soon'
         };
       case 'shipped':
         return {
-          color: 'bg-purple-100 text-purple-800 border-purple-200',
+          color: 'bg-purple-50 text-purple-700 border-purple-200',
           icon: '🚚',
           description: 'Your order is on its way to you'
         };
       case 'delivered':
         return {
-          color: 'bg-green-100 text-green-800 border-green-200',
+          color: 'bg-green-50 text-green-700 border-green-200',
           icon: '📦',
           description: 'Your order has been delivered successfully'
         };
       case 'cancelled':
         return {
-          color: 'bg-red-100 text-red-800 border-red-200',
+          color: 'bg-red-50 text-red-700 border-red-200',
           icon: '❌',
           description: 'Your order has been cancelled'
         };
       default:
         return {
-          color: 'bg-gray-100 text-gray-800 border-gray-200',
+          color: 'bg-gray-50 text-gray-700 border-gray-200',
           icon: '📋',
           description: 'Order status updated'
         };
@@ -201,33 +200,33 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center space-x-2 mb-6">
-        <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-        <span className="text-sm text-gray-500">Loading order details...</span>
+      <div className="flex flex-col items-center space-y-4 py-8">
+        <div className="w-6 h-6 border-2 border-orange-200 border-t-[#D9643A] rounded-full animate-spin"></div>
+        <span className="text-sm text-gray-600">Loading order details...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6 max-w-md w-full">
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <AlertCircle className="w-5 h-5 text-red-600" />
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
           <div className="text-sm font-medium text-red-800">Failed to Load Order</div>
         </div>
         <p className="text-sm text-red-600 mb-4">{error}</p>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={fetchOrderDetails}
             disabled={loading}
-            className="flex items-center gap-2 bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded text-sm font-medium transition disabled:opacity-50"
+            className="flex items-center justify-center gap-2 bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 flex-1 sm:flex-none"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Retry
           </button>
           <Link
             href="/orders"
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-medium transition"
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition text-center flex-1 sm:flex-none"
           >
             View All Orders
           </Link>
@@ -238,17 +237,17 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
 
   if (!orderId) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6 max-w-md w-full">
+      <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6 shadow-sm">
         <div className="flex items-center gap-3 mb-2">
-          <AlertCircle className="w-5 h-5 text-yellow-600" />
-          <div className="text-sm font-medium text-yellow-800">No Order ID Found</div>
+          <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
+          <div className="text-sm font-medium text-orange-800">No Order ID Found</div>
         </div>
-        <p className="text-sm text-yellow-600 mb-4">
+        <p className="text-sm text-orange-600 mb-4">
           Your order was placed successfully, but we couldn&apos;t retrieve the order details.
         </p>
         <Link
           href="/orders"
-          className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded text-sm font-medium transition"
+          className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition inline-block"
         >
           View All Orders
         </Link>
@@ -257,9 +256,9 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
   }
 
   return (
-    <>
-      {/* Order Information */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 max-w-lg w-full shadow-lg">
+    <div className="space-y-6">
+      {/* Order Information Card */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         {/* Order Header */}
         <div className="text-center mb-6">
           <div className="text-sm text-gray-500 mb-1">Order Number</div>
@@ -268,18 +267,18 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
         
         {orderDetails ? (
           <div className="space-y-6">
-            {/* Status with Enhanced Display */}
+            {/* Status */}
             <div className="text-center">
-              <div className="text-sm text-gray-600 mb-2">Current Status</div>
+              <div className="text-sm text-gray-600 mb-3">Current Status</div>
               {(() => {
                 const statusInfo = getStatusInfo(orderDetails.status);
                 return (
-                  <div className="space-y-2">
-                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border ${statusInfo.color}`}>
-                      <span>{statusInfo.icon}</span>
+                  <div className="space-y-3">
+                    <div className={`inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-semibold border ${statusInfo.color}`}>
+                      <span className="text-base">{statusInfo.icon}</span>
                       <span>{formatStatus(orderDetails.status)}</span>
                     </div>
-                    <p className="text-xs text-gray-600 max-w-xs mx-auto">
+                    <p className="text-xs text-gray-600 max-w-sm mx-auto leading-relaxed">
                       {statusInfo.description}
                     </p>
                   </div>
@@ -288,26 +287,26 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
             </div>
 
             {/* Order Summary Grid */}
-            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <div className="text-xs text-gray-500 mb-1">Total Amount</div>
-                <div className="font-bold text-lg text-green-600">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 text-center border border-orange-200">
+                <div className="text-xs text-[#D9643A] mb-1 font-medium">Total Amount</div>
+                <div className="font-bold text-xl text-[#D9643A]">
                   IDR {orderDetails.amount?.toLocaleString()}
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-xs text-gray-500 mb-1">Items</div>
-                <div className="font-semibold text-gray-800">
-                  {orderDetails.items?.length || 0}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 text-center border border-gray-200">
+                <div className="text-xs text-gray-600 mb-1 font-medium">Total Items</div>
+                <div className="font-bold text-xl text-gray-700">
+                  {orderDetails.items?.length || 0} items
                 </div>
               </div>
             </div>
             
             {/* Order Date */}
             {orderDetails.date && (
-              <div className="text-center">
-                <div className="text-sm text-gray-600 mb-1">Order Placed</div>
-                <div className="text-sm font-medium text-gray-800">
+              <div className="text-center bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <div className="text-sm text-blue-700 mb-1 font-medium">📅 Order Placed</div>
+                <div className="text-sm font-semibold text-blue-800">
                   {formatDate(orderDetails.date)}
                 </div>
               </div>
@@ -315,9 +314,9 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
 
             {/* Estimated Delivery */}
             {orderDetails.date && orderDetails.status !== 'delivered' && orderDetails.status !== 'cancelled' && (
-              <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div className="text-sm text-blue-600 mb-1">📅 Estimated Delivery</div>
-                <div className="text-sm font-semibold text-blue-800">
+              <div className="text-center bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="text-sm text-purple-700 mb-1 font-medium">🚚 Estimated Delivery</div>
+                <div className="text-sm font-semibold text-purple-800">
                   {getEstimatedDelivery(orderDetails.date, orderDetails.status)}
                 </div>
               </div>
@@ -326,27 +325,27 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
             {/* Items Preview */}
             {orderDetails.items && orderDetails.items.length > 0 && (
               <div>
-                <div className="text-sm text-gray-600 mb-3 font-medium">Items in This Order</div>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {orderDetails.items.map((item, index) => (
-                    <div key={`${item.id}-${item.size}-${index}`} className="flex items-center justify-between text-xs bg-gray-50 px-3 py-2 rounded">
+                <div className="text-sm text-gray-700 mb-4 font-semibold">Items in This Order</div>
+                <div className="space-y-3 max-h-40 overflow-y-auto">
+                  {orderDetails.items.slice(0, 3).map((item, index) => (
+                    <div key={`${item.id}-${item.size}-${index}`} className="flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg border border-gray-100">
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-800 truncate">{item.product.name}</div>
-                        <div className="text-gray-500">Size: {item.size} • Qty: {item.quantity}</div>
+                        <div className="font-medium text-gray-800 text-sm truncate">{item.product.name}</div>
+                        <div className="text-gray-500 text-xs mt-1">Size: {item.size} • Quantity: {item.quantity}</div>
                       </div>
-                      <div className="text-gray-700 font-medium ml-2">
+                      <div className="text-[#D9643A] font-bold ml-3 text-sm">
                         IDR {(item.price * item.quantity).toLocaleString()}
                       </div>
                     </div>
                   ))}
                 </div>
                 {orderDetails.items.length > 3 && (
-                  <div className="text-center mt-2">
+                  <div className="text-center mt-3">
                     <Link 
                       href={`/orders/${orderId}`}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-sm text-[#D9643A] hover:text-[#B8552E] font-medium hover:underline transition"
                     >
-                      View all {orderDetails.items.length} items
+                      View all {orderDetails.items.length} items →
                     </Link>
                   </div>
                 )}
@@ -355,10 +354,10 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
             
             {/* Customer Info */}
             {orderDetails.user && (
-              <div className="border-t pt-4">
-                <div className="text-sm text-gray-600 mb-2">Order Details</div>
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-gray-800">
+              <div className="border-t pt-6">
+                <div className="text-sm text-gray-600 mb-3 font-semibold">Customer Details</div>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="text-sm font-medium text-gray-800 mb-1">
                     {orderDetails.user.name}
                   </div>
                   <div className="text-xs text-gray-600">
@@ -369,8 +368,8 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
             )}
           </div>
         ) : (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="text-sm text-yellow-800 text-center">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="text-sm text-orange-800 text-center">
               🔄 Order details are being processed and will be available shortly.
             </div>
           </div>
@@ -378,36 +377,40 @@ function OrderSuccessContent({ orderId }: OrderSuccessContentProps) {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8 w-full max-w-lg">
-        {orderId && (
-          <Link
-            href="/orders"
-            className="bg-[#d86538] hover:bg-[#b9552e] text-white px-6 py-3 uppercase text-sm font-semibold tracking-wide transition flex items-center justify-center space-x-2 rounded-lg shadow-md flex-1"
-          >
-            <Eye className="w-4 h-4" />
-            <span>Track Order</span>
-          </Link>
-        )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Link
+          href="/orders"
+          className="bg-[#D9643A] hover:bg-[#B8552E] text-white px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+        >
+          <Eye className="w-4 h-4" />
+          <span>TRACK ORDER</span>
+        </Link>
         
         <Link
           href="/productlist"
-          className="border-2 border-[#d86538] text-[#d86538] hover:bg-[#d86538] hover:text-white px-6 py-3 uppercase text-sm font-semibold tracking-wide transition flex items-center justify-center space-x-2 rounded-lg flex-1"
+          className="border-2 border-[#D9643A] text-[#D9643A] hover:bg-[#D9643A] hover:text-white px-6 py-4 text-sm font-semibold transition flex items-center justify-center gap-2 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-200"
         >
           <Package className="w-4 h-4" />
-          <span>Continue Shopping</span>
+          <span>CONTINUE SHOPPING</span>
         </Link>
       </div>
-    </>
+    </div>
   );
 }
 
 // Loading fallback for the Suspense boundary
 function OrderSuccessLoading() {
   return (
-    <div className="flex flex-col items-center justify-center space-y-4 mb-6">
-      <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-      <span className="text-gray-500">Loading order details...</span>
-      <div className="w-64 h-4 bg-gray-200 rounded animate-pulse"></div>
+    <div className="flex flex-col items-center justify-center space-y-6 py-12">
+      <div className="w-12 h-12 border-4 border-orange-200 border-t-[#D9643A] rounded-full animate-spin"></div>
+      <div className="text-center space-y-2">
+        <span className="text-gray-600 font-medium">Loading order details...</span>
+        <div className="flex space-x-2 justify-center">
+          <div className="w-20 h-3 bg-gray-200 rounded animate-pulse"></div>
+          <div className="w-32 h-3 bg-gray-200 rounded animate-pulse"></div>
+          <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -417,167 +420,177 @@ export default function SuccessPage() {
   const [showConfetti, setShowConfetti] = useState(true);
 
   useEffect(() => {
-    // Hide confetti effect after 3 seconds
-    const timer = setTimeout(() => setShowConfetti(false), 3000);
+    // Hide confetti effect after 4 seconds
+    const timer = setTimeout(() => setShowConfetti(false), 4000);
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-6 text-center bg-gradient-to-br from-green-50 via-white to-blue-50 relative overflow-hidden">
+    <div className="min-h-screen ">
       {/* Animated Background Elements */}
       {showConfetti && (
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          {[...Array(25)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-2 h-2 bg-green-400 rounded-full animate-bounce opacity-60"
+              className="absolute w-3 h-3 rounded-full opacity-70"
               style={{
+                backgroundColor: ['#D9643A', '#f97316', '#fb923c', '#fed7aa', '#22c55e'][Math.floor(Math.random() * 5)],
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 2}s`,
-                animationDuration: `${1 + Math.random() * 2}s`
+                animation: `bounce ${1 + Math.random() * 3}s infinite`,
+                animationDelay: `${Math.random() * 2}s`
               }}
             />
           ))}
         </div>
       )}
 
-      {/* Logo */}
-      <div className="absolute top-6 left-6 z-10">
-        <Link href="/" className="hover:opacity-80 transition">
-          <h1 className="text-2xl font-serif tracking-wide">
-            <span className="text-[#e76f34] font-bold">M</span>
-            <span className="text-black font-medium">ODEVA</span>
-          </h1>
-        </Link>
-      </div>
 
-      {/* Success Icon with Animation */}
-      <div className="relative mb-8">
-        <div className="relative">
-          <CheckCircle className="text-green-500 w-20 h-20 drop-shadow-lg" />
-          <div className="absolute -top-1 -right-1 bg-green-100 rounded-full p-1">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-          </div>
-        </div>
-        {showConfetti && (
-          <div className="absolute -inset-4">
-            <div className="w-full h-full border-4 border-green-300 rounded-full animate-ping opacity-30"></div>
-          </div>
-        )}
-      </div>
-
-      {/* Heading with Animation */}
-      <div className="mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2 animate-fade-in">
-          ORDER PLACED SUCCESSFULLY!
-        </h1>
-        <p className="text-lg text-gray-600 animate-fade-in-delay">
-          🎉 Thank you for your purchase!
-        </p>
-      </div>
-
-      {/* Order Details Component */}
-      <Suspense fallback={<OrderSuccessLoading />}>
-        <OrderSuccessContentWrapper />
-      </Suspense>
-
-      {/* Description */}
-      <div className="max-w-2xl mb-10 space-y-4">
-        <div className="bg-white/80 backdrop-blur rounded-xl p-6 border border-gray-200">
-          <p className="text-gray-700 mb-3 font-medium">
-            🚀 Your order is now in our fulfillment center
-          </p>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Our team is carefully preparing your items for shipment. You&apos;ll receive tracking information via email once your package is on its way.
-          </p>
-        </div>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-500">
-            Browse our collection while you wait – you might find something else you love!
-          </p>
-        </div>
-      </div>
-
-      {/* Navigation Links */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <Link
-          href="/"
-          className="text-gray-600 hover:text-gray-800 text-sm font-medium transition inline-flex items-center gap-1"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Home
-        </Link>
-        
-        <span className="text-gray-300 hidden sm:block">|</span>
-        
-        <Link
-          href="/orders"
-          className="text-[#d86538] hover:text-[#b9552e] text-sm font-medium transition"
-        >
-          View All Orders
-        </Link>
-      </div>
-
-      {/* Email Confirmation Notice */}
-      <div className="max-w-md w-full mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm">
-          <div className="flex items-start space-x-4">
-            <div className="bg-blue-100 rounded-full p-3 flex-shrink-0">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div className="text-left flex-1">
-              <div className="font-semibold text-blue-800 text-base mb-2">📧 Email Confirmation Sent</div>
-              <div className="text-blue-700 text-sm leading-relaxed">
-                A detailed order confirmation has been sent to your email with:
+      {/* Main Content */}
+      <main className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        <div className="max-w-2xl mx-auto">
+          {/* Success Header */}
+          <div className="text-center mb-12">
+            <div className="relative inline-block mb-6">
+              <div className="bg-green-100 rounded-full p-8 shadow-lg relative">
+                <CheckCircle className="text-green-600 w-16 h-16 mx-auto" />
+                {showConfetti && (
+                  <>
+                    <div className="absolute -inset-4 border-4 border-green-300 rounded-full animate-ping opacity-40"></div>
+                    <div className="absolute -inset-8 border-2 border-green-200 rounded-full animate-pulse opacity-30"></div>
+                  </>
+                )}
               </div>
-              <ul className="text-blue-600 text-xs mt-2 space-y-1 list-disc list-inside">
-                <li>Complete order summary</li>
-                <li>Tracking information</li>
-                <li>Delivery timeline</li>
-                <li>Customer support contacts</li>
-              </ul>
+            </div>
+            
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 animate-fade-in">
+              PAYMENT SUCCESS!
+            </h1>
+            <div className="max-w-lg mx-auto">
+              <p className="text-gray-600 leading-relaxed mb-6">
+                Lean back and relax, knowing our team is hard at work preparing and shipping your package swiftly. Feel free to browse our diverse product selection during this time - you might discover another item you'd like to add to your collection!
+              </p>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Support Notice */}
-      <div className="text-center bg-white/60 backdrop-blur rounded-lg p-4 border border-gray-200">
-        <p className="text-sm text-gray-600 mb-2">Need assistance with your order?</p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-          <Link
-            href="/support"
-            className="text-sm text-[#d86538] hover:text-[#b9552e] font-semibold transition"
-          >
-            📞 Contact Support
-          </Link>
-          <span className="text-gray-300 hidden sm:block">•</span>
-          <Link
-            href="/faq"
-            className="text-sm text-gray-600 hover:text-gray-800 transition"
-          >
-            💡 Visit FAQ
-          </Link>
-          <span className="text-gray-300 hidden sm:block">•</span>
-          <Link
-            href="/track-order"
-            className="text-sm text-gray-600 hover:text-gray-800 transition"
-          >
-            📦 Track Package
-          </Link>
-        </div>
-      </div>
+          {/* Order Details Component */}
+          <Suspense fallback={<OrderSuccessLoading />}>
+            <OrderSuccessContentWrapper />
+          </Suspense>
 
-      {/* Footer Note */}
-      <div className="mt-8 text-xs text-gray-400">
-        <p>Order confirmation • Secure checkout completed</p>
-      </div>
+          {/* Additional Information */}
+          <div className="space-y-6 mt-8">
+            {/* Email Confirmation */}
+            <div className="bg-white border border-blue-200 rounded-xl p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="bg-blue-100 rounded-full p-3 flex-shrink-0">
+                  <Mail className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-blue-800 text-lg mb-2">📧 Email Confirmation Sent</div>
+                  <div className="text-blue-700 leading-relaxed mb-4">
+                    A detailed order confirmation has been sent to your email with:
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-blue-600 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                      Complete order summary
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                      Tracking information
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                      Delivery timeline
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                      Customer support contacts
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Grid */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <h3 className="font-semibold text-gray-800 mb-4 text-lg">Quick Actions</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <Link
+                  href="/"
+                  className="flex flex-col items-center gap-3 text-gray-600 hover:text-[#D9643A] p-4 rounded-lg hover:bg-orange-50 transition-all duration-200 group"
+                >
+                  <Home className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium">Home</span>
+                </Link>
+                <Link
+                  href="/support"
+                  className="flex flex-col items-center gap-3 text-gray-600 hover:text-[#D9643A] p-4 rounded-lg hover:bg-orange-50 transition-all duration-200 group"
+                >
+                  <Phone className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium">Support</span>
+                </Link>
+                <Link
+                  href="/faq"
+                  className="flex flex-col items-center gap-3 text-gray-600 hover:text-[#D9643A] p-4 rounded-lg hover:bg-orange-50 transition-all duration-200 group"
+                >
+                  <HelpCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium">FAQ</span>
+                </Link>
+                <Link
+                  href="/track-order"
+                  className="flex flex-col items-center gap-3 text-gray-600 hover:text-[#D9643A] p-4 rounded-lg hover:bg-orange-50 transition-all duration-200 group"
+                >
+                  <Package className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium">Track</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Back to Home - Primary CTA */}
+            <Link
+              href="/"
+              className="w-full bg-gradient-to-r from-[#D9643A] to-[#B8552E] hover:from-[#B8552E] hover:to-[#A04A29] text-white py-6 text-center font-bold text-xl tracking-wider transition-all duration-300 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 block"
+            >
+              BACK TO HOME
+            </Link>
+
+            {/* Support Notice */}
+            <div className="text-center bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <p className="text-gray-600 mb-4 font-medium">Need assistance with your order?</p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link
+                  href="/support"
+                  className="text-[#D9643A] hover:text-[#B8552E] font-semibold transition hover:underline"
+                >
+                  📞 Contact Support
+                </Link>
+                <span className="text-gray-300">•</span>
+                <Link
+                  href="/faq"
+                  className="text-gray-600 hover:text-gray-800 transition hover:underline"
+                >
+                  💡 Visit FAQ
+                </Link>
+                <span className="text-gray-300">•</span>
+                <Link
+                  href="/track-order"
+                  className="text-gray-600 hover:text-gray-800 transition hover:underline"
+                >
+                  📦 Track Package
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center text-gray-400 mt-12 pt-8 border-t border-gray-200">
+            <p className="text-sm">Order confirmation • Secure checkout completed</p>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
