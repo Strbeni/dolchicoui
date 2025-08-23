@@ -13,13 +13,7 @@ interface AuthLayoutProps {
 export default function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white mt-[-12px] md:mt-0">
-      {/* Optional: Add a header with logo */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-3">
-    <Link href="/">
-    <DolchiLogo className="h-12 w-auto mb-6" width={100} height={52} />
-    </Link>
-
-      </div>
+     
 
       {/* Main content */}
       <main className="relative z-0">

@@ -1,7 +1,7 @@
+
 "use client"
 
 import type React from "react"
-
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,40 @@ import { Eye, EyeOff, CheckCircle } from "lucide-react"
 import { useState, useCallback, useEffect } from "react"
 import DolchiLogo from "@/components/DolchiLogo"
 
+
+// Password checklist and strength
+  
+  
+  const passwordChecklist = [
+    {
+      label: "At least 10 characters",
+      test: (pwd: string) => pwd.length >= 10,
+    },
+    {
+      label: "At least one uppercase letter",
+      test: (pwd: string) => /[A-Z]/.test(pwd),
+    },
+    {
+      label: "At least one lowercase letter",
+      test: (pwd: string) => /[a-z]/.test(pwd),
+    },
+    {
+      label: "At least one number",
+      test: (pwd: string) => /\d/.test(pwd),
+    },
+    {
+      label: "At least one special character",
+      test: (pwd: string) => /[!@#$%^&*(),.?\":{}|<>]/.test(pwd),
+    },
+  ];
+
+  const getPasswordStrength = (pwd: string) => {
+    const passed = passwordChecklist.filter(item => item.test(pwd)).length;
+    if (passed === 5) return { label: "Strong", color: "green" };
+    if (passed >= 3) return { label: "Medium", color: "orange" };
+    if (passed >= 1) return { label: "Weak", color: "red" };
+    return { label: "Very Weak", color: "gray" };
+  }
 // Types for better type safety
 interface ApiResponse {
   success: boolean
@@ -25,8 +59,18 @@ export default function ForgotPassword() {
   // State management
   const [step, setStep] = useState<StepType>("emailInput")
   const [email, setEmail] = useState("")
+
+  // Autofill from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const lastContact = localStorage.getItem("dolchi_last_contact") || ""
+      if (lastContact && !email) {
+        setEmail(lastContact)
+      }
+    }
+  }, [])
   const [otp, setOtp] = useState("")
-  const [otpBoxes, setOtpBoxes] = useState<string[]>(["", "", "", "", "", ""]) 
+  const [otpBoxes, setOtpBoxes] = useState<string[]>(["", "", "", "", "", ""])
   const otpRefs = useState<Array<HTMLInputElement | null>>([])[0]
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -37,18 +81,16 @@ export default function ForgotPassword() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // API Configuration
-  const API_BASE = "http://localhost:4000/api/user"
+  const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com") + "/api/user"
   const RESEND_SECONDS = 24
 
-  // Password validation
   const validatePassword = (password: string): string[] => {
     const errors: string[] = []
-    if (password.length < 8) errors.push("At least 8 characters")
-    if (!/[A-Z]/.test(password)) errors.push("One uppercase letter")
-    if (!/[a-z]/.test(password)) errors.push("One lowercase letter")
-    if (!/\d/.test(password)) errors.push("One number")
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.push("One special character")
+    if (password.length < 10) errors.push("At least 10 characters")
+    if (!/[A-Z]/.test(password)) errors.push("At least one uppercase letter")
+    if (!/[a-z]/.test(password)) errors.push("At least one lowercase letter")
+    if (!/\d/.test(password)) errors.push("At least one number")
+    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) errors.push("At least one special character")
     return errors
   }
 
@@ -63,10 +105,13 @@ export default function ForgotPassword() {
     return () => clearInterval(interval)
   }, [resendCooldown])
 
-  // API call wrapper with error handling
   const apiCall = async (endpoint: string, body: object): Promise<ApiResponse> => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout
+
+    console.log(`[v0] Environment variable NEXT_PUBLIC_API_BASE_URL:`, process.env.NEXT_PUBLIC_API_BASE_URL)
+    console.log(`[v0] Making API call to: ${API_BASE}${endpoint}`)
+    console.log(`[v0] Request body:`, body)
 
     try {
       const response = await fetch(`${API_BASE}${endpoint}`, {
@@ -79,29 +124,50 @@ export default function ForgotPassword() {
       })
 
       clearTimeout(timeoutId)
-      const data = await response.json()
+      console.log(`[v0] API response status:`, response.status)
+      console.log(`[v0] API response headers:`, Object.fromEntries(response.headers.entries()))
+
+      let data
+      try {
+        const responseText = await response.text()
+        console.log(`[v0] Raw response text:`, responseText)
+
+        if (!responseText) {
+          throw new Error("Empty response from server")
+        }
+
+        data = JSON.parse(responseText)
+        console.log(`[v0] Parsed response data:`, data)
+      } catch (jsonErr) {
+        console.error(`[v0] JSON parsing error:`, jsonErr)
+        throw new Error("Invalid server response. Please try again.")
+      }
 
       if (!response.ok) {
-        throw new Error(data?.message || `HTTP ${response.status}: ${response.statusText}`)
+        console.error(`[v0] API Error:`, response.status, data)
+        throw new Error(data?.message || `Server error (${response.status}). Please try again.`)
       }
 
       return data
     } catch (err) {
       clearTimeout(timeoutId)
+      console.error(`[v0] API call failed:`, err)
       if (err instanceof Error) {
         if (err.name === "AbortError") {
-          throw new Error("Request timeout. Please try again.")
+          throw new Error("Request timeout. Please check your connection and try again.")
         }
-        throw new Error(err.message)
+        throw err
       }
-      throw new Error("An unexpected error occurred.")
+      throw new Error("An unexpected error occurred. Please try again.")
     }
   }
 
-  // Send OTP to email
   const sendOtp = useCallback(async () => {
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Please enter a valid email address.")
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const phoneRegex = /^[+]?[1-9][\d]{0,15}$/
+
+    if (!email || (!emailRegex.test(email) && !phoneRegex.test(email))) {
+      setError("Please enter a valid email address or phone number.")
       return
     }
 
@@ -110,67 +176,75 @@ export default function ForgotPassword() {
     setSuccess(null)
 
     try {
+      console.log("Sending OTP to:", email)
       const data = await apiCall("/forgot-password", { email })
-      setSuccess(data.message || "OTP sent successfully!")
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to send OTP")
+      }
+
+      setSuccess(data.message || "OTP sent successfully to your email/phone!")
       setStep("otpInput")
-      setResendCooldown(RESEND_SECONDS) // Start cooldown
+      setResendCooldown(RESEND_SECONDS)
+      console.log("OTP sent successfully")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send OTP")
+      console.error("Send OTP error:", err)
+      setError(err instanceof Error ? err.message : "Failed to send OTP. Please try again.")
     } finally {
       setLoading(false)
     }
   }, [email])
 
-  // Resend OTP
-  const resendOtp = useCallback(async () => {
-    if (resendCooldown > 0) return
-    await sendOtp()
-  }, [sendOtp, resendCooldown])
-
-  // Proceed to password reset after OTP verification
   const proceedToPasswordReset = useCallback(() => {
-    if (!otp || otp.length !== 6) {
+    if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
       setError("Please enter a valid 6-digit OTP.")
       return
     }
+
+    console.log("OTP verified, proceeding to password reset")
     setError(null)
     setStep("passwordReset")
   }, [otp])
 
-  // Reset password
   const resetPassword = useCallback(async () => {
     setError(null)
 
-    // Client-side validation
     const passwordErrors = validatePassword(newPassword)
     if (passwordErrors.length > 0) {
-      setError(`Password must have: ${passwordErrors.join(", ")}`)
+      setError(`Password requirements: ${passwordErrors.join(", ")}`)
       return
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.")
+      setError("Passwords do not match. Please check and try again.")
       return
     }
 
     setLoading(true)
 
     try {
+      console.log("Resetting password for:", email)
       const data = await apiCall("/reset-password", {
         email,
         otp,
         newPassword,
       })
 
+      if (!data.success) {
+        throw new Error(data.message || "Password reset failed")
+      }
+
       setSuccess(data.message || "Password reset successfully!")
       setStep("success")
+      console.log("Password reset successful")
 
-      // Auto redirect after 3 seconds
+      // Redirect after 3 seconds
       setTimeout(() => {
         router.push("/login")
       }, 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reset password")
+      console.error("Reset password error:", err)
+      setError(err instanceof Error ? err.message : "Failed to reset password. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -236,16 +310,21 @@ export default function ForgotPassword() {
         <div className="absolute inset-0 bg-black/35" />
         <div className="absolute inset-0 flex flex-col justify-center px-14 text-white">
           <DolchiLogo className="h-12 w-auto mb-6" width={160} height={52} />
-          <h1 className="text-5xl font-semibold leading-tight max-w-xl">Fashion Moves Fast<br />
-             Stay Ahead</h1>
-          <p className="mt-6 text-lg max-w-lg opacity-90">Discover fashion that reflects your values and your style. Sustainably sourced, thoughtfully designed, endlessly stylish.</p>
+          <h1 className="text-5xl font-semibold leading-tight max-w-xl">
+            Fashion Moves Fast
+            <br /> Stay Ahead
+          </h1>
+          <p className="mt-6 text-lg max-w-lg opacity-90">
+            Discover fashion that reflects your values and your style. Sustainably sourced, thoughtfully designed,
+            endlessly stylish.
+          </p>
         </div>
       </div>
 
       {/* Right Side - Form Content */}
       <div className="flex-1 flex flex-col">
         {/* Mobile Header with Logo */}
-        
+
         <div className="lg:hidden bg-gradient-to-r from-blue-400 to-purple-400 p-0 text-center">
           <div className="relative h-70 w-full overflow-hidden">
             <Image src="/banner.svg" alt="Welcome" fill className="object-cover" />
@@ -258,7 +337,6 @@ export default function ForgotPassword() {
               <p className="text-white/80 text-xs">One Account. Endless Style.</p>
             </div>
           </div>
-        
         </div>
 
         {/* Form Container */}
@@ -267,7 +345,6 @@ export default function ForgotPassword() {
             {/* Desktop Logo */}
             <div className="hidden lg:block text-center mb-8">
               <DolchiLogo className="h-10 w-auto mx-auto mb-4" width={120} height={40} />
-            
             </div>
 
             {/* Step Title */}
@@ -348,7 +425,9 @@ export default function ForgotPassword() {
                       {otpBoxes.map((val, idx) => (
                         <Input
                           key={idx}
-                          ref={(el) => { otpRefs[idx] = el }}
+                          ref={(el) => {
+                            otpRefs[idx] = el
+                          }}
                           inputMode="numeric"
                           pattern="[0-9]*"
                           className="w-12 h-12 text-center text-lg"
@@ -366,7 +445,7 @@ export default function ForgotPassword() {
                   <div className="text-center">
                     <button
                       type="button"
-                      onClick={resendOtp}
+                      onClick={sendOtp}
                       disabled={loading || resendCooldown > 0}
                       className="text-[#ff6b35] hover:underline text-sm disabled:text-gray-400 disabled:no-underline"
                     >
@@ -407,6 +486,37 @@ export default function ForgotPassword() {
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
+                    {/* Password checklist */}
+                    <ul className="mt-2 mb-2 space-y-1">
+                      {passwordChecklist.map((item, idx) => {
+                        const passed = item.test(newPassword);
+                        return (
+                          <li key={idx} className="flex items-center text-sm">
+                            {passed ? (
+                              <span className="text-green-600 mr-2">&#10003;</span>
+                            ) : (
+                              <span className="text-red-500 mr-2">&#10007;</span>
+                            )}
+                            <span className={passed ? "text-green-700" : "text-gray-700"}>{item.label}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {/* Password strength */}
+                    <div className="mb-2 text-xs">
+                      <span>Password strength: </span>
+                      <span style={{ color: getPasswordStrength(newPassword).color }}>
+                        {getPasswordStrength(newPassword).label}
+                      </span>
+                    </div>
+                    {/* Show all validation errors */}
+                    {newPassword && validatePassword(newPassword).length > 0 && (
+                      <ul className="text-xs text-red-600 list-disc ml-5 mt-1">
+                        {validatePassword(newPassword).map((err, idx) => (
+                          <li key={idx}>{err}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
 
                   <div>
@@ -429,11 +539,19 @@ export default function ForgotPassword() {
                         {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
+                    {/* Password mismatch error */}
+                    {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                      <p className="text-xs text-red-600 font-medium mt-1">Passwords do not match.</p>
+                    )}
                   </div>
 
                   <Button
                     type="submit"
-                    disabled={loading || validatePassword(newPassword).length > 0 || newPassword !== confirmPassword}
+                    disabled={
+                      loading ||
+                      validatePassword(newPassword).length > 0 ||
+                      newPassword !== confirmPassword
+                    }
                     className="w-full h-12 bg-[#ff6b35] hover:bg-[#e55a2b] text-white font-medium rounded-lg"
                   >
                     {loading ? "Resetting..." : "Continue"}
