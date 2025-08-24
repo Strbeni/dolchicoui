@@ -1,19 +1,7 @@
-'use client';
-
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
-import { Stepper } from "@/components/ui/stepper";
+"use client";
+import React, { useState, useEffect, useCallback } from "react";
+import { ChevronRight, Plus, Edit2, ShoppingCart, MapPin, Phone, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 
 // API Configuration
 const API_BASE_URL = 'https://valyris-i.onrender.com/api';
@@ -62,19 +50,25 @@ interface AddressType {
   isDefault: boolean;
 }
 
-export default function Checkout() {
+export default function CheckoutForm() {
+  // Get coupon code from query params
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const couponCode = searchParams ? searchParams.get('coupon') : null;
   // State Management
   const [currentStep, setCurrentStep] = useState(0);
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Address related state
   const [savedAddresses, setSavedAddresses] = useState<AddressType[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [addressesLoading, setAddressesLoading] = useState(false);
-  
+  const [showAddressForm, setShowAddressForm] = useState(false);
+
+  const router = useRouter();
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     phone: '',
@@ -85,11 +79,12 @@ export default function Checkout() {
     zipCode: ''
   });
 
-  const router = useRouter();
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
 
   // Get auth headers (memoized for stability)
   const getAuthHeaders = useCallback(() => {
-    const token = localStorage?.getItem('token') || sessionStorage?.getItem('token');
+    const token = typeof window !== 'undefined' ?
+      localStorage?.getItem('token') || sessionStorage?.getItem('token') : null;
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -101,15 +96,17 @@ export default function Checkout() {
     try {
       setAddressesLoading(true);
       const headers = getAuthHeaders();
-      if (!headers['Authorization']) return;
-      
+      if (!headers['Authorization'] || headers['Authorization'] === 'Bearer null') {
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/addresses`, { headers });
 
       if (response.ok) {
         const data = await response.json();
         const addresses = data.addresses || [];
         setSavedAddresses(addresses);
-        
+
         const defaultAddress = addresses.find((addr: AddressType) => addr.isDefault);
         if (defaultAddress && !selectedAddressId) {
           setSelectedAddressId(defaultAddress.id);
@@ -156,9 +153,12 @@ export default function Checkout() {
       setLoading(true);
       setError(null);
 
-      const token = localStorage?.getItem('token') || sessionStorage?.getItem('token');
+      const token = typeof window !== 'undefined' ?
+        localStorage?.getItem('token') || sessionStorage?.getItem('token') : null;
+
       if (!token) {
-        router?.push('/login');
+        setError('Please login to continue with checkout');
+        setLoading(false);
         return;
       }
 
@@ -176,10 +176,17 @@ export default function Checkout() {
 
         setCartData(cartResult);
 
-        const savedFormData = localStorage?.getItem('checkoutFormData');
+        const savedFormData = typeof window !== 'undefined' ?
+          localStorage?.getItem('checkoutFormData') : null;
         if (savedFormData) {
           const parsedData = JSON.parse(savedFormData) as FormData;
           setFormData(prev => ({ ...prev, ...parsedData }));
+        }
+
+        // Coupon sync from localStorage
+        const storedCoupon = typeof window !== 'undefined' ? localStorage.getItem("appliedCoupon") : null;
+        if (storedCoupon) {
+          setAppliedCoupon(JSON.parse(storedCoupon));
         }
 
       } catch (err) {
@@ -188,9 +195,9 @@ export default function Checkout() {
         setLoading(false);
       }
     };
-    
+
     initializeCheckout();
-  }, [router, fetchCart, fetchAddresses]);
+  }, [fetchCart, fetchAddresses]);
 
   // Handle address selection
   const handleAddressSelect = useCallback((addressId: number) => {
@@ -198,6 +205,7 @@ export default function Checkout() {
     if (selectedAddress) {
       setSelectedAddressId(addressId);
       setUseNewAddress(false);
+      setShowAddressForm(false);
       setFormData(prev => ({
         ...prev,
         name: selectedAddress.name,
@@ -214,6 +222,7 @@ export default function Checkout() {
   const handleUseNewAddress = useCallback(() => {
     setUseNewAddress(true);
     setSelectedAddressId(null);
+    setShowAddressForm(true);
     setFormData(prev => ({
       name: '',
       phone: '',
@@ -228,11 +237,11 @@ export default function Checkout() {
   // Form validation
   const isFormValid = useCallback(() => {
     return !!(
-      formData.name.trim() && 
-      formData.phone.trim() && 
-      formData.email.trim() && 
-      formData.street.trim() && 
-      formData.province && 
+      formData.name.trim() &&
+      formData.phone.trim() &&
+      formData.email.trim() &&
+      formData.street.trim() &&
+      formData.province &&
       formData.zipCode
     );
   }, [formData]);
@@ -248,28 +257,31 @@ export default function Checkout() {
     }
   }, [selectedAddressId, useNewAddress]);
 
-  // Handle continue to next step
   const handleContinue = useCallback(() => {
-    if (!isFormValid()) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-    
-    setError(null);
+  if (!isFormValid()) {
+    setError('Please fill in all required fields');
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(formData.email)) {
+    setError('Please enter a valid email address');
+    return;
+  }
+  setError(null);
+  if (typeof window !== 'undefined') {
     localStorage?.setItem('checkoutFormData', JSON.stringify(formData));
-    router?.push('/checkout/shipping');
+  }
+  router.push("/checkout/shipping"); // <-- Yahan route update karo
+}, [isFormValid, formData, router]);
 
-  }, [isFormValid, formData, router]);
+  // Handle edit cart (Back)
+  const handleEditCart = () => {
+    router.back();
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-gray-300 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading checkout...</p>
@@ -280,126 +292,141 @@ export default function Checkout() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
         <div className="text-center max-w-md mx-auto">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Oops! Something went wrong</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <Button onClick={() => window.location.reload()} className="w-full bg-orange-500 hover:bg-orange-600">
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md font-medium"
+          >
             Try Again
-          </Button>
+          </button>
         </div>
       </div>
     );
   }
-  
+
   if (!cartData || cartData.items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
         <div className="text-center max-w-md mx-auto">
+          <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-800 mb-2">Your cart is empty</h2>
           <p className="text-gray-600 mb-6">Add items to your cart before checking out.</p>
-          <Button onClick={() => router?.push('/productlist')} className="w-full bg-orange-500 hover:bg-orange-600">
+          <button
+            onClick={() => router.push('/')}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-md font-medium"
+          >
             Continue Shopping
-          </Button>
+          </button>
         </div>
       </div>
     );
   }
 
   // Calculate totals
-  const discount = 0; // Mock discount from image
-  const shipping = 0;
   const subtotal = cartData.summary.subtotal;
-  const total = Math.max(0, subtotal - discount + shipping);
+   const savings = 0;
+  const taxCollected =0;
+  const deliveryCharges = 0;
+
+  let couponDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.type === 'percentage') {
+      couponDiscount = Math.floor((subtotal * appliedCoupon.discount) / 100);
+    } else {
+      couponDiscount = appliedCoupon.discount;
+    }
+  }
+  const total = Math.max(0, subtotal - savings + taxCollected + deliveryCharges - couponDiscount);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Form */}
-          <div className="lg:col-span-7">
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">CHECKOUT FORM</h2>
-              
-
-              {/* Progress Steps */}
-              <div className="flex items-center justify-between  mb-8">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-medium">
-                    1
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">PERSONAL INFO</p>
-                  </div>
-                </div>
-                <div className="flex-1 h-px bg-gray-200 mx-4"></div>
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium">
-                    2
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">PAYMENT</p>
-                  </div>
-                </div>
-                <div className="flex-1 h-px bg-gray-200 mx-4"></div>
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium">
-                    3
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">CONFIRMATION</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Address Selection for existing users */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout Form</h1>
+              {/* Saved Addresses Section */}
               {savedAddresses.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Delivery Address</h3>
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">Saved Address</h2>
+                    <button
+                      onClick={() => setShowAddressForm(true)}
+                      className="flex items-center text-orange-500 hover:text-orange-600 text-sm font-medium"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Address
+                    </button>
+                  </div>
                   <div className="space-y-3">
                     {savedAddresses.map((address) => (
-                      <label
+                      <div
                         key={address.id}
-                        className={`block border rounded-lg p-4 cursor-pointer transition-colors ${
+                        className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
                           selectedAddressId === address.id
-                            ? 'border-orange-500 bg-orange-50'
-                            : 'border-gray-300 hover:border-orange-300'
+                            ? 'border-orange-500 bg-orange-50 shadow-sm'
+                            : 'border-gray-200 hover:border-orange-300 hover:shadow-sm'
                         }`}
+                        onClick={() => handleAddressSelect(address.id)}
                       >
-                        <div className="flex items-start">
-                          <input
-                            type="radio"
-                            name="address"
-                            checked={selectedAddressId === address.id}
-                            onChange={() => handleAddressSelect(address.id)}
-                            className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
-                          />
-                          <div className="ml-3 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-gray-900">{address.name}</span>
-                              {address.isDefault && (
-                                <Badge className="bg-green-100 text-green-800 text-xs">Default</Badge>
-                              )}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3">
+                            <input
+                              type="radio"
+                              name="address"
+                              checked={selectedAddressId === address.id}
+                              onChange={() => handleAddressSelect(address.id)}
+                              className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-semibold text-gray-900">{address.name}</span>
+                                {address.isDefault && (
+                                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                                    Default
+                                  </span>
+                                )}
+                                <button className="text-orange-500 hover:text-orange-600 text-xs">
+                                  Edit
+                                </button>
+                              </div>
+                              <div className="text-sm text-gray-600 space-y-1">
+                                <div className="flex items-center">
+                                  <Phone className="w-3 h-3 mr-2 text-gray-400" />
+                                  Mobile number: {address.phone}
+                                </div>
+                                <div className="flex items-center">
+                                  <MapPin className="w-3 h-3 mr-2 text-gray-400" />
+                                  Postcode: {address.zip}
+                                </div>
+                                <div className="flex items-start">
+                                  <MapPin className="w-3 h-3 mr-2 mt-0.5 text-gray-400" />
+                                  City: {address.city}
+                                </div>
+                                <div className="flex items-start">
+                                  <MapPin className="w-3 h-3 mr-2 mt-0.5 text-gray-400" />
+                                  House / apartment no. and street address: {address.street}
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-sm text-gray-600">
-                              {address.street}, {address.city}, {address.state} {address.zip}
-                            </p>
-                            <p className="text-sm text-gray-600">Phone: {address.phone}</p>
                           </div>
                         </div>
-                      </label>
+                      </div>
                     ))}
-                    
-                    <label
-                      className={`block border rounded-lg p-4 cursor-pointer transition-colors ${
+                    {/* Use New Address Option */}
+                    <div
+                      className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
                         useNewAddress
-                          ? 'border-orange-500 bg-orange-50'
-                          : 'border-gray-300 hover:border-orange-300'
+                          ? 'border-orange-500 bg-orange-50 shadow-sm'
+                          : 'border-gray-200 hover:border-orange-300 hover:shadow-sm'
                       }`}
+                      onClick={handleUseNewAddress}
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center space-x-3">
                         <input
                           type="radio"
                           name="address"
@@ -407,114 +434,113 @@ export default function Checkout() {
                           onChange={handleUseNewAddress}
                           className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                         />
-                        <span className="ml-3 font-semibold text-gray-900">Use a new address</span>
+                        <span className="font-medium text-gray-900">Use this address</span>
+                        <span className="text-orange-500 text-xs">Edit</span>
                       </div>
-                    </label>
+                    </div>
                   </div>
+                  {savedAddresses.length > 2 && (
+                    <button className="text-orange-500 hover:text-orange-600 text-sm font-medium mt-3">
+                      See less
+                    </button>
+                  )}
                 </div>
               )}
 
-              {/* Contact Person */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">CONTACT PERSON</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">NAME</label>
-                    <Input 
-                      placeholder="Eg: John Doe"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      className="focus:ring-orange-500 focus:border-orange-500"
-                      disabled={selectedAddressId !== null && !useNewAddress}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">PHONE NUMBER</label>
-                    <div className="flex gap-2">
-                      <Select defaultValue="+62">
-                        <SelectTrigger className="w-20 focus:ring-orange-500 focus:border-orange-500">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="+62">(+62)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input 
-                        placeholder="111-2222-33333"
-                        className="flex-1 focus:ring-orange-500 focus:border-orange-500"
-                        value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
-                        disabled={selectedAddressId !== null && !useNewAddress}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">EMAIL</label>
-                    <Input 
-                      placeholder="Eg: example@example.com"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="focus:ring-orange-500 focus:border-orange-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Address Detail - Show when using new address or no saved addresses */}
-              {(useNewAddress || savedAddresses.length === 0) && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">ADDRESS DETAIL</h3>
-                  
+              {/* Address Form - Show when adding new address or no saved addresses */}
+              {(showAddressForm || useNewAddress || savedAddresses.length === 0) && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Address details</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">ADDRESS</label>
-                      <Input 
-                        placeholder="Eg: ABC Street 12A, West Java, Indonesia"
-                        value={formData.street}
-                        onChange={(e) => handleInputChange('street', e.target.value)}
-                        className="focus:ring-orange-500 focus:border-orange-500"
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">COUNTRY</label>
-                      <Select value={formData.country} onValueChange={(value) => handleInputChange('country', value)}>
-                        <SelectTrigger className="focus:ring-orange-500 focus:border-orange-500">
-                          <SelectValue placeholder="--Choose Country--" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Indonesia">Indonesia</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Mobile Number <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="Enter mobile number"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                      />
                     </div>
-
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="Enter email address"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Country <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={formData.country}
+                        onChange={(e) => handleInputChange('country', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                      >
+                        <option value="Indonesia">Indonesia</option>
+                        <option value="India">India</option>
+                      </select>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">STATE/PROVINCE</label>
-                        <Select value={formData.province} onValueChange={(value) => handleInputChange('province', value)}>
-                          <SelectTrigger className="focus:ring-orange-500 focus:border-orange-500">
-                            <SelectValue placeholder="--Choose Province--" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Jakarta">Jakarta</SelectItem>
-                            <SelectItem value="West Java">West Java</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          State/Province <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={formData.province}
+                          onChange={(e) => handleInputChange('province', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                        >
+                          <option value="">Select State/Province</option>
+                          <option value="Jakarta">Jakarta</option>
+                          <option value="West Java">West Java</option>
+                          <option value="Maharashtra">Maharashtra</option>
+                        </select>
                       </div>
-
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ZIP CODE</label>
-                        <Input
-                          placeholder="--Choose ZIP Code--"
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          ZIP Code <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Enter ZIP code"
                           value={formData.zipCode}
                           onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                          className="focus:ring-orange-500 focus:border-orange-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                         />
                       </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Street Address <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        placeholder="House number and street name"
+                        value={formData.street}
+                        onChange={(e) => handleInputChange('street', e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
+                      />
                     </div>
                   </div>
                 </div>
@@ -526,64 +552,83 @@ export default function Checkout() {
                 </div>
               )}
 
-              <Button 
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 font-medium"
+              <button
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors duration-200 flex items-center justify-center"
                 onClick={handleContinue}
                 disabled={!isFormValid()}
               >
-                CONTINUE TO SHIPPING
-              </Button>
+                Proceed To Checkout
+                <ChevronRight className="w-5 h-5 ml-2" />
+              </button>
             </div>
           </div>
-
           {/* Right Column - Order Summary */}
-          <div className="lg:col-span-5">
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 sticky top-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">ORDER SUMMARY</h3>
-              
-             
-
-              {/* Product Items */}
-              <div className="space-y-4 mb-6">
-                {cartData.items.map((item) => (
-                  <div key={`${item.productId}-${item.size}`} className="flex iitems-center gap-3">
-                    <div className="relative">
-                      <Image
-                        src={item.product.image[0] || "/placeholder.svg"}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Order summary</h3>
+                <button
+                  onClick={handleEditCart}
+                  className="text-orange-500 hover:text-orange-600 text-sm font-medium"
+                >
+                  Edit Cart
+                </button>
+              </div>
+              {/* Items Header */}
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-3">Items</p>
+                <div className="flex space-x-3">
+                  {cartData.items.slice(0, 2).map((item, index) => (
+                    <div key={`${item.productId}-${item.size}`} className="relative">
+                      <img
+                        src={item.product.image[0] || "/api/placeholder/80/80"}
                         alt={item.product.name}
-                        width={60}
-                        height={60}
-                        className="object-cover rounded-lg"
+                        className="w-16 h-16 object-cover rounded-md"
                       />
                       <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
                         {item.quantity}
                       </span>
+                      {index === 1 && cartData.items.length > 2 && (
+                        <div className="text-xs text-gray-500 mt-1 text-center">
+                          +{cartData.items.length - 2} more
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 truncate">{item.product.name}</p>
-                      <p className="text-xs text-gray-500">Size: {item.size}</p>
-                      <p className="text-sm text-gray-700 font-medium">IDR {item.price.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-
               {/* Order Totals */}
-              <div className="space-y-2 border-t pt-4">
+              <div className="space-y-3 border-t pt-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="text-gray-900">IDR {subtotal.toLocaleString()}</span>
+                  <span className="text-gray-600">Subtotal ({cartData.summary.totalItems} items):</span>
+                  <span className="text-gray-900">₹ {subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-sm text-red-600">
-                 
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Savings:</span>
+                  <span>₹ {savings.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="text-gray-900">IDR {shipping.toLocaleString()}</span>
+                  <span className="text-gray-600">Tax Collected:</span>
+                  <span className="text-gray-900">₹ {taxCollected}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                  <span className="text-gray-900">Total</span>
-                  <span className="text-orange-600">IDR {total.toLocaleString()}</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Delivery Charges:</span>
+                  <span className="text-green-600 font-medium">Free Delivery</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Coupons:</span>
+                  {appliedCoupon ? (
+                    <span className="text-green-600">
+                      -₹ {couponDiscount}
+                      <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{appliedCoupon.code}</span>
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">No coupon applied</span>
+                  )}
+                </div>
+                <div className="flex justify-between text-lg font-bold pt-3 border-t">
+                  <span className="text-gray-900">Total:</span>
+                  <span className="text-orange-600">₹ {total.toLocaleString()}</span>
                 </div>
               </div>
             </div>

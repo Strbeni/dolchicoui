@@ -67,6 +67,7 @@ const breadcrumbs = [
 ]
 
 export default function ProductDetailPage() {
+ 
   const [activeTab, setActiveTab] = useState("details")
   const [wishlistSuccess, setWishlistSuccess] = useState(false)
   // Fetch product reviews by ID
@@ -110,6 +111,13 @@ export default function ProductDetailPage() {
 
   // Product state
   const [product, setProduct] = useState<Product | null>(null)
+  // For compatibility with product list API
+  const getImagesArray = (prod: any) => {
+    if (prod?.images && Array.isArray(prod.images) && prod.images.length > 0) return prod.images;
+    if (prod?.image && Array.isArray(prod.image) && prod.image.length > 0) return prod.image;
+    if (prod?.image && typeof prod.image === "string") return [prod.image];
+    return [];
+  }
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -371,7 +379,8 @@ export default function ProductDetailPage() {
       alert("Please select a size")
       return
     }
-    router.push("/checkout")
+    handleAddToCart();
+    router.push("/cartpage")
   }
 
   const checkPinCode = () => {
@@ -419,11 +428,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-white">
       {/* Mobile Layout */}
       <div className="lg:hidden">
-        <div className="px-4 py-3 text-sm text-gray-600">
-          <span>Home</span> <ChevronRight className="inline h-3 w-3 mx-1" />
-          <span>Women</span> <ChevronRight className="inline h-3 w-3 mx-1" />
-          <span>T-Shirt</span>
-        </div>
+       
 
         {/* Product Title */}
         <div className="px-4 pb-4">
@@ -432,15 +437,29 @@ export default function ProductDetailPage() {
 
         {/* Product Image */}
         <div className="relative bg-gray-100 aspect-square mx-4 mb-4">
-          <img
-            src={
-              product?.images && product.images.length > 0 && selectedImage < product.images.length
-                ? product.images[selectedImage]
-                : "/placeholder.svg?height=400&width=400"
+          {(() => {
+            const imagesArr = getImagesArray(product);
+            let imgSrc = imagesArr.length > 0 && selectedImage < imagesArr.length
+              ? imagesArr[selectedImage]
+              : null;
+            if (imgSrc && !imgSrc.startsWith("http") && !imgSrc.startsWith("/")) {
+              imgSrc = `/${imgSrc}`;
             }
-            alt={product?.name || "Product"}
-            className="w-full h-full object-cover"
-          />
+            if (!imgSrc) imgSrc = "/placeholder.png";
+            return imgSrc ? (
+              <Image
+                src={imgSrc}
+                alt={product?.name || "Product"}
+                width={400}
+                height={400}
+                className="w-full h-full object-cover"
+                priority
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.png";
+                }}
+              />
+            ) : null;
+          })()}
 
           {/* Action Icons */}
           <div className="absolute right-3 top-3 flex flex-col gap-3">
@@ -498,21 +517,36 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Thumbnail Images */}
-        {product?.images && product.images.length > 1 && (
-          <div className="flex gap-2 px-4 mb-6 overflow-x-auto">
-            {product.images.map((image, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedImage(index)}
-                className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden ${
-                  selectedImage === index ? "border-black" : "border-gray-200"
-                }`}
-              >
-                <img src={image || "/placeholder.svg"} alt="" className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
+        {(() => {
+          const imagesArr = getImagesArray(product);
+          return imagesArr.length > 1 && (
+            <div className="flex gap-2 px-4 mb-6 overflow-x-auto">
+              {imagesArr.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden ${
+                    selectedImage === index ? "border-black" : "border-gray-200"
+                  }`}
+                >
+                  <Image
+                    src={
+                      image.startsWith("http")
+                        ? image
+                        : image.startsWith("/")
+                          ? image
+                          : `/${image}`
+                    }
+                    alt={product?.name || "Thumbnail"}
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Brand and Product Info */}
         <div className="px-4 mb-6">
@@ -928,19 +962,7 @@ export default function ProductDetailPage() {
       {/* Desktop Layout */}
       <div className="hidden lg:block max-w-7xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
-        <div className="px-4 md:px-6 lg:px-20 py-4">
-          <nav className="flex items-center space-x-2 text-sm text-gray-600">
-            {breadcrumbs.map((crumb, index) => (
-              <div key={index} className="flex items-center">
-                <Link href={crumb.href} className="hover:text-gray-900">
-                  {crumb.label}
-                </Link>
-                {index < breadcrumbs.length - 1 && <span className="mx-2">{">"}</span>}
-              </div>
-            ))}
-          </nav>
-        </div>
-
+        
         <div className="px-4 md:px-6 lg:px-20 pb-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             {/* Product Images */}
@@ -948,17 +970,29 @@ export default function ProductDetailPage() {
               {/* Main Image */}
               <div className="relative bg-gray-50 rounded-lg overflow-hidden">
                 <Zoom>
-                  <Image
-                    src={
-                      product?.images && product.images.length > 0 && selectedImage < product.images.length
-                        ? product.images[selectedImage]
-                        : "/placeholder.svg?height=600&width=600"
+                  {(() => {
+                    const imagesArr = getImagesArray(product);
+                    let imgSrc = imagesArr.length > 0 && selectedImage < imagesArr.length
+                      ? imagesArr[selectedImage]
+                      : null;
+                    if (imgSrc && !imgSrc.startsWith("http") && !imgSrc.startsWith("/")) {
+                      imgSrc = `/${imgSrc}`;
                     }
-                    alt={product?.name || "Product"}
-                    width={600}
-                    height={600}
-                    className="w-full h-[400px] md:h-[500px] lg:h-[600px] object-cover"
-                  />
+                    if (!imgSrc) imgSrc = "/placeholder.png";
+                    return imgSrc ? (
+                      <Image
+                        src={imgSrc}
+                        alt={product?.name || "Product"}
+                        width={600}
+                        height={600}
+                        className="w-full h-[400px] md:h-[500px] lg:h-[600px] object-cover"
+                        priority
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.png";
+                        }}
+                      />
+                    ) : null;
+                  })()}
                 </Zoom>
                 {/* Action buttons on image */}
                 <div className="absolute right-4 top-4 flex flex-col gap-2">
@@ -1002,23 +1036,32 @@ export default function ProductDetailPage() {
 
               {/* Thumbnail Images */}
               <div className="flex gap-2 overflow-x-auto">
-                {product.images?.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedImage(idx)}
-                    className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 ${
-                      selectedImage === idx ? "border-gray-800" : "border-gray-200"
-                    }`}
-                  >
-                    <Image
-                      src={img || "/placeholder.svg?height=80&width=80"}
-                      alt={`Thumbnail ${idx + 1}`}
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+                {(() => {
+                  const imagesArr = getImagesArray(product);
+                  return imagesArr.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedImage(idx)}
+                      className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 ${
+                        selectedImage === idx ? "border-gray-800" : "border-gray-200"
+                      }`}
+                    >
+                      <Image
+                        src={
+                          img.startsWith("http")
+                            ? img
+                            : img.startsWith("/")
+                              ? img
+                              : `/${img}`
+                        }
+                        alt={`Thumbnail ${idx + 1}`}
+                        width={80}
+                        height={80}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ));
+                })()}
               </div>
             </div>
 
