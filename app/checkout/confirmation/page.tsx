@@ -41,10 +41,19 @@ interface CheckoutPaymentData {
   [key: string]: any;
 }
 
+interface AppliedCoupon {
+  code: string;
+  discount: number;
+  type: "percentage" | "fixed";
+  minAmount: number;
+  description: string;
+}
+
 export default function ConfirmationPage() {
   const [cartData, setCartData] = useState<CartData | null>(null);
   const [formData, setFormData] = useState<CheckoutFormData | null>(null);
   const [paymentData, setPaymentData] = useState<CheckoutPaymentData | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +86,8 @@ export default function ConfirmationPage() {
         // Load form and payment data from localStorage
         const savedForm = localStorage.getItem('checkoutFormData');
         const savedPayment = localStorage.getItem('checkoutPaymentData');
+        const savedCoupon = localStorage.getItem('appliedCoupon');
+        
         if (savedForm) setFormData(JSON.parse(savedForm));
         else {
           router.push('/checkout');
@@ -86,6 +97,13 @@ export default function ConfirmationPage() {
         else {
           router.push('/checkout/shipping');
           return;
+        }
+        if (savedCoupon) {
+          try {
+            setAppliedCoupon(JSON.parse(savedCoupon));
+          } catch (e) {
+            console.error('Error parsing coupon data:', e);
+          }
         }
       } catch (err) {
         setError('Failed to load confirmation data.');
@@ -97,13 +115,24 @@ export default function ConfirmationPage() {
   }, [router]);
 
   // Helper for totals
+  const calculateDiscount = useCallback(() => {
+    if (!cartData || !appliedCoupon) return 0;
+    const subtotal = cartData.summary.subtotal || 0;
+    
+    if (appliedCoupon.type === "percentage") {
+      return Math.floor((subtotal * appliedCoupon.discount) / 100);
+    } else {
+      return appliedCoupon.discount;
+    }
+  }, [cartData, appliedCoupon]);
+
   const calculateTotal = useCallback(() => {
     if (!cartData) return 0;
-    const discount = 0;
-    const shipping = 100;
-    const subtotal = cartData.summary.subtotal;
+    const discount = calculateDiscount();
+    const shipping = 0; 
+    const subtotal = cartData.summary.subtotal || 0;
     return Math.max(0, subtotal - discount + shipping);
-  }, [cartData]);
+  }, [cartData, calculateDiscount]);
 
   // Place order on backend
   const handlePlaceOrder = useCallback(async () => {
@@ -146,6 +175,7 @@ export default function ConfirmationPage() {
       // Clear checkout data in localStorage
       localStorage.removeItem('checkoutFormData');
       localStorage.removeItem('checkoutPaymentData');
+      localStorage.removeItem('appliedCoupon');
       // Navigate to success page
       router.push(`/checkout/success?orderId=${result.orderId}`);
     } catch (err) {
@@ -155,18 +185,18 @@ export default function ConfirmationPage() {
     }
   }, [cartData, formData, calculateTotal, router]);
 
-  const discount = 0;
-  const shipping = 0;
+  const discount = calculateDiscount();
+  const shipping: number = 0;
   const subtotal = cartData?.summary.subtotal ?? 0;
   const total = calculateTotal();
 
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading...</p>
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-sm">Loading confirmation...</p>
         </div>
       </div>
     );
@@ -174,15 +204,15 @@ export default function ConfirmationPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+        <div className="text-center max-w-sm mx-auto">
           <div className="text-red-500 mb-4">
             <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Error</h2>
-          <p className="mb-4">{error}</p>
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">Error</h2>
+          <p className="text-sm mb-4 text-gray-600">{error}</p>
           <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </div>
@@ -195,137 +225,303 @@ export default function ConfirmationPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 px-6 lg:px-20 py-10 gap-10">
-      {/* LEFT */}
-      <div>
-        <h1 className="text-3xl font-bold mb-6">CONFIRMATION</h1>
-        <div className="flex items-center gap-6 mb-10">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">✓</div>
-            <div className="text-xs">
-              <div className="font-semibold text-orange-600">Step 1</div>
-              <div>PERSONAL INFO</div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      <div className="bg-white border-b shadow-sm sticky top-0 z-50 lg:hidden">
+        <div className="flex items-center justify-between px-4 py-4">
+          <button 
+            onClick={() => router.back()} 
+            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-lg font-semibold text-gray-900">Order Confirmation</h1>
+          <div className="w-9"></div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6 lg:px-6 lg:py-8">
+        {/* Desktop Header */}
+        <div className="hidden lg:flex items-center justify-between mb-8">
+          <button 
+            onClick={() => router.back()} 
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Payment
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Order Confirmation</h1>
+          <div className="w-32"></div>
+        </div>
+
+        {/* Progress Steps - More Compact */}
+        <div className="mb-6 lg:mb-8">
+          <div className="flex items-center justify-center lg:justify-start gap-2">
+            {/* Step 1 */}
+            <div className="flex flex-col items-center flex-1 max-w-[100px]">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mb-2">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="text-xs text-center font-medium text-green-600">
+                PERSONAL INFO
+              </div>
             </div>
-          </div>
-          <div className="w-8 h-0.5 bg-gray-300" />
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-green-500 text-white text-xs flex items-center justify-center">✓</div>
-            <div className="text-xs">
-              <div className="font-semibold text-orange-600">Step 2</div>
-              <div>PAYMENT</div>
+
+            {/* Connector */}
+            <div className="flex-1 h-0.5 bg-green-500 max-w-[60px] mt-[-16px]"></div>
+
+            {/* Step 2 */}
+            <div className="flex flex-col items-center flex-1 max-w-[100px]">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mb-2">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <button 
+                onClick={() => router.back()}
+                className="text-xs text-center font-medium text-green-600 hover:text-green-700 transition-colors"
+              >
+                PAYMENT
+              </button>
             </div>
-          </div>
-          <div className="w-8 h-0.5 bg-gray-300" />
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-orange-100 border text-xs flex items-center justify-center">🧾</div>
-            <div className="text-xs text-gray-500">
-              <div>Step 3</div>
-              <div>CONFIRMATION</div>
+
+            {/* Connector */}
+            <div className="flex-1 h-0.5 bg-orange-500 max-w-[60px] mt-[-16px]"></div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col items-center flex-1 max-w-[100px]">
+              <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center mb-2">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="text-xs text-center font-medium text-orange-600">
+                CONFIRMATION
+              </div>
             </div>
           </div>
         </div>
-        {/* Order Details */}
-        <div className="bg-gray-50 p-4 rounded mb-6">
-          <h3 className="font-semibold mb-2">Order Details</h3>
-          <div className="text-sm space-y-1">
-            <p><span className="font-medium">Name:</span> {formData.name}</p>
-            <p><span className="font-medium">Email:</span> {formData.email}</p>
-            <p><span className="font-medium">Phone:</span> {formData.phone}</p>
-            <p>
-              <span className="font-medium">Address:</span> {formData.street}, {formData.province}, {formData.country} {formData.zipCode}
-            </p>
-            {paymentData && (
-              <p>
-                <span className="font-medium">Payment Method:</span> {paymentData.method.toUpperCase()}
-              </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          {/* LEFT SECTION - Order Details */}
+          <div className="space-y-4 lg:space-y-6">
+            {/* Order Number */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-sm">
+              <div className="text-sm text-gray-500 mb-2">Order Number</div>
+              <div className="font-bold text-xl text-orange-600 mb-2">1234ASDFGHJ</div>
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                Waiting For Payment
+              </div>
+            </div>
+
+            {/* Payment Information */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-sm">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Payment Information
+              </h3>
+              <div className="text-sm text-gray-600 leading-relaxed">
+                Upon completing a purchase, you will receive a payment confirmation email. This 
+                email will contain essential information about the{' '}
+                <span className="text-blue-600 underline cursor-pointer hover:text-blue-700">
+                  items you have purchased
+                </span>{' '}
+                and the total amount that needs to be paid.
+              </div>
+            </div>
+
+            {/* Customer Details */}
+            {formData && (
+              <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Delivery Information
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Name</div>
+                    <div className="font-medium text-gray-900">{formData.name}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</div>
+                    <div className="font-medium text-gray-900 break-all">{formData.email}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Phone</div>
+                    <div className="font-medium text-gray-900">{formData.phone}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Address</div>
+                    <div className="font-medium text-gray-900 leading-relaxed">
+                      {formData.street}, {formData.province}, {formData.country} {formData.zipCode}
+                    </div>
+                  </div>
+                  {paymentData && (
+                    <div className="sm:col-span-2">
+                      <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Payment Method</div>
+                      <div className="font-medium text-gray-900 capitalize">
+                        {paymentData.method === 'cod' ? 'Cash on Delivery' : paymentData.method}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
-        </div>
-        {/* Order Status */}
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <p className="font-semibold mb-1">Order Status</p>
-            <p className="text-sm text-gray-600">
-              By clicking &quot;PLACE ORDER&quot;, you confirm that you want to place this order. 
-              You will receive an order confirmation email with all the details.
-            </p>
+
+          {/* RIGHT SECTION - ORDER SUMMARY */}
+          <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-sm">
+            <h2 className="font-bold text-xl text-gray-900 mb-6 flex items-center">
+              <svg className="w-6 h-6 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              ORDER SUMMARY
+            </h2>
+
+            {/* Applied Coupon Banner */}
+            {appliedCoupon && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                  <div>
+                    <span className="text-sm font-medium text-green-700">
+                      Coupon Applied: {appliedCoupon.code}
+                    </span>
+                    <p className="text-xs text-green-600">{appliedCoupon.description}</p>
+                  </div>
+                </div>
+                <div className="text-sm font-semibold text-green-700">
+                  -{appliedCoupon.type === "percentage" ? `${appliedCoupon.discount}%` : `IDR ${appliedCoupon.discount.toLocaleString()}`}
+                </div>
+              </div>
+            )}
+
+            {/* Product Items */}
+            <div className="space-y-4 mb-6">
+              {cartData.items.length > 0 ? (
+                cartData.items.map((item) => (
+                  <div key={`${item.id}-${item.size}`} className="flex gap-4 items-start p-3 bg-gray-50 rounded-lg">
+                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                      <Image
+                        src={item.product.image?.[0] || '/placeholder.jpg'}
+                        alt={item.product.name}
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm text-gray-900 mb-1 line-clamp-2">
+                        {item.product.name}
+                      </h4>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Qty: {item.quantity} | Size: {item.size}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-sm text-gray-900">
+                            IDR {(item.price * item.quantity).toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            IDR {item.price.toLocaleString()} each
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  <p>No items in cart</p>
+                </div>
+              )}
+            </div>
+
+            {/* Price Summary */}
+            <div className="border-t border-gray-200 pt-4 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="font-medium text-gray-900">IDR {subtotal.toLocaleString()}</span>
+              </div>
+              {appliedCoupon && discount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Coupon ({appliedCoupon.code})</span>
+                  <span>-IDR {discount.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Shipping</span>
+                <span className="font-medium text-gray-900">
+                  {shipping === 0 ? 'Free' : `IDR ${shipping.toLocaleString()}`}
+                </span>
+              </div>
+              <div className="border-t border-gray-200 pt-3">
+                <div className="flex justify-between">
+                  <span className="font-bold text-lg text-gray-900">Total</span>
+                  <span className="font-bold text-lg text-orange-600">IDR {total.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <span className="bg-yellow-100 text-yellow-600 text-xs px-4 py-1 rounded-full">
-            Ready to Place
-          </span>
         </div>
-        {/* Payment Info */}
-        <div className="mt-4 text-sm text-gray-700">
-          <p className="font-semibold mb-1">Payment Information</p>
-          <p>
-            By clicking &quot;PLACE ORDER&quot;, you confirm that you want to place this order. 
-            You will receive an order confirmation email with all the details.
-          </p>
-        </div>
-        {/* Place Order Button */}
-        <div className="mt-10 flex justify-center">
+
+        {/* Action Button - Desktop */}
+        <div className="hidden lg:flex justify-center mt-8">
           <Button
-            className="bg-[#d9673f] hover:bg-[#c2552d] text-white px-8 py-2"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-12 py-4 text-lg font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
             onClick={handlePlaceOrder}
-            disabled={placingOrder}
+            disabled={placingOrder || !cartData.items.length}
           >
             {placingOrder ? (
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>PLACING ORDER...</span>
               </div>
             ) : (
-              'PLACE ORDER'
+              'CONFIRM & PLACE ORDER'
             )}
           </Button>
         </div>
       </div>
-      {/* RIGHT SUMMARY */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">ORDER SUMMARY</h2>
-        <div className="bg-[#f5f1ec] border border-gray-300 text-sm px-4 py-2 flex justify-between items-center mb-4 rounded">
-          <span>Hooray! You use promo code!</span>
-          <button className="text-gray-400 text-lg" aria-label="Remove promo code">×</button>
-        </div>
-        {/* Products from Cart */}
-        <div className="space-y-4 mb-6">
-          {cartData.items.map((item) => (
-            <div key={`${item.id}-${item.size}`} className="flex gap-4 items-start">
-              <Image
-                src={item.product.image[0] || '/p1.svg'}
-                alt={item.product.name}
-                width={70}
-                height={70}
-                className="object-cover rounded"
-              />
-              <div>
-                <h4 className="font-semibold text-sm">{item.product.name}</h4>
-                <p className="text-xs text-gray-500">{item.quantity} × IDR {item.price.toLocaleString()}</p>
-                <p className="text-xs text-gray-400 mt-1">Size: {item.size}</p>
-              </div>
+
+      {/* Action Button - Mobile Fixed Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 lg:hidden shadow-lg">
+        <Button
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 text-lg font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          onClick={handlePlaceOrder}
+          disabled={placingOrder || !cartData.items.length}
+        >
+          {placingOrder ? (
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>PLACING ORDER...</span>
             </div>
-          ))}
-        </div>
-        {/* Price Summary */}
-        <div className="space-y-2 text-sm border-t pt-4">
-          <div className="flex justify-between">
-            <span>Subtotal ({cartData.summary.totalItems} items)</span>
-            <span>IDR {subtotal.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between text-red-600">
-            <span>Voucher (50KDISCOUNT)</span>
-            <span>-IDR {discount.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Shipping</span>
-            <span>IDR {shipping.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between font-bold pt-2">
-            <span>Total</span>
-            <span>IDR {total.toLocaleString()}</span>
-          </div>
-        </div>
+          ) : (
+            'CONFIRM & PLACE ORDER'
+          )}
+        </Button>
       </div>
+
+      {/* Mobile Bottom Spacing */}
+      <div className="h-24 lg:hidden"></div>
     </div>
   );
 }

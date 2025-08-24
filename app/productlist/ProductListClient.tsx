@@ -949,7 +949,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   </button>
 
                   <div className="aspect-[4/5] bg-gray-100 rounded overflow-hidden">
-                    <Image
+                    <Image 
+                    onClick={() => router.push(`/productdetail/${product.id}`)}
                       src={product.image[0] || "/placeholder.svg"}
                       alt={product.name}
                       width={300}
