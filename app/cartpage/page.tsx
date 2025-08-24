@@ -542,8 +542,8 @@ export default function ShoppingCartComplete() {
     <div className="min-h-screen bg-gray-50">
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-sm w-full p-6">
+        <div className="fixed inset-0 bg-opacity-50 z-50 border-10 flex items-center justify-center p-4">
+          <div className="bg-[#fafafa] rounded-[16px] max-w-sm w-full p-6">
             <h3 className="text-lg font-semibold mb-2">
               {itemToDelete?.action === 'saveForLater' ? 'Save for Later?' : 'Remove from Cart?'}
             </h3>
@@ -570,7 +570,7 @@ export default function ShoppingCartComplete() {
                 {itemToDelete?.action === 'saveForLater' ? 'Save' : 'Remove'}
               </button>
             </div>
-            <div className="mt-4 pt-4 border-t">
+            <div className="mt-4 p-2 font-bold h-[40px] border-2 border-[#B8B8B8] bg-[#FFFFFF] rounded-lg">
               <button 
                 onClick={async () => {
                   if (itemToDelete?.action === 'saveForLater') {

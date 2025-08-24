@@ -1,380 +1,316 @@
-
 "use client";
 
-interface Address {
-  name?: string;
-  street?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
-  phone?: string;
-  // Add other fields as needed
-}
-
-interface Order {
-  id?: string;
-  status?: string;
-  date?: string | number;
-  amount?: number;
-  // Add other fields as needed
-}
-
-import React, { useState, useEffect, useCallback, useRef } from "react";
-
-interface Profile {
-  email?: string;
-  name?: string;
-  displayName?: string;
-  country?: string;
-  state?: string;
-  phoneNumber?: string;
-  // Add other fields as needed
-}
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
 
-// --- Constants and helpers
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
-const ORDERS_API_URL = "https://valyris-i.onrender.com/api";
+// Next.js base URL configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
 
-const getAuthToken = () =>
-  typeof window !== "undefined"
-    ? localStorage.getItem("token") || sessionStorage.getItem("token")
-    : null;
-
-const statusColors = {
-  IN_PROGRESS: "bg-gradient-to-r from-[#f05a2b] to-[#ff7a2a] text-white",
-  COMPLETED: "bg-gradient-to-r from-green-400 to-green-700 text-white",
-  CANCELLED: "bg-gradient-to-r from-red-400 to-red-700 text-white",
-  PENDING: "bg-gradient-to-r from-yellow-300 to-yellow-500 text-white",
-  CONFIRMED: "bg-gradient-to-r from-blue-400 to-blue-700 text-white",
-  SHIPPED: "bg-gradient-to-r from-purple-400 to-purple-700 text-white",
-  DELIVERED: "bg-gradient-to-r from-green-400 to-green-700 text-white"
-};
-
-const formatStatus = (status) =>
-  status
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (l) => l.toUpperCase());
-
-const formatDate = (timestamp) =>
-  new Date(timestamp).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-
-const mockCards = [
-  {
-    id: "mock-1",
-    bankName: "HDFC Bank",
-    last4: "4567",
-    type: "VISA",
-    typeOfCard: "Debit Card",
-    name: "Demo User",
-    bgColor: "bg-gradient-to-tr from-blue-600 via-blue-400 to-blue-800",
-    isMock: true,
-  },
-  {
-    id: "mock-2",
-    bankName: "ICICI Bank",
-    last4: "8901",
-    type: "Mastercard",
-    typeOfCard: "Credit Card",
-    name: "Demo User",
-    bgColor: "bg-gradient-to-tr from-purple-600 via-pink-400 to-purple-800",
-    isMock: true,
-  },
-];
-
-const mockUpis = [
-  {
-    id: "mock-upi-1",
-    bankName: "PhonePe",
-    upiId: "demo.user@ybl",
-    type: "UPI",
-    upiProvider: "PhonePe",
-    name: "Demo User",
-    bgColor: "bg-gradient-to-tr from-indigo-600 via-indigo-400 to-purple-700",
-    isMock: true,
-  },
-  {
-    id: "mock-upi-2",
-    bankName: "Google Pay",
-    upiId: "demo.user@okaxis",
-    type: "UPI",
-    upiProvider: "Google Pay",
-    name: "Demo User",
-    bgColor: "bg-gradient-to-tr from-green-500 via-teal-400 to-teal-700",
-    isMock: true,
-  }
-];
-
-// --- Main Component
-export default function AccountDashboard() {
+export default function AccountSettings() {
   const router = useRouter();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // States
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
-
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [addressLoading, setAddressLoading] = useState(true);
-
-  const [cards, setCards] = useState<typeof mockCards>([]);
-  const [upis, setUpis] = useState<typeof mockUpis>([]);
-  const [paymentLoading, setPaymentLoading] = useState(true);
-
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(true);
-
-  const [stats, setStats] = useState({ total: 0, pending: 0, completed: 0 });
-  const [error, setError] = useState("");
-
-  const [settingsAction, setSettingsAction] = useState(""); // "edit", "password", "delete"
+  // Profile states
   const [isEditing, setIsEditing] = useState(false);
-  const [editProfile, setEditProfile] = useState<any>(null);
-  const [editLoading, setEditLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  // User data states
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState(""); // Read-only
+  const [displayName, setDisplayName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [country, setCountry] = useState("USA");
+  const [state, setState] = useState("California");
+  const [zip, setZip] = useState("");
 
+  // Email change states
+  const [showEmailOtp, setShowEmailOtp] = useState(false);
+  const [emailOtp, setEmailOtp] = useState("");
+  const [tempEmail, setTempEmail] = useState("");
+  const [isEmailChanged, setIsEmailChanged] = useState(false);
+
+  // Password reset states
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [passwordResetOtp, setPasswordResetOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [otpRequested, setOtpRequested] = useState(false);
 
+  // Delete account states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showDeleteOtp, setShowDeleteOtp] = useState(false);
   const [deleteEmailOtp, setDeleteEmailOtp] = useState("");
   const [deleteOtpError, setDeleteOtpError] = useState("");
 
-  // --- Data Fetch ---
-  const fetchProfile = useCallback(async () => {
-    setProfileLoading(true);
+  // Helper function to get auth token
+  const getAuthToken = () => {
+    // FIX: Check both localStorage and sessionStorage for the token
+    return typeof window !== 'undefined' ? localStorage.getItem('token') || sessionStorage.getItem('token') : null;
+  };
+
+  // Fetch user profile function
+  const fetchUserProfile = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setError('Authentication required. Redirecting to login...');
+      router.push('/login'); // Redirect if no token is found
+      return;
+    }
+
+    setLoading(true);
     setError("");
-    try {
-      const token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/api/user/get-user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch profile.");
-      const data = await res.json();
-      setProfile(data.user || data);
-      setEditProfile(data.user || data);
-    } catch (err) {
-      setError("Failed to load profile.");
-    } finally {
-      setProfileLoading(false);
-    }
-  }, []);
 
-  const fetchAddresses = useCallback(async () => {
-    setAddressLoading(true);
     try {
-      const token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/api/addresses`, {
-        headers: { Authorization: `Bearer ${token}` },
+      // ✅ FIX: Implemented the 'get-user' API endpoint
+      const response = await fetch(`${API_BASE_URL}/api/user/get-user`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setAddresses(data.addresses || []);
-    } catch (err) {
-      setAddresses([]);
-    } finally {
-      setAddressLoading(false);
-    }
-  }, []);
 
-  const fetchPayments = useCallback(async () => {
-    setPaymentLoading(true);
-    try {
-      const token = getAuthToken();
-      const [cardsRes, upisRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/payment/cards`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`${API_BASE_URL}/api/payment/upis`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-      const cardsData = await cardsRes.json();
-      const upisData = await upisRes.json();
-      setCards((cardsData.cards && cardsData.cards.length > 0) ? cardsData.cards : mockCards);
-      setUpis((upisData.upis && upisData.upis.length > 0) ? upisData.upis : mockUpis);
+      if (response.ok) {
+        const data = await response.json();
+        // ✅ FIX: Added robust data handling for different response structures
+        const user = data.user || data; 
+        
+        setUsername(user.username || "");
+        setEmail(user.email || "");
+        setPhone(user.phoneNumber || "");
+        setDisplayName(user.name || "");
+        setFullName(user.fullName || "");
+        setCountry(user.country || "USA");
+        setState(user.state || "California");
+        setZip(user.zip || "");
+      } else if (response.status === 401 || response.status === 403) {
+        setError('Session expired. Please login again.');
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        router.push('/login');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to load profile');
+      }
     } catch (err) {
-      setCards(mockCards);
-      setUpis(mockUpis);
+      console.error('Failed to fetch user profile:', err);
+      setError('An unexpected error occurred. Failed to load profile.');
     } finally {
-      setPaymentLoading(false);
+      setLoading(false);
     }
-  }, []);
+  }, [router]); // Dependency array for useCallback
 
-  const fetchOrders = useCallback(async () => {
-    setOrdersLoading(true);
-    try {
-      const token = getAuthToken();
-      const res = await fetch(`${ORDERS_API_URL}/order/user`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setOrders(data.orders || []);
-      setStats({
-        total: (data.orders || []).length,
-        pending: (data.orders || []).filter(
-          (o) =>
-            ["ORDER_PLACED", "CONFIRMED", "IN_PROGRESS", "PENDING", "SHIPPED"].includes(
-              o.status.toUpperCase()
-            )
-        ).length,
-        completed: (data.orders || []).filter(
-          (o) =>
-            o.status.toUpperCase() === "COMPLETED" ||
-            o.status.toUpperCase() === "DELIVERED"
-        ).length,
-      });
-    } catch (err) {
-      setOrders([]);
-      setStats({ total: 0, pending: 0, completed: 0 });
-    } finally {
-      setOrdersLoading(false);
-    }
-  }, []);
-
+  // Load user profile on component mount
   useEffect(() => {
-    fetchProfile();
-    fetchAddresses();
-    fetchPayments();
-    fetchOrders();
-  }, [fetchProfile, fetchAddresses, fetchPayments, fetchOrders]);
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
-  // --- Handlers ---
-  const handleEditProfile = () => {
-    setSettingsAction("edit");
+  const handleEdit = () => {
     setIsEditing(true);
-    setEditProfile(profile);
-  };
-
-  const handleProfileChange = (e) => {
-    setEditProfile({ ...editProfile, [e.target.name]: e.target.value });
-  };
-
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
-    setEditLoading(true);
     setError("");
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setShowEmailOtp(false);
+    setEmailOtp("");
+    setTempEmail("");
+    setIsEmailChanged(false);
+    setError("");
+    // Reset to original values
+    fetchUserProfile();
+  };
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+
+    if (isEmailChanged) {
+      await handleEmailChangeRequest();
+      return;
+    }
+
+    setLoading(true);
     try {
       const token = getAuthToken();
       const updateData = {
-        name: editProfile.name,
-        username: editProfile.username,
-        fullName: editProfile.fullName,
-        country: editProfile.country,
-        state: editProfile.state,
-        zip: editProfile.zip,
+        name: displayName,
+        username,
+        fullName,
+        country,
+        state,
+        zip,
       };
+
       const response = await fetch(`${API_BASE_URL}/api/user/update-profile`, {
-        method: "PATCH",
+        method: 'PATCH',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(updateData),
       });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to update profile");
-      }
-      setIsEditing(false);
-      setSettingsAction("");
-      fetchProfile();
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to update profile");
+
+      if (response.ok) {
+        setIsEditing(false);
+        alert('Profile updated successfully!');
       } else {
-        setError("Failed to update profile");
+        const data = await response.json();
+        setError(data.message || 'Failed to update profile');
       }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError('Failed to update profile');
     } finally {
-      setEditLoading(false);
+      setLoading(false);
     }
   };
 
-  // --- Password Reset Handlers ---
+  const handleEmailChangeRequest = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/user/request-email-change`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newEmail: tempEmail }),
+      });
+
+      if (response.ok) {
+        setShowEmailOtp(true);
+        alert('OTP sent to new email address');
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to send OTP');
+      }
+    } catch (err) {
+      console.error('Error requesting email change:', err);
+      setError('Failed to request email change');
+    }
+  };
+
+  const handleVerifyEmailOtp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/api/user/verify-email-change`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ otp: emailOtp }),
+      });
+
+      if (response.ok) {
+        setEmail(tempEmail);
+        setShowEmailOtp(false);
+        setIsEditing(false);
+        setEmailOtp("");
+        setTempEmail("");
+        setIsEmailChanged(false);
+        alert('Email updated successfully!');
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Invalid OTP');
+      }
+    } catch (err) {
+      console.error('Error verifying email OTP:', err);
+      setError('Failed to verify OTP');
+    }
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempEmail(e.target.value);
+    setIsEmailChanged(e.target.value !== email);
+  };
+
+  // Password Reset Flow
   const handleRequestPasswordReset = async () => {
     setPasswordError("");
-    setOtpRequested(false);
     try {
       const response = await fetch(`${API_BASE_URL}/api/user/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: profile?.email }),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       });
+
       const data = await response.json();
-      if (response.ok && (data.success || data.message?.toLowerCase().includes("sent"))) {
+      if (response.ok) {
         setShowPasswordReset(true);
-        setOtpRequested(true);
-        alert("OTP sent to your registered email.");
+        alert('Password reset OTP sent to your email');
       } else {
-        setPasswordError(data.message || "Failed to send password reset OTP");
+        setPasswordError(data.message || 'Failed to send password reset OTP');
       }
     } catch (err) {
-      setPasswordError("Failed to request password reset");
+      console.error('Error requesting password reset:', err);
+      setPasswordError('Failed to request password reset');
     }
   };
 
-  const validatePassword = (password) => {
-    if (password.length < 8) return "Password must be at least 8 characters";
-    if (!/\d/.test(password)) return "Password must contain a number";
-    if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) return "Password must contain a special character";
+  const validatePassword = (password: string) => {
+    if (password.length < 8) return "Password must be at least 8 characters long";
+    if (!/\d/.test(password)) return "Password must contain at least one number";
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return "Password must contain at least one special character";
     return "";
   };
 
-  const handleResetPassword = async (e) => {
+  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setPasswordError("");
+
     if (newPassword !== confirmPassword) {
       setPasswordError("Passwords do not match");
       return;
     }
+    
     const validationError = validatePassword(newPassword);
     if (validationError) {
       setPasswordError(validationError);
       return;
     }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/user/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          email: profile?.email,
+          email,
           otp: passwordResetOtp,
-          newPassword,
+          newPassword
         }),
       });
+
       const data = await response.json();
-      if (response.ok && (data.success || data.message?.toLowerCase().includes("success"))) {
+      if (response.ok) {
+        alert("Password changed successfully!");
         setShowPasswordReset(false);
-        setSettingsAction("");
         setPasswordResetOtp("");
         setNewPassword("");
         setConfirmPassword("");
-        alert("Password changed successfully.");
       } else {
-        setPasswordError(data.message || "Failed to reset password");
+        setPasswordError(data.message || 'Failed to reset password');
       }
     } catch (err) {
-      setPasswordError("Failed to reset password");
+      console.error('Error resetting password:', err);
+      setPasswordError('Failed to reset password');
     }
   };
 
-  // --- Delete Account Handlers ---
+  // Account Deletion Flow
   const handleDeleteAccountClick = () => {
-    setSettingsAction("delete");
     setIsDeleteModalOpen(true);
     setDeleteOtpError("");
   };
@@ -383,615 +319,418 @@ export default function AccountDashboard() {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/api/user/request-account-deletion`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
-      const data = await response.json();
-      if (response.ok && (data.success || data.message?.toLowerCase().includes("sent"))) {
+
+      if (response.ok) {
         setShowDeleteOtp(true);
         setIsDeleteModalOpen(false);
-        alert("OTP sent to your registered email.");
+        alert('OTP sent to your registered email');
       } else {
-        setDeleteOtpError(data.error || data.message || "Failed to send OTP");
+        const data = await response.json();
+        setDeleteOtpError(data.error || 'Failed to send OTP');
       }
     } catch (err) {
-      setDeleteOtpError("Failed to request account deletion");
+      console.error('Error requesting account deletion:', err);
+      setDeleteOtpError('Failed to request account deletion');
     }
   };
 
-  const handleDeleteOtpVerification = async (e) => {
+  const handleDeleteOtpVerification = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setDeleteOtpError("");
+
     if (!deleteEmailOtp) {
       setDeleteOtpError("Please enter the OTP");
       return;
     }
+
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/api/user/verify-account-deletion`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ otp: deleteEmailOtp }),
       });
-      const data = await response.json();
-      if (response.ok && (data.success || data.message?.toLowerCase().includes("success"))) {
-        localStorage.removeItem("token");
-        sessionStorage.removeItem("token");
+
+      if (response.ok) {
+        alert("Account deleted successfully. Redirecting to home screen.");
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         router.push("/");
-        alert("Account deleted.");
       } else {
-        setDeleteOtpError(data.error || data.message || "Invalid OTP");
+        const data = await response.json();
+        setDeleteOtpError(data.error || 'Invalid OTP');
       }
     } catch (err) {
-      setDeleteOtpError("Failed to verify OTP");
+      console.error('Error verifying deletion OTP:', err);
+      setDeleteOtpError('Failed to verify OTP');
     }
   };
 
-  const closeSettingsAction = () => {
-    setSettingsAction("");
-    setIsEditing(false);
-    setShowPasswordReset(false);
-    setOtpRequested(false);
-    setIsDeleteModalOpen(false);
+  const handleCancelDeleteOtp = () => {
     setShowDeleteOtp(false);
     setDeleteEmailOtp("");
     setDeleteOtpError("");
+  };
+
+  const handleCancelPasswordReset = () => {
+    setShowPasswordReset(false);
     setPasswordResetOtp("");
     setNewPassword("");
     setConfirmPassword("");
     setPasswordError("");
   };
 
-  // --- Navigation Slider ---
-  // On mobile view, show a horizontal slider for navigation tabs
-  const navTabs = [
-    { label: "Dashboard", path: "/profile" },
-    { label: "Order History", path: "/profile/orderHistory" },
-    { label: "Saved Payment Method", path: "/profile/paymentMethod" },
-    { label: "Address Book", path: "/profile/addressBook" },
-    
-  ];
-  // The "active" navigation is the current path (simulate)
-  // For demonstration, we'll use window.location.pathname, but in Next.js, better to use usePathname from "next/navigation"
-  const [activeTab, setActiveTab] = useState("Dashboard");
-  const sliderRef = useRef(null);
-
-  useEffect(() => {
-    // Set active tab on mount
-    if (typeof window !== "undefined") {
-      const pathname = window.location.pathname;
-      const found = navTabs.find(tab => pathname.includes(tab.path.split("/profile/")[1] || "profile"));
-      setActiveTab(found ? found.label : "Dashboard");
-    }
-  }, []);
-
-  // --- UI ---
+  // Main component render
   return (
-  <div className="min-h-screen pb-10 bg-white text-[#101820]">
-      {/* Mobile Navigation Slider */}
-  <div className="lg:hidden sticky top-0 z-40 backdrop-blur-md border-b border-orange-200 shadow-sm px-2 pt-3 pb-2 bg-white">
-        <div className="flex items-center justify-between mb-2 px-2">
-  
-        
-        </div>
-        <div
-          ref={sliderRef}
-          className="flex gap-1  overflow-x-auto scrollbar-hide px-1 py-2 bg-white rounded-[18px] border border-orange-200 shadow-sm"
-        >
-          {navTabs.map(tab => (
+    <div className="flex min-h-screen bg-gray-100 p-6">
+      <Tabs defaultValue="account" className="w-full flex">
+        {/* Sidebar */}
+        <div className="w-1/4 pr-6">
+          <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
+            <TabsTrigger value="account">Account</TabsTrigger>
             <button
-              key={tab.label}
-              className={`min-w-[160px] px-3 py-3 rounded-2xl text-md font-medium whitespace-nowrap ${
-                activeTab === tab.label
-                  ? "bg-[#fff6f2] text-[#f05a2b] font-bold"
-                  : "bg-white text-[#101820] hover:bg-[#fff6f2]"
-              }`}
-              onClick={() => {
-                setActiveTab(tab.label);
-                router.push(tab.path);
-              }}
+              type="button"
+              onClick={() => router.push("/profile/orderHistory")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
             >
-              {tab.label}
+              Order History
             </button>
-          ))}
-        </div>
-      </div>
-
-    
-
-      <div className="flex flex-col h-fit-content  lg:flex-row gap-4 lg:gap-8 w-full px-4 lg:px-20 pt-4 lg:pt-10">
-        {/* Desktop Sidebar */}
-  <aside className="hidden lg:flex flex-col gap-3 rounded-xl lg:w-1/5 h-[250px] sticky top-10 bg-white border border-orange-200 shadow-sm">
-          {navTabs.map(tab => (
             <button
-              key={tab.label}
-              onClick={() => {
-                setActiveTab(tab.label);
-                router.push(tab.path);
-              }}
-              className={`text-left px-3 py-2 rounded-xl font-semibold ${
-                activeTab === tab.label
-                  ? "bg-[#fff6f2] text-[#f05a2b] font-bold"
-                  : "hover:bg-[#fff6f2] text-[#101820]"
-              }`}
+              type="button"
+              onClick={() => router.push("/profile/paymentMethod")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
             >
-              {tab.label}
+              Saved Payment Method
             </button>
-          ))}
-        </aside>
+            <button
+              type="button"
+              onClick={() => router.push("/profile/addressBook")}
+              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
+            >
+              Address Book
+            </button>
+          </TabsList>
+        </div>
 
-        {/* Main content */}
-        <main className="flex-1 w-full">
-          {/* Alert/Error */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-xl text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Top Grid - Responsive */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6 lg:mb-8">
-            {/* Account Info */}
-            <Card className="rounded-3xl bg-white border border-orange-200 shadow-md">
-              <CardContent className="p-4 lg:p-5">
-                <div className="flex items-center gap-3 lg:gap-4 mb-3">
-                  <Image
-                    src="/avatar.svg"
-                    alt="avatar"
-                    width={36}
-                    height={36}
-                    className="lg:w-[46px] lg:h-[46px] rounded-full border-2 border-orange-200 "
-                  />
-                  <h2 className="font-semibold text-base lg:text-lg tracking-tight text-[#f05a2b]">Account Info</h2>
-                </div>
-                {profileLoading ? (
-                  <div className="animate-pulse h-4 bg-orange-100 rounded w-2/3" />
-                ) : (
-                  <div className="space-y-2 text-xs lg:text-sm text-gray-700">
-                    <div className="font-bold text-base lg:text-lg truncate">{profile?.name || profile?.displayName}</div>
-                    <div className="opacity-70 text-xs">{profile?.country}, {profile?.state}</div>
-                    <div className="text-xs">
-                      <div className="truncate">Email: <span className="font-medium">{profile?.email}</span></div>
-                      <div className="truncate">Phone: <span className="font-medium">{profile?.phoneNumber}</span></div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Billing Address */}
-            <Card className="rounded-3xl bg-white border border-orange-200 shadow-md">
-              <CardContent className="p-4 lg:p-5">
-                <div className="flex items-center gap-3 lg:gap-4 mb-3">
-                  <Image src="/address.svg" alt="address" width={30} height={30} className="lg:w-[36px] lg:h-[36px]" />
-                  <h2 className="font-semibold c text-base lg:text-lg tracking-tight text-[#f05a2b]">Billing Address</h2>
-                </div>
-                {addressLoading ? (
-                  <div className="animate-pulse h-4 bg-orange-100 rounded w-2/3" />
-                ) : addresses.length === 0 ? (
-                  <div className="text-sm text-gray-600">No address found.</div>
-                ) : (
-                  <div className="space-y-2 text-xs text-gray-700">
-                    <div className="font-bold text-sm lg:text-base truncate">{addresses[0].name}</div>
-                    <div className="text-xs line-clamp-2">{addresses[0].street}, {addresses[0].city}, {addresses[0].state}, {addresses[0].zip}</div>
-                    <div className="text-xs">{addresses[0].country}</div>
-                    <div className="text-xs truncate">Phone: <span className="font-bold">{addresses[0].phone}</span></div>
-                    <Button
-                      onClick={() => router.push("/profile/addressBook")}
-                      size="sm"
-                      className="mt-2 bg-gradient-to-r from-orange-200 to-orange-400 text-orange-800 hover:bg-orange-300 text-xs px-3 py-1"
-                    >
-                      Edit Address
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Order Summary */}
-            <Card className="rounded-3xl bg-gradient-to-br from-[#fff6f2] via-[#eaf6ff] to-[#ffeaf2] border border-orange-200 shadow-md col-span-1 sm:col-span-2">
-              <CardContent className="p-4 lg:p-5">
-                <h2 className="font-semibold mb-3 text-base lg:text-lg tracking-tight text-[#f05a2b]">Order Summary</h2>
-                <div className="grid grid-cols-1 gap-2 lg:gap-4">
-                  <div className="flex flex-col items-center px-2 py-2 rounded-lg bg-white/60 ">
-                    <div className="font-semibold text-xl lg:text-2xl text-blue-700">{stats.total}</div>
-                    <div className="text-xs text-gray-600 text-center">Total Orders</div>
-                  </div>
-                  <div className="flex flex-col items-center px-2 py-2 rounded-lg bg-white/60 ">
-                    <div className="font-semibold text-xl lg:text-2xl text-orange-600">{stats.pending}</div>
-                    <div className="text-xs text-orange-600 text-center">Pending Orders</div>
-                  </div>
-                  <div className="flex flex-col items-center px-2 py-2 rounded-lg bg-white/60 ">
-                    <div className="font-semibold text-xl lg:text-2xl text-green-600">{stats.completed}</div>
-                    <div className="text-xs text-green-600 text-center">Completed Orders</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Payment Option */}
-          <section className="mb-6 lg:mb-8">
-            <Card className="rounded-3xl bg-white border border-orange-200 shadow-md">
-              <CardContent className="p-4 lg:p-5">
-                <div className="flex justify-between items-center mb-3">
-                  <h2 className="font-semibold text-base lg:text-lg tracking-tight text-[#f05a2b]">Payment Option</h2>
+        {/* Content Area */}
+        <div className="w-3/4">
+          <TabsContent value="account">
+            {/* Account Settings Card */}
+            <Card className="shadow-md mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Account Settings</h2>
                   <Button
-                    size="sm"
-                    className="bg-gradient-to-r from-orange-200 to-orange-400 text-orange-800 hover:bg-orange-300 text-xs px-3"
-                    onClick={() => router.push("/profile/paymentMethod")}
-                  >
-                    <span className="hidden sm:inline">Add Card / UPI</span>
-                    <span className="sm:hidden">Add</span>
-                  </Button>
-                </div>
-                {paymentLoading ? (
-                  <div className="flex gap-2">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="animate-pulse h-32 w-48 lg:w-56 rounded-2xl bg-orange-100 flex-shrink-0" />
-                    ))}
-                  </div>
-                ) : cards.length === 0 && upis.length === 0 ? (
-                  <div className="text-sm text-gray-600">No payment methods saved.</div>
-                ) : (
-                  <div className="flex gap-3 lg:gap-4 overflow-x-auto pb-2 -mx-1">
-                    {cards.map((card) => (
-                      <div
-                        key={card.id}
-                        className={`rounded-2xl text-white p-4 min-w-[200px] lg:min-w-[220px] ${card.bgColor || "bg-gradient-to-br from-blue-600 to-blue-800"} relative flex-shrink-0`}
-                      >
-                        {card.isMock && (
-                          <div className="absolute top-2 left-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-lg ">
-                            Demo
-                          </div>
-                        )}
-                        <div className="flex justify-between mb-2">
-                          <span className="font-semibold text-xs">{card.bankName}</span>
-                        </div>
-                        <div className="mb-2 text-xs">
-                          <span className="text-gray-200">CARD NUMBER</span>
-                          <div className="tracking-widest text-sm font-mono">**** **** **** {card.last4}</div>
-                        </div>
-                        <div className="flex justify-between items-center mb-1">
-                          <div className="font-bold text-xs">{card.type}</div>
-                          <div className="text-gray-200 text-xs">{card.typeOfCard}</div>
-                        </div>
-                        <div className="font-semibold text-white text-xs truncate">{card.name}</div>
-                      </div>
-                    ))}
-                    {upis.map((upi) => (
-                      <div
-                        key={upi.id}
-                        className={`rounded-2xl text-white p-4 min-w-[200px] lg:min-w-[220px] ${upi.bgColor || "bg-gradient-to-br from-green-600 to-green-800"} relative flex-shrink-0`}
-                      >
-                        {upi.isMock && (
-                          <div className="absolute top-2 left-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-lg ">
-                            Demo
-                          </div>
-                        )}
-                        <div className="flex justify-between mb-2">
-                          <span className="font-semibold text-xs">{upi.bankName}</span>
-                        </div>
-                        <div className="mb-2 text-xs">
-                          <span className="text-gray-200">UPI ID</span>
-                          <div className="tracking-wide text-sm font-mono break-all">{upi.upiId}</div>
-                        </div>
-                        <div className="flex justify-between items-center mb-1">
-                          <div className="font-bold text-xs">{upi.type}</div>
-                          <div className="text-gray-200 text-xs">{upi.upiProvider}</div>
-                        </div>
-                        <div className="font-semibold text-white text-xs truncate">{upi.name}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Settings Section */}
-          <section className="mb-6 lg:mb-8">
-            <Card className="rounded-3xl bg-white border border-orange-200 shadow-md">
-              <CardContent className="p-4 lg:p-5">
-                <h2 className="font-semibold text-base lg:text-lg tracking-tight mb-3 text-[#f05a2b]">Settings</h2>
-                <div className="flex gap-2 flex-wrap mb-4">
-                  <Button
-                    variant={settingsAction === "edit" ? "default" : "outline"}
-                    className="rounded-xl font-semibold text-xs px-3 py-2"
-                    onClick={handleEditProfile}
-                  >
-                    <span className="hidden sm:inline">🖊️ Edit Profile</span>
-                    <span className="sm:hidden">🖊️ Edit</span>
-                  </Button>
-                  <Button
-                    variant={settingsAction === "password" ? "default" : "outline"}
-                    className="rounded-xl font-semibold text-xs px-3 py-2"
-                    onClick={() => {
-                      setSettingsAction("password");
-                      setShowPasswordReset(false);
-                      setOtpRequested(false);
-                      setPasswordResetOtp("");
-                      setNewPassword("");
-                      setConfirmPassword("");
-                      setPasswordError("");
-                    }}
-                  >
-                    <span className="hidden sm:inline">🔒 Change Password</span>
-                    <span className="sm:hidden">🔒 Password</span>
-                  </Button>
-                  <Button
-                    variant={settingsAction === "delete" ? "destructive" : "outline"}
-                    className="rounded-xl font-semibold text-xs px-3 py-2"
+                    variant="destructive"
                     onClick={handleDeleteAccountClick}
                   >
-                    <span className="hidden sm:inline">🗑️ Delete Account</span>
-                    <span className="sm:hidden">🗑️ Delete</span>
+                    Delete account
                   </Button>
                 </div>
-                <div className="mt-2">
-                  {settingsAction === "edit" && (
-                    <form className="grid grid-cols-1 sm:grid-cols-2 gap-3" onSubmit={handleSaveProfile}>
-                      <input 
-                        name="name" 
-                        value={editProfile?.name || ""} 
-                        onChange={handleProfileChange} 
-                        placeholder="Display Name" 
-                        className="border rounded-xl px-3 py-2 w-full text-sm" 
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {error}
+                  </div>
+                )}
+
+                {showEmailOtp ? (
+                  <form onSubmit={handleVerifyEmailOtp} className="grid grid-cols-1 gap-6">
+                    <div>
+                      <Label htmlFor="emailOtp">Enter OTP sent to {tempEmail}</Label>
+                      <Input
+                        id="emailOtp"
+                        value={emailOtp}
+                        onChange={(e) => setEmailOtp(e.target.value)}
+                        placeholder="Enter 6-digit OTP"
+                        maxLength={6}
                       />
-                      <input 
-                        name="username" 
-                        value={editProfile?.username || ""} 
-                        onChange={handleProfileChange} 
-                        placeholder="Username" 
-                        className="border rounded-xl px-3 py-2 w-full text-sm" 
-                      />
-                      <input 
-                        name="fullName" 
-                        value={editProfile?.fullName || ""} 
-                        onChange={handleProfileChange} 
-                        placeholder="Full Name" 
-                        className="border rounded-xl px-3 py-2 w-full text-sm sm:col-span-2" 
-                      />
-                      <select 
-                        name="country" 
-                        value={editProfile?.country || ""} 
-                        onChange={handleProfileChange} 
-                        className="border rounded-xl px-3 py-2 w-full text-sm"
+                    </div>
+                    <div className="flex justify-end gap-4">
+                      <Button
+                        type="button"
+                        onClick={handleCancel}
+                        className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded"
                       >
-                        <option value="">Select Country</option>
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="bg-red-400 hover:bg-red-500 text-white px-6 py-2 rounded"
+                      >
+                        Verify OTP
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <form className="grid grid-cols-2 gap-6" onSubmit={handleSave}>
+                    <div>
+                      <Label htmlFor="displayName">Display Name</Label>
+                      <Input
+                        id="displayName"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        value={isEditing ? tempEmail || email : email}
+                        onChange={handleEmailChange}
+                        disabled={!isEditing}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        value={phone}
+                        disabled={true}
+                        className="bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="country">Country/Region</Label>
+                      <select
+                        id="country"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="border rounded px-2 py-1 w-full"
+                        disabled={!isEditing}
+                      >
                         <option>Bangladesh</option>
                         <option>India</option>
                         <option>USA</option>
                       </select>
-                      <select 
-                        name="state" 
-                        value={editProfile?.state || ""} 
-                        onChange={handleProfileChange} 
-                        className="border rounded-xl px-3 py-2 w-full text-sm"
+                    </div>
+                    <div>
+                      <Label htmlFor="state">State</Label>
+                      <select
+                        id="state"
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                        className="border rounded px-2 py-1 w-full"
+                        disabled={!isEditing}
                       >
-                        <option value="">Select State</option>
                         <option>Dhaka</option>
                         <option>Delhi</option>
                         <option>California</option>
                       </select>
-                      <input 
-                        name="zip" 
-                        value={editProfile?.zip || ""} 
-                        onChange={handleProfileChange} 
-                        placeholder="Zip Code" 
-                        className="border rounded-xl px-3 py-2 w-full text-sm sm:col-span-2" 
+                    </div>
+                    <div>
+                      <Label htmlFor="zip">Zip Code</Label>
+                      <Input
+                        id="zip"
+                        value={zip}
+                        onChange={(e) => setZip(e.target.value)}
+                        disabled={!isEditing}
                       />
-                      <div className="flex gap-2 mt-2 sm:col-span-2">
-                        <Button type="button" onClick={closeSettingsAction} size="sm" className="bg-gray-100 rounded-xl flex-1 sm:flex-none">
-                          Cancel
-                        </Button>
-                        <Button type="submit" size="sm" disabled={editLoading} className="rounded-xl flex-1 sm:flex-none">
-                          {editLoading ? "Saving..." : "Save"}
-                        </Button>
-                      </div>
-                    </form>
-                  )}
-                  {settingsAction === "password" && (
-                    <div className="space-y-4">
-                      {!otpRequested ? (
-                        <div>
+                    </div>
+                    
+                    <div className="col-span-2 flex justify-end gap-4 mt-4">
+                      {isEditing ? (
+                        <>
                           <Button
                             type="button"
-                            onClick={handleRequestPasswordReset}
-                            className="bg-orange-100 text-[#f68358] hover:bg-orange-200 font-semibold px-6 py-2 rounded-xl w-full sm:w-auto"
+                            onClick={handleCancel}
+                            className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded"
                           >
-                            Request Password Reset OTP
+                            Cancel
                           </Button>
-                          {passwordError && (
-                            <p className="text-red-500 text-sm mt-2">{passwordError}</p>
-                          )}
-                        </div>
+                          <Button
+                            type="submit"
+                            disabled={loading}
+                            className="bg-red-400 hover:bg-red-500 text-white px-6 py-2 rounded"
+                          >
+                            {loading ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                        </>
                       ) : (
-                        <form className="grid grid-cols-1 gap-3" onSubmit={handleResetPassword}>
-                          <input 
-                            value={passwordResetOtp} 
-                            onChange={(e) => setPasswordResetOtp(e.target.value)} 
-                            placeholder="Enter OTP sent to email" 
-                            className="border rounded-xl px-3 py-2 text-sm" 
-                            maxLength={6} 
-                          />
-                          <input 
-                            type="password" 
-                            value={newPassword} 
-                            onChange={(e) => setNewPassword(e.target.value)} 
-                            placeholder="New Password" 
-                            className="border rounded-xl px-3 py-2 text-sm" 
-                          />
-                          <input 
-                            type="password" 
-                            value={confirmPassword} 
-                            onChange={(e) => setConfirmPassword(e.target.value)} 
-                            placeholder="Confirm Password" 
-                            className="border rounded-xl px-3 py-2 text-sm" 
-                          />
-                          {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-                          <div className="flex gap-2 mt-2">
-                            <Button type="button" onClick={closeSettingsAction} className="bg-gray-100 rounded-xl flex-1 sm:flex-none">Cancel</Button>
-                            <Button type="submit" className="bg-gradient-to-br from-orange-400 to-orange-600 text-white rounded-xl flex-1 sm:flex-none">Reset Password</Button>
-                          </div>
-                        </form>
+                        <Button
+                          type="button"
+                          onClick={handleEdit}
+                          className="bg-blue-400 hover:bg-blue-500 text-white px-6 py-2 rounded"
+                        >
+                          Edit
+                        </Button>
                       )}
                     </div>
-                  )}
-                  {settingsAction === "delete" && (
-                    <div>
-                      <Button variant="destructive" className="mb-2 rounded-xl font-semibold w-full sm:w-auto" onClick={handleDeleteAccountClick}>Request Account Deletion</Button>
-                      {isDeleteModalOpen && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                          <Card className="bg-white rounded-3xl p-6 lg:p-8 w-full max-w-md border-0">
-                            <CardContent className="p-0">
-                              <h2 className="text-lg lg:text-xl font-semibold mb-4 text-red-600">Are you sure?</h2>
-                              <p className="text-sm text-gray-600 mb-6">
-                                This action cannot be undone. This will permanently delete your account and all your data.
-                              </p>
-                              <div className="flex flex-col sm:flex-row justify-end gap-3">
-                                <Button type="button" variant="outline" onClick={closeSettingsAction} className="rounded-xl flex-1 sm:flex-none">Cancel</Button>
-                                <Button type="button" variant="destructive" onClick={handleDeleteAccount} className="rounded-xl flex-1 sm:flex-none">Delete</Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      )}
-                      {showDeleteOtp && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                          <Card className="bg-white rounded-3xl p-6 lg:p-8 w-full max-w-md border-0">
-                            <CardContent className="p-0">
-                              <h2 className="text-lg lg:text-xl font-semibold mb-4 text-[#f68358]">Verify Identity</h2>
-                              <p className="text-sm text-gray-600 mb-6">
-                                Please verify your identity by entering the OTP sent to your registered email.
-                              </p>
-                              <form onSubmit={handleDeleteOtpVerification} className="space-y-4">
-                                <input 
-                                  value={deleteEmailOtp} 
-                                  onChange={(e) => setDeleteEmailOtp(e.target.value)} 
-                                  placeholder="Enter email OTP" 
-                                  className="border rounded-xl px-3 py-2 w-full text-sm" 
-                                  maxLength={6} 
-                                />
-                                {deleteOtpError && <p className="text-red-500 text-sm">{deleteOtpError}</p>}
-                                <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
-                                  <Button type="button" variant="outline" onClick={closeSettingsAction} className="rounded-xl flex-1 sm:flex-none">Cancel</Button>
-                                  <Button type="submit" variant="destructive" className="rounded-xl flex-1 sm:flex-none">Verify & Delete Account</Button>
-                                </div>
-                              </form>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Recent Orders Table */}
-          <section>
-            <Card className="rounded-3xl bg-white border border-[#f05a2b] shadow-sm">
-              <CardContent className="p-4 lg:p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-semibold text-base lg:text-lg tracking-tight text-[#f05a2b]">Recent Orders</h2>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-xl text-xs px-3"
-                    onClick={() => router.push("/profile/orderHistory")}
-                  >
-                    View All
-                  </Button>
-                </div>
-                {ordersLoading ? (
-                  <div className="animate-pulse h-8 bg-orange-100 rounded w-2/3" />
-                ) : orders.length === 0 ? (
-                  <div className="text-sm text-gray-600 text-center py-8">No orders found.</div>
-                ) : (
-                  <>
-                    {/* Desktop Table */}
-                    <div className="hidden md:block overflow-x-auto">
-                      <table className="w-full table-auto text-sm">
-                        <thead>
-                          <tr className="text-left border-b text-[#f68358]">
-                            <th className="py-2 px-2 font-semibold">Order ID</th>
-                            <th className="py-2 px-2 font-semibold">Status</th>
-                            <th className="py-2 px-2 font-semibold">Date</th>
-                            <th className="py-2 px-2 font-semibold">Total</th>
-                            <th className="py-2 px-2 font-semibold">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {orders.slice(0, 5).map((order) => (
-                            <tr key={order.id} className="border-b hover:bg-orange-50">
-                              <td className="py-3 px-2 font-semibold">#{order.id}</td>
-                              <td className="py-3 px-2">
-                                <span className={`px-2 py-1 rounded-xl font-bold text-xs ${statusColors[order.status.toUpperCase()] || "bg-gray-200 text-gray-800"}`}>
-                                  {formatStatus(order.status)}
-                                </span>
-                              </td>
-                              <td className="py-3 px-2">{formatDate(order.date)}</td>
-                              <td className="py-3 px-2 font-semibold">
-                                IDR {order.amount.toLocaleString()}
-                              </td>
-                              <td className="py-3 px-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="rounded-xl text-xs px-3 py-1"
-                                  onClick={() =>
-                                    router.push(`/profile/orderHistory/orderDetail/${order.id}`)
-                                  }
-                                >
-                                  View Details
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile Cards */}
-                    <div className="md:hidden space-y-3">
-                      {orders.slice(0, 5).map((order) => (
-                        <div key={order.id} className="bg-gradient-to-r from-orange-50 to-blue-50 rounded-xl p-4 border border-orange-100">
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex-1">
-                              <div className="font-bold text-sm text-gray-800">#{order.id}</div>
-                              <div className="text-xs text-gray-600 mt-1">{formatDate(order.date)}</div>
-                            </div>
-                            <span className={`px-2 py-1 rounded-lg font-bold text-xs ${statusColors[order.status.toUpperCase()] || "bg-gray-200 text-gray-800"}`}>
-                              {formatStatus(order.status)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <div className="font-semibold text-sm text-[#f68358]">
-                              IDR {order.amount.toLocaleString()}
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-lg text-xs px-3 py-1 border-orange-300 text-[#f68358] hover:bg-orange-100"
-                              onClick={() =>
-                                router.push(`/profile/orderHistory/orderDetail/${order.id}`)
-                              }
-                            >
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                  </form>
                 )}
               </CardContent>
             </Card>
-          </section>
-        </main>
-      </div>
+
+            {/* Password Reset Card */}
+            <Card className="shadow-md">
+              <CardContent className="p-6">
+                <h2 className="text-lg font-semibold mb-4">Change Password</h2>
+                
+                {!showPasswordReset ? (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-4">
+                      To change your password, we&apos;ll send an OTP to your registered email address.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleRequestPasswordReset}
+                      className="bg-red-400 hover:bg-red-500 text-white px-6 py-2 rounded"
+                    >
+                      Request Password Reset
+                    </Button>
+                  </div>
+                ) : (
+                  <form className="grid grid-cols-1 gap-6" onSubmit={handleResetPassword}>
+                    <div>
+                      <Label htmlFor="passwordResetOtp">OTP sent to {email}</Label>
+                      <Input
+                        id="passwordResetOtp"
+                        value={passwordResetOtp}
+                        onChange={(e) => setPasswordResetOtp(e.target.value)}
+                        placeholder="Enter 6-digit OTP"
+                        maxLength={6}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="8+ characters, number, special character"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                    </div>
+                    {passwordError && (
+                      <p className="text-red-500 text-sm">{passwordError}</p>
+                    )}
+                    <div className="flex justify-end gap-4 mt-4">
+                      <Button
+                        type="button"
+                        onClick={handleCancelPasswordReset}
+                        className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="bg-red-400 hover:bg-red-500 text-white px-6 py-2 rounded"
+                      >
+                        Reset Password
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Delete OTP Verification Modal */}
+            {showDeleteOtp && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <Card className="bg-white rounded-lg p-6 min-w-[400px] shadow-lg">
+                  <CardContent>
+                    <h2 className="text-xl font-semibold mb-4">Verify Identity</h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Please verify your identity by entering the OTP sent to your registered email.
+                    </p>
+                    <form onSubmit={handleDeleteOtpVerification} className="space-y-4">
+                      <div>
+                        <Label htmlFor="deleteEmailOtp">Email OTP</Label>
+                        <Input
+                          id="deleteEmailOtp"
+                          value={deleteEmailOtp}
+                          onChange={(e) => setDeleteEmailOtp(e.target.value)}
+                          placeholder="Enter email OTP"
+                          maxLength={6}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">OTP sent to {email}</p>
+                      </div>
+                      {deleteOtpError && (
+                        <p className="text-red-500 text-sm">{deleteOtpError}</p>
+                      )}
+                      <div className="flex justify-end gap-4 mt-6">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleCancelDeleteOtp}
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit" variant="destructive">
+                          Verify & Delete Account
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <Card className="bg-white rounded-lg p-6 min-w-[350px] shadow-lg">
+                  <CardContent>
+                    <h2 className="text-xl font-semibold mb-4">Are you sure?</h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                      This action cannot be undone. This will permanently delete your account and all
+                      your data.
+                    </p>
+                    <div className="flex justify-end gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsDeleteModalOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="button" variant="destructive" onClick={handleDeleteAccount}>
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }
