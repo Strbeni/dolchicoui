@@ -73,48 +73,65 @@ function OrderSuccessContent({ orderId, showOrderDetails, setShowOrderDetails }:
   }, [orderDetails]);
 
   // Fetch order details if orderId is provided
-  const fetchOrderDetails = useCallback(async () => {
-    if (!orderId) {
+const fetchOrderDetails = useCallback(async () => {
+  if (!orderId) {
+    setLoading(false);
+    return;
+  }
+  
+  try {
+    setError(null);
+    setLoading(true);
+
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || sessionStorage.getItem('token')) : null;
+    if (!token) {
+      setError('Authentication required to view order details');
       setLoading(false);
       return;
     }
-    try {
-      setError(null);
-      setLoading(true);
 
-      const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || sessionStorage.getItem('token')) : null;
-      if (!token) {
-        setError('Authentication required to view order details');
-        setLoading(false);
-        return;
+    // Use the payment status endpoint instead of direct order endpoint
+    const response = await fetch(`${API_BASE_URL}/payment/status/${orderId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
-      const response = await fetch(`${API_BASE_URL}/order/${orderId}`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
+    });
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Order not found. Please check your order number.');
-        } else if (response.status === 401) {
-          throw new Error('Authentication expired. Please log in again.');
-        } else {
-          throw new Error(`Failed to fetch order: ${response.statusText}`);
-        }
-      }
-
-      const result = await response.json();
-      if (result.success && result.order) {
-        setOrderDetails(result.order);
-      } else {
-        throw new Error(result.message || 'Order details not available');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load order details');
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch order: ${response.statusText}`);
     }
-  }, [orderId, getAuthHeaders]);
+
+    const result = await response.json();
+    if (result.success && result.data) {
+      // Map the backend response to your expected format
+      const orderData = {
+        id: result.data.orderId,
+        status: result.data.orderStatus,
+        amount: result.data.amount,
+        date: new Date(result.data.createdAt).getTime(),
+        transactionId: result.data.razorpayPaymentId || 'N/A',
+        paymentMethod: result.data.paymentMethod,
+        sender: result.data.address?.name || 'N/A',
+        items: result.data.items || [],
+        user: {
+          id: 1, // You can get this from the token
+          name: result.data.address?.name || 'User',
+          email: result.data.address?.email || 'user@example.com'
+        }
+      };
+      setOrderDetails(orderData);
+    } else {
+      throw new Error(result.message || 'Order details not available');
+    }
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to load order details');
+  } finally {
+    setLoading(false);
+  }
+}, [orderId]);
+
 
   useEffect(() => {
     fetchOrderDetails();

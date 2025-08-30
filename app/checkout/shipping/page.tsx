@@ -217,30 +217,22 @@ const PaymentMethodPage = () => {
     );
   }, [paymentMethod, upiVerified, cardForm]);
 
-  const handleContinueToPayment = useCallback(() => {
-    if (!isPaymentValid()) {
-      setError('Please complete the payment information');
-      return;
-    }
-    try {
-      setError(null);
-      const paymentData = {
-        method: paymentMethod,
-        ...(paymentMethod === 'upi' && { upiId: upiID }),
-        ...(paymentMethod === 'card' && {
-          cardName: cardForm.cardName,
-          cardNumber: cardForm.cardNumber.slice(-4), // Only store last 4 digits
-          expiryMonth: cardForm.expiryMonth,
-          expiryYear: cardForm.expiryYear,
-        })
-      };
-      localStorage.setItem('checkoutPaymentData', JSON.stringify(paymentData));
-      // Navigate to confirmation page
-      window.location.href = '/checkout/confirmation';
-    } catch {
-      setError('Failed to save payment information. Please try again.');
-    }
-  }, [isPaymentValid, paymentMethod, upiID, cardForm]);
+const handleContinueToPayment = useCallback(() => {
+  try {
+    setError(null);
+    const paymentData = {
+      method: 'razorpay', // Always use Razorpay
+      // Remove other payment method specific data
+    };
+    localStorage.setItem('checkoutPaymentData', JSON.stringify(paymentData));
+    
+    // Navigate to confirmation page
+    window.location.href = '/checkout/confirmation';
+  } catch {
+    setError('Failed to save payment information. Please try again.');
+  }
+}, []);
+
 
   const handleEditAddress = () => {
     window.location.href = '/checkout';

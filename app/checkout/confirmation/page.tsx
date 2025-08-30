@@ -5,8 +5,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
+// Add global Window type declaration at the top of the file
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 // API base URL
-const API_BASE_URL = 'https://valyris-i.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://valyris-i.onrender.com/api';
 
 // --- Types ---
 interface CartItem {
@@ -20,6 +27,7 @@ interface CartItem {
     image: string[];
   };
 }
+
 interface CartData {
   items: CartItem[];
   summary: {
@@ -27,6 +35,7 @@ interface CartData {
     subtotal: number;
   };
 }
+
 interface CheckoutFormData {
   name: string;
   email: string;
@@ -36,6 +45,7 @@ interface CheckoutFormData {
   country: string;
   zipCode: string;
 }
+
 interface CheckoutPaymentData {
   method: string;
   [key: string]: any;
@@ -60,6 +70,30 @@ export default function ConfirmationPage() {
 
   const router = useRouter();
 
+  // Load Razorpay script - MOVED INSIDE THE COMPONENT
+  useEffect(() => {
+    // Load Razorpay script
+    if (typeof window !== 'undefined' && !window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        console.log('Razorpay script loaded successfully');
+      };
+      script.onerror = () => {
+        setError('Failed to load payment system. Please refresh and try again.');
+      };
+      document.head.appendChild(script);
+
+      // Cleanup function
+      return () => {
+        if (document.head.contains(script)) {
+          document.head.removeChild(script);
+        }
+      };
+    }
+  }, []);
+
   // Load cart and form/payment data from storage and backend
   useEffect(() => {
     const loadData = async () => {
@@ -71,6 +105,7 @@ export default function ConfirmationPage() {
           router.push('/login');
           return;
         }
+        
         // Fetch cart items
         const cartRes = await fetch(`${API_BASE_URL}/cart`, {
           headers: {
@@ -134,31 +169,44 @@ export default function ConfirmationPage() {
     return Math.max(0, subtotal - discount + shipping);
   }, [cartData, calculateDiscount]);
 
-  // Place order on backend
-  const handlePlaceOrder = useCallback(async () => {
-    if (!cartData || !formData) return;
-    setError(null);
-    setPlacingOrder(true);
+  // Add new Razorpay payment function
+  const initiateRazorpayPayment = useCallback(async () => {
+    if (!window.Razorpay) {
+      throw new Error('Payment system not loaded. Please refresh and try again.');
+    }
+
+    if (!cartData || !formData) {
+      throw new Error('Missing required data for payment');
+    }
+
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
+      // Prepare order data matching your backend API
       const orderData = {
         items: cartData.items.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
           size: item.size,
+          price: item.price
         })),
         amount: calculateTotal(),
         address: {
+          name: formData.name,
           street: formData.street,
           city: formData.province,
           state: formData.province,
-          zipCode: formData.zipCode,
-          country: formData.country,
-          phone: formData.phone,
+          zip: formData.zipCode,
+          phone: formData.phone
+        },
+        notes: {
+          coupon: appliedCoupon?.code || null,
+          totalItems: cartData.summary.totalItems
         }
       };
 
-      const response = await fetch(`${API_BASE_URL}/order/place`, {
+      // Step 1: Create Razorpay order
+      const response = await fetch(`${API_BASE_URL}/payment/create-order`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -167,23 +215,115 @@ export default function ConfirmationPage() {
         body: JSON.stringify(orderData)
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Failed to place order');
+      const orderResult = await response.json();
+      
+      if (!orderResult.success) {
+        throw new Error(orderResult.message || 'Failed to create payment order');
       }
-      // Clear checkout data in localStorage
-      localStorage.removeItem('checkoutFormData');
-      localStorage.removeItem('checkoutPaymentData');
-      localStorage.removeItem('appliedCoupon');
-      // Navigate to success page
-      router.push(`/checkout/success?orderId=${result.orderId}`);
-    } catch (err) {
-      setError('Failed to place order. Please try again.');
-    } finally {
+
+      const { orderId, amount: orderAmount, currency, key, dbOrderId } = orderResult.data;
+
+      // Step 2: Configure Razorpay checkout
+      const options = {
+        key: key,
+        amount: orderAmount, // Already in paise from backend
+        currency: currency,
+        name: 'Valyris Store',
+        description: `Order for ${cartData.summary.totalItems} item(s)`,
+        order_id: orderId,
+        handler: async (response: any) => {
+          try {
+            // Step 3: Verify payment
+            const verifyResponse = await fetch(`${API_BASE_URL}/payment/verify`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+
+            const verifyResult = await verifyResponse.json();
+
+            if (verifyResult.success) {
+              // Clear cart from backend
+              try {
+                await fetch(`${API_BASE_URL}/cart/clear`, {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+              } catch (clearError) {
+                console.error('Failed to clear cart:', clearError);
+              }
+
+              // Clear checkout data
+              localStorage.removeItem('checkoutFormData');
+              localStorage.removeItem('checkoutPaymentData');
+              localStorage.removeItem('appliedCoupon');
+              
+              // Navigate to success page with both order IDs
+              router.push(`/checkout/success?orderId=${dbOrderId}&paymentId=${response.razorpay_payment_id}`);
+            } else {
+              throw new Error('Payment verification failed');
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            setError('Payment verification failed. Please contact support.');
+            setPlacingOrder(false);
+          }
+        },
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.phone
+        },
+        theme: {
+          color: '#f97316' // Orange color matching your theme
+        },
+        modal: {
+          ondismiss: () => {
+            setPlacingOrder(false);
+          }
+        }
+      };
+
+      // Step 4: Open Razorpay checkout
+      const razorpay = new window.Razorpay(options);
+      
+      razorpay.on('payment.failed', (response: any) => {
+        console.error('Payment failed:', response.error);
+        setError(`Payment failed: ${response.error.description}`);
+        setPlacingOrder(false);
+      });
+
+      razorpay.open();
+    } catch (error) {
+      console.error('Payment initiation error:', error);
+      throw error;
+    }
+  }, [cartData, formData, appliedCoupon, calculateTotal, router]);
+
+  // Updated handlePlaceOrder function
+  const handlePlaceOrder = useCallback(async () => {
+    if (!cartData || !formData) return;
+    setError(null);
+    setPlacingOrder(true);
+    
+    try {
+      // Use Razorpay payment instead of direct order placement
+      await initiateRazorpayPayment();
+    } catch (err: any) {
+      setError(err.message || 'Payment initiation failed. Please try again.');
       setPlacingOrder(false);
     }
-  }, [cartData, formData, calculateTotal, router]);
+  }, [cartData, formData, initiateRazorpayPayment]);
 
   const discount = calculateDiscount();
   const shipping: number = 0;
@@ -314,7 +454,7 @@ export default function ConfirmationPage() {
             {/* Order Number */}
             <div className="bg-white border border-gray-200 rounded-xl p-4 lg:p-6 shadow-sm">
               <div className="text-sm text-gray-500 mb-2">Order Number</div>
-              <div className="font-bold text-xl text-orange-600 mb-2">1234ASDFGHJ</div>
+              <div className="font-bold text-xl text-orange-600 mb-2">Pending Payment</div>
               <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                 Waiting For Payment
               </div>
@@ -329,12 +469,11 @@ export default function ConfirmationPage() {
                 Payment Information
               </h3>
               <div className="text-sm text-gray-600 leading-relaxed">
-                Upon completing a purchase, you will receive a payment confirmation email. This 
-                email will contain essential information about the{' '}
+                Your payment will be processed securely through Razorpay. Upon completing the payment, you will receive a confirmation email with{' '}
                 <span className="text-blue-600 underline cursor-pointer hover:text-blue-700">
-                  items you have purchased
+                  order details
                 </span>{' '}
-                and the total amount that needs to be paid.
+                and tracking information.
               </div>
             </div>
 
@@ -367,14 +506,13 @@ export default function ConfirmationPage() {
                       {formData.street}, {formData.province}, {formData.country} {formData.zipCode}
                     </div>
                   </div>
-                  {paymentData && (
-                    <div className="sm:col-span-2">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Payment Method</div>
-                      <div className="font-medium text-gray-900 capitalize">
-                        {paymentData.method === 'cod' ? 'Cash on Delivery' : paymentData.method}
-                      </div>
+                  <div className="sm:col-span-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide mb-1">Payment Method</div>
+                    <div className="font-medium text-gray-900 flex items-center">
+                      Razorpay Gateway
+                      <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Secure</span>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
@@ -493,10 +631,10 @@ export default function ConfirmationPage() {
             {placingOrder ? (
               <div className="flex items-center gap-3">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>PLACING ORDER...</span>
+                <span>PROCESSING PAYMENT...</span>
               </div>
             ) : (
-              'CONFIRM & PLACE ORDER'
+              'PAY NOW'
             )}
           </Button>
         </div>
@@ -512,10 +650,10 @@ export default function ConfirmationPage() {
           {placingOrder ? (
             <div className="flex items-center justify-center gap-3">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>PLACING ORDER...</span>
+              <span>PROCESSING PAYMENT...</span>
             </div>
           ) : (
-            'CONFIRM & PLACE ORDER'
+            'PAY NOW'
           )}
         </Button>
       </div>
