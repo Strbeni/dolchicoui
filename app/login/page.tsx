@@ -1,5 +1,5 @@
-
 "use client"
+
 // Enhanced password validation for new user profile
 const validatePassword = (password: string): string[] => {
   const errors: string[] = [];
@@ -73,6 +73,8 @@ interface UserCheckResponse {
   userRole?: string
   requiresRegistration?: boolean
   isProfileComplete?: boolean
+  emailVerified?: boolean
+  phoneVerified?: boolean
 }
 
 interface AuthResponse {
@@ -80,6 +82,7 @@ interface AuthResponse {
   token?: string
   userId?: number
   requiresProfileCompletion?: boolean
+  requiresVerification?: boolean
   message?: string
   user?: User
 }
@@ -97,52 +100,82 @@ export default function UnifiedAuthComponent() {
 
   // Handle Google OAuth redirect: extract token/user from URL or cookies
   useEffect(() => {
-    // Check URL params for token and user
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search)
       const token = urlParams.get("token")
       const userStr = urlParams.get("user")
+      const authSuccess = urlParams.get("auth") === "success"
 
-      console.log("[OAuth] Checking URL params - token:", !!token, "user:", !!userStr)
+      console.log("[OAuth] Checking URL params - token:", !!token, "user:", !!userStr, "authSuccess:", authSuccess)
 
-      if (token) {
-        console.log("[OAuth] Token found in URL, storing and redirecting...")
+      // Priority: Handle Google OAuth redirect first
+      if (authSuccess || token) {
+        console.log("[OAuth] OAuth success detected, processing...")
         
-        // Store tokens with multiple persistence layers
-        localStorage.setItem("token", token)
-        sessionStorage.setItem("token", token)
-        document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
-        
-        if (userStr) {
-          try {
-            const decodedUser = decodeURIComponent(userStr)
-            localStorage.setItem("user", decodedUser)
-            sessionStorage.setItem("user", decodedUser)
-            console.log("[OAuth] User data stored")
-          } catch (error) {
-            console.error("[OAuth] Error decoding user data:", error)
+        if (token) {
+          // Store tokens with multiple persistence layers
+          localStorage.setItem("token", token)
+          sessionStorage.setItem("token", token)
+          document.cookie = `auth-token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
+          
+          if (userStr) {
+            try {
+              const decodedUser = decodeURIComponent(userStr)
+              localStorage.setItem("user", decodedUser)
+              sessionStorage.setItem("user", decodedUser)
+              console.log("[OAuth] User data stored")
+            } catch (error) {
+              console.error("[OAuth] Error decoding user data:", error)
+            }
           }
         }
-        
-        // Remove token/user from URL for cleanliness
-        const url = new URL(window.location.href)
-        url.searchParams.delete("token")
-        url.searchParams.delete("user")
-        window.history.replaceState({}, document.title, url.pathname)
-        
-        // Set redirecting state and redirect
-        setRedirecting(true)
-        setTimeout(() => {
-          router.push("/home")
-        }, 500)
-        
+
+        // Check for token in cookies if not in URL
+        if (!token) {
+          const cookieToken = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('auth-token='))   
+            ?.split('=')[1]
+          
+          if (cookieToken) {
+            console.log("[OAuth] Token found in cookies, storing...")
+            localStorage.setItem("token", cookieToken)
+            sessionStorage.setItem("token", cookieToken)
+          }
+        }
+
+        // Verify user authentication status with backend
+// In UnifiedAuthComponent - update the verifyAuthStatus function
+// After OAuth redirect, immediately check profile
+const verifyAuthStatus = async () => {
+  try {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+    const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+      credentials: 'include',  // Add this line
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      // Update your app's authentication state
+      localStorage.setItem("user", JSON.stringify(data.user))
+      // Set logged in state in your app
+    }
+  } catch (error) {
+    console.error("Auth check failed:", error)
+  }
+}
+
+
+
+        verifyAuthStatus()
         return
       }
 
-      // Check for token in cookies as fallback
+      // Fallback: Check for token in cookies for existing sessions
       const cookieToken = document.cookie
         .split('; ')
-        .find(row => row.startsWith('token='))
+        .find(row => row.startsWith('auth-token='))   
         ?.split('=')[1]
       
       if (cookieToken && !localStorage.getItem("token")) {
@@ -208,7 +241,7 @@ export default function UnifiedAuthComponent() {
 
     // Set cookie for additional persistence
     if (typeof window !== "undefined") {
-      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}` // 7 days
+      document.cookie = `auth-token=${token}; path=/; max-age=${7*24*60*60}`
     }
 
     console.log("Authentication successful, redirecting...")
@@ -236,7 +269,7 @@ export default function UnifiedAuthComponent() {
 
     const digitsOnly = trimmedInput.replace(/\D/g, "")
     const hasMinimumDigits = digitsOnly.length >= 7
-    const phoneCharRegex = /^[+\-\s$$$$\d]+$/
+    const phoneCharRegex = /^[+\-\s()$\d]+$/
     const hasValidPhoneChars = phoneCharRegex.test(trimmedInput)
 
     if (hasMinimumDigits && hasValidPhoneChars) {
@@ -268,7 +301,7 @@ export default function UnifiedAuthComponent() {
 
     const digitsOnly = trimmedInput.replace(/\D/g, "")
     const hasMinimumDigits = digitsOnly.length >= 7
-    const phoneCharRegex = /^[+\-\s$$$$\d]+$/
+    const phoneCharRegex = /^[+\-\s()$\d]+$/
     const hasValidPhoneChars = phoneCharRegex.test(trimmedInput)
 
     if (hasMinimumDigits && hasValidPhoneChars) {
@@ -313,7 +346,7 @@ export default function UnifiedAuthComponent() {
         if (trimmed.startsWith("+")) {
           return trimmed
         }
-        const cleanNumber = trimmed.replace(/[\s\-$$$$]/g, "")
+        const cleanNumber = trimmed.replace(/[\s\-()$]/g, "")
         const codeToUse = countryCodeVal || countryCode
         return `${codeToUse}${cleanNumber}`
       }
@@ -323,7 +356,7 @@ export default function UnifiedAuthComponent() {
     [countryCode],
   )
 
-  // Check if user exists using backend API
+  // Enhanced user check with verification status
   const checkUserExists = React.useCallback(async (emailOrPhone: string): Promise<UserCheckResponse> => {
     if (!emailOrPhone.trim()) return { exists: false }
 
@@ -333,6 +366,7 @@ export default function UnifiedAuthComponent() {
       const res = await fetch(`${API_BASE_URL}/api/user/auth/check-user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ emailOrPhone }),
       })
 
@@ -340,9 +374,15 @@ export default function UnifiedAuthComponent() {
 
       if (res.ok) {
         setUserExists(data.exists)
-        // Use data.loginMethods directly without storing in state
+        
+        // Enhanced logic for verification status
         const hasPasswordMethod = (data.loginMethods || []).includes("password")
-        setShowPasswordOption(data.exists && hasPasswordMethod)
+        const isEmailVerified = data.emailVerified !== false
+        const isPhoneVerified = data.phoneVerified !== false
+        
+        // Show password option only if user exists, has password method, and is verified
+        setShowPasswordOption(data.exists && hasPasswordMethod && (isEmailVerified || isPhoneVerified))
+        
         return data
       } else {
         console.error("Check auth API error:", data)
@@ -368,6 +408,7 @@ export default function UnifiedAuthComponent() {
       const res = await fetch(`${API_BASE_URL}/api/user/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify(payload),
       })
 
@@ -387,13 +428,14 @@ export default function UnifiedAuthComponent() {
     [contactType],
   )
 
-  // Send OTP for existing users
+  // Send OTP for existing users (including unverified users)
   const handleSendOTPForExistingUser = React.useCallback(async (cleanContact: string): Promise<void> => {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
 
     const res = await fetch(`${API_BASE_URL}/api/user/auth/send-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: 'include',
       body: JSON.stringify({ emailOrPhone: cleanContact }),
     })
 
@@ -411,7 +453,7 @@ export default function UnifiedAuthComponent() {
     setResendTimer(RESEND_SECONDS)
   }, [])
 
-  // Main entry point: Handle continue from step 1
+  // Enhanced continue handler with verification check
   const handleContinue = React.useCallback(async (): Promise<void> => {
     setError("")
     setLoading(true)
@@ -430,7 +472,18 @@ export default function UnifiedAuthComponent() {
       const userStatus = await checkUserExists(cleanContact)
 
       if (userStatus.exists) {
-        // Existing user: Go to login flow
+        // Check verification status for existing users
+        const isEmailContact = contactType === "email"
+        const isPhoneContact = contactType === "mobile"
+        const needsVerification = 
+          (isEmailContact && !userStatus.emailVerified) ||
+          (isPhoneContact && !userStatus.phoneVerified)
+
+        if (needsVerification) {
+          console.log("User exists but needs verification, sending OTP")
+          await handleSendOTPForExistingUser(cleanContact)
+        }
+        
         setStep(2)
       } else {
         // New user: Check terms and send OTP immediately
@@ -447,7 +500,7 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }, [contactInput, contactType, acceptTerms, formatContactForAPI, checkUserExists, handleSendOTPForNewUser])
+  }, [contactInput, contactType, acceptTerms, formatContactForAPI, checkUserExists, handleSendOTPForNewUser, handleSendOTPForExistingUser])
 
   // Handle edit contact (inline editing with pencil icon)
   const handleEditContact = React.useCallback((): void => {
@@ -481,22 +534,42 @@ export default function UnifiedAuthComponent() {
         setLoading(false)
         return
       }
+      
       // Update contact in state
       setVerifiedContact(formattedContact)
       setVerifiedContactType(editContactType)
       setCountryCode(editCountryCode)
       setContactInput(editContactInput)
       setIsEditingContact(false)
-      // For new user creation, send OTP to new contact and start timer
-      if (!userExists) {
+      
+      // Reset OTP state when contact is changed
+      setOtpSent(false)
+      setOtp("")
+      setOtpBoxes(["", "", "", "", "", ""])
+      
+      // Re-check user status with new contact
+      const userStatus = await checkUserExists(formattedContact)
+      
+      // For existing users who need verification, send OTP automatically
+      if (userStatus.exists) {
+        const isEmailContact = editContactType === "email"
+        const isPhoneContact = editContactType === "mobile"
+        const needsVerification = 
+          (isEmailContact && !userStatus.emailVerified) ||
+          (isPhoneContact && !userStatus.phoneVerified)
+
+        if (needsVerification) {
+          await handleSendOTPForExistingUser(formattedContact)
+        }
+      } else {
+        // For new user creation, send OTP to new contact
         await handleSendOTPForNewUser(formattedContact)
-        // setOtpSent and setResendTimer are already called inside handleSendOTPForNewUser
       }
     } catch (err: any) {
       setError(err?.message || "Failed to update contact.")
     }
     setLoading(false)
-  }, [editContactInput, editContactType, editCountryCode, userExists, formatContactForAPI, handleSendOTPForNewUser])
+  }, [editContactInput, editContactType, editCountryCode, formatContactForAPI, checkUserExists, handleSendOTPForExistingUser, handleSendOTPForNewUser])
 
   // Cancel edit contact
   const handleCancelEditContact = React.useCallback((): void => {
@@ -505,7 +578,7 @@ export default function UnifiedAuthComponent() {
     setError("")
   }, [])
 
-  // Handle OTP verification with improved token handling
+  // Enhanced OTP verification with proper redirect handling
   const handleVerifyOTP = React.useCallback(async (): Promise<void> => {
     setError("")
     setLoading(true)
@@ -520,6 +593,7 @@ export default function UnifiedAuthComponent() {
       const res = await fetch(`${API_BASE_URL}/api/user/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify(payload),
       })
 
@@ -529,13 +603,17 @@ export default function UnifiedAuthComponent() {
         throw new Error(data?.message || "Invalid OTP")
       }
 
+      // Check what the user needs next
       if (data.requiresProfileCompletion) {
         if (data.userId) {
           setUserId(data.userId)
         }
         setStep(3)
+      } else if (data.requiresVerification) {
+        // Still needs more verification (other contact method)
+        setError("Please verify your other contact method as well")
       } else {
-        // Login successful
+        // Login successful - user is fully verified
         if (data.token) {
           setAuthTokens(data.token, data.user)
 
@@ -554,7 +632,7 @@ export default function UnifiedAuthComponent() {
     }
   }, [verifiedContactType, verifiedContact, otp, setAuthTokens, router])
 
-  // Handle password login with improved token handling
+  // Handle password login with verification check
   const handlePasswordLogin = React.useCallback(async (): Promise<void> => {
     setError("")
     setLoading(true)
@@ -566,6 +644,7 @@ export default function UnifiedAuthComponent() {
       const res = await fetch(`${API_BASE_URL}/api/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify(payload),
       })
 
@@ -573,6 +652,17 @@ export default function UnifiedAuthComponent() {
 
       if (!res.ok || !data.success) {
         throw new Error(data?.message || "Login failed")
+      }
+
+      // Check if user needs verification even after password login
+      if (data.requiresVerification) {
+        setError("Please verify your email/phone number first")
+        if (data.userId) {
+          setUserId(data.userId)
+        }
+        // Force OTP flow for unverified users
+        await handleSendOTPForExistingUser(verifiedContact)
+        return
       }
 
       // Login successful
@@ -591,7 +681,7 @@ export default function UnifiedAuthComponent() {
     } finally {
       setLoading(false)
     }
-  }, [verifiedContact, password, setAuthTokens])
+  }, [verifiedContact, password, setAuthTokens, handleSendOTPForExistingUser])
 
   // Handle profile completion with improved token handling
   const handleCompleteProfile = React.useCallback(async (): Promise<void> => {
@@ -621,6 +711,7 @@ export default function UnifiedAuthComponent() {
       const res = await fetch(`${API_BASE_URL}/api/user/complete-profile`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify(payload),
       })
 
@@ -648,64 +739,41 @@ export default function UnifiedAuthComponent() {
     }
   }, [userId, fullName, password, confirmPassword, setAuthTokens])
 
-  // Enhanced Google OAuth login with better error handling and debugging
- const handleSocialLogin = React.useCallback(
-  async (provider: "google" | "facebook"): Promise<void> => {
-    try {
-      console.log(`[OAuth] Starting ${provider} OAuth login`)
-
-      // Get the OAuth URL from environment variables
-      let OAUTH_URL =
-        provider === "google"
-          ? process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL
-          : process.env.NEXT_PUBLIC_FACEBOOK_OAUTH_URL
-
-      console.log(`[OAuth] ${provider} OAuth URL from env:`, OAUTH_URL)
-
-      // Fallback to constructing URL if env variable is not set
-      if (!OAUTH_URL) {
-        const API_BASE_URL =
-          process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
-        OAUTH_URL = `${API_BASE_URL}/api/auth/${provider}`
-        console.log(`[OAuth] Using constructed ${provider} OAuth URL:`, OAUTH_URL)
-      }
-
-      // Validate URL format
+  // Enhanced Google OAuth login with priority handling
+  const handleSocialLogin = React.useCallback(
+    async (provider: "google" | "facebook"): Promise<void> => {
       try {
-        new URL(OAUTH_URL)
-      } catch (urlError) {
-        console.error(`[OAuth] Invalid URL format:`, OAUTH_URL)
-        throw new Error(`Invalid ${provider} OAuth URL configuration`)
+        console.log(`[OAuth] Starting ${provider} OAuth login with priority`)
+
+        // Priority: Google OAuth should be the primary method
+        const OAUTH_URL = 
+          provider === "google"
+            ? process.env.NEXT_PUBLIC_GOOGLE_OAUTH_URL ||
+              "https://valyris-i.onrender.com/api/auth/google"
+            : process.env.NEXT_PUBLIC_FACEBOOK_OAUTH_URL
+
+        if (!OAUTH_URL) throw new Error(`${provider} OAuth URL missing`)
+
+        // Validate URL and redirect
+        new URL(OAUTH_URL) // throws if malformed
+        console.log(`[OAuth] Redirecting browser to: ${OAUTH_URL}`)
+        
+        // Set loading state for better UX
+        setLoading(true)
+        
+        // Redirect to OAuth provider
+        window.location.href = OAUTH_URL
+
+      } catch (error) {
+        console.error(`[OAuth] ${provider} OAuth failed:`, error)
+        setError(
+          `${provider[0].toUpperCase() + provider.slice(1)} login unavailable. Please try again or use email/phone.`
+        )
+        setLoading(false)
       }
-
-      // Get current page URL for redirect
-      const currentOrigin = window.location.origin
-      const redirectUrl = `${currentOrigin}/home`
-
-      // Add redirect parameter to OAuth URL
-      const finalUrl = `${OAUTH_URL}?redirect=${encodeURIComponent(redirectUrl)}`
-
-      console.log(`[OAuth] Final ${provider} OAuth URL:`, finalUrl)
-      console.log(`[OAuth] Redirect URL:`, redirectUrl)
-
-      // Show loading state
-      setLoading(true)
-      setError("")
-
-      // Perform redirect
-      console.log(`[OAuth] Redirecting to ${provider} OAuth...`)
-      window.location.href = finalUrl
-    } catch (error) {
-      console.error(`[OAuth] ${provider} OAuth redirect failed:`, error)
-      setError(
-        `${provider.charAt(0).toUpperCase() + provider.slice(1)} login is currently unavailable. Please try again or use email/phone login.`
-      )
-      setLoading(false)
-    }
-  },
-  []
-)
-
+    },
+    []
+  )
 
   // Handle resend OTP with proper endpoint selection
   const handleResendOTP = React.useCallback(async (): Promise<void> => {
@@ -826,6 +894,7 @@ export default function UnifiedAuthComponent() {
     },
     [handleEditCountrySelect],
   )
+
   return (
     <div className="min-h-screen md:bg-none bg-white relative">
       <div className="">
@@ -838,7 +907,7 @@ export default function UnifiedAuthComponent() {
               <DolchiLogo className="h-12 w-auto mb-6" width={160} height={52} />
               <h1 className="text-5xl font-semibold leading-tight max-w-xl">
                 Fashion Moves Fast
-                <br /> Stay Ahead
+                <br /> Stay Ahead
               </h1>
               <p className="mt-6 text-lg max-w-lg opacity-90">
                 Discover fashion that reflects your values and your style. Sustainably sourced, thoughtfully designed,
@@ -880,11 +949,12 @@ export default function UnifiedAuthComponent() {
                     </div>
                   )}
 
-                  {/* Social Login Buttons */}
+                  {/* Social Login Buttons - Google Priority */}
                   <div className="space-y-3">
                     <Button
                       type="button"
                       onClick={() => handleSocialLogin("google")}
+                      disabled={loading}
                       variant="outline"
                       className="w-full h-12 flex items-center justify-center gap-3 hover:bg-gray-50 transition-all duration-200 border-2 font-medium"
                     >
@@ -894,11 +964,21 @@ export default function UnifiedAuthComponent() {
                     <Button
                       type="button"
                       onClick={() => handleSocialLogin("facebook")}
+                      disabled={loading}
                       className="w-full h-12 flex items-center justify-center gap-3 bg-[#1877f2] hover:bg-[#166fe0] text-white font-medium"
                     >
                       <Image src="/facebook.svg" alt="Facebook" width={20} height={20} />
                       <span>Continue with Facebook</span>
                     </Button>
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                    </div>
                   </div>
 
                   <div className="space-y-2 pt-2">
@@ -1152,8 +1232,8 @@ export default function UnifiedAuthComponent() {
                     </div>
                   )}
 
-                  {/* OTP Input: For new users (always show) OR existing users who requested OTP */}
-                  {((otpSent && userExists) || !userExists) && !isEditingContact && (
+                  {/* OTP Input: For new users (always show) OR existing users who requested OTP OR unverified users */}
+                  {((otpSent && userExists) || !userExists || (userExists && !showPasswordOption)) && !isEditingContact && (
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="otp" className="uppercase text-xs text-orange-600 font-medium">
@@ -1176,7 +1256,9 @@ export default function UnifiedAuthComponent() {
                             />
                           ))}
                         </div>
-                        <p className="text-xs text-gray-500">Please enter the one-time password sent to your phone.</p>
+                        <p className="text-xs text-gray-500">
+                          Please enter the one-time password sent to your {verifiedContactType === "mobile" ? "phone" : "email"}.
+                        </p>
                       </div>
 
                       <div className="text-center">
@@ -1305,7 +1387,7 @@ export default function UnifiedAuthComponent() {
       {/* Loading overlay during redirect */}
       {redirecting && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-0 rounded-lg shadow-lg flex items-center gap-3">
+          <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3">
             <div className="w-6 h-6 border-2 border-[#d9673f] border-t-transparent rounded-full animate-spin" />
             <span className="text-gray-700 font-medium">Logging you in...</span>
           </div>
