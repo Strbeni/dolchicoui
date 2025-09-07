@@ -207,15 +207,8 @@ const PaymentMethodPage = () => {
 
   const isPaymentValid = useCallback(() => {
     if (paymentMethod === 'cod') return true;
-    if (paymentMethod === 'upi') return upiVerified;
-    return !!(
-      cardForm.cardName.trim() &&
-      cardForm.cardNumber.length === 16 &&
-      cardForm.expiryMonth &&
-      cardForm.expiryYear &&
-      cardForm.cvv.length >= 3
-    );
-  }, [paymentMethod, upiVerified, cardForm]);
+    if (paymentMethod === 'upi') return true;
+  }, [paymentMethod]);
 
 const handleContinueToPayment = useCallback(() => {
   try {
@@ -338,116 +331,8 @@ const handleContinueToPayment = useCallback(() => {
                   onChange={() => setPaymentMethod('upi')}
                   className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                 />
-                <label htmlFor="upi-mobile" className="ml-2 font-medium text-gray-900">UPI</label>
+                <label htmlFor="upi-mobile" className="ml-2 font-medium text-gray-900">Pay Online</label>
               </div>
-              
-              {paymentMethod === 'upi' && (
-                <div className="ml-6 space-y-2">
-                  <label className="text-sm text-gray-700">
-                    UPI ID is the format of name/phone number@bankname
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Enter UPI id"
-                    value={upiID}
-                    onChange={handleUPIChange}
-                    autoComplete="off"
-                  />
-                  {upiID && !upiVerified && (
-                    <p className="text-xs text-red-500">Please enter a valid UPI ID</p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Card Option */}
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="card-mobile"
-                  name="paymentMethod"
-                  checked={paymentMethod === 'card'}
-                  onChange={() => setPaymentMethod('card')}
-                  className="w-4 h-4 text-orange-600 focus:ring-orange-500"
-                />
-                <label htmlFor="card-mobile" className="ml-2 font-medium text-gray-900">Credit or Debit card</label>
-                <div className="ml-3 flex items-center gap-1">
-                  <div className="w-8 h-5 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">RP</div>
-                  <div className="w-8 h-5 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">V</div>
-                  <div className="w-8 h-5 bg-red-600 rounded text-white text-xs flex items-center justify-center font-bold">MC</div>
-                </div>
-              </div>
-
-              {paymentMethod === 'card' && (
-                <div className="ml-6 space-y-3">
-                  <p className="text-xs text-gray-600">
-                    Please ensure that you enable your card for online payments from your bank's app.
-                  </p>
-                  
-                  <input
-                    type="text"
-                    className="w-full p-3 border border-gray-300 rounded-md"
-                    placeholder="Enter Card number"
-                    value={cardForm.cardNumber}
-                    onChange={(e) => handleCardFormChange('cardNumber', e.target.value)}
-                    maxLength={16}
-                  />
-                  
-                  <input
-                    type="text"
-                    className="w-full p-3 border border-gray-300 rounded-md"
-                    placeholder="Enter name"
-                    value={cardForm.cardName}
-                    onChange={(e) => handleCardFormChange('cardName', e.target.value)}
-                  />
-                  
-                  <div className="grid grid-cols-3 gap-2">
-                    <select
-                      className="p-3 border border-gray-300 rounded-md bg-white"
-                      value={cardForm.expiryMonth}
-                      onChange={(e) => handleCardFormChange('expiryMonth', e.target.value)}
-                    >
-                      <option value="">Month</option>
-                      {Array.from({length: 12}, (_, i) => (
-                        <option key={i+1} value={String(i+1).padStart(2, '0')}>
-                          {String(i+1).padStart(2, '0')}
-                        </option>
-                      ))}
-                    </select>
-                    
-                    <select
-                      className="p-3 border border-gray-300 rounded-md bg-white"
-                      value={cardForm.expiryYear}
-                      onChange={(e) => handleCardFormChange('expiryYear', e.target.value)}
-                    >
-                      <option value="">Year</option>
-                      {Array.from({length: 10}, (_, i) => {
-                        const year = new Date().getFullYear() + i;
-                        return <option key={year} value={year}>{year}</option>;
-                      })}
-                    </select>
-                    
-                    <input
-                      type="password"
-                      className="p-3 border border-gray-300 rounded-md"
-                      placeholder="CVV"
-                      value={cardForm.cvv}
-                      onChange={(e) => handleCardFormChange('cvv', e.target.value)}
-                      maxLength={4}
-                    />
-                  </div>
-                  
-                  <button
-                    type="button"
-                    className="w-full bg-orange-500 text-white py-3 rounded-md font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
-                    disabled={!isPaymentValid()}
-                  >
-                    Verify
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* COD Option */}
@@ -585,118 +470,8 @@ const handleContinueToPayment = useCallback(() => {
                     onChange={() => setPaymentMethod('upi')}
                     className="w-4 h-4 text-orange-600 focus:ring-orange-500"
                   />
-                  <label htmlFor="upi" className="ml-3 font-medium text-gray-900">UPI</label>
+                  <label htmlFor="upi" className="ml-3 font-medium text-gray-900">Pay Online</label>
                 </div>
-                
-                {paymentMethod === 'upi' && (
-                  <div className="ml-7 space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Enter UPI id <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className="block w-full max-w-md p-3 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                      placeholder="name@bankname"
-                      value={upiID}
-                      onChange={handleUPIChange}
-                      autoComplete="off"
-                    />
-                    <p className="text-xs text-gray-500">The UPI ID is in the format of name/phone number@bankname</p>
-                    {upiID && !upiVerified && (
-                      <p className="text-xs text-red-500">Please enter a valid UPI ID</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Card Option */}
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <input
-                    type="radio"
-                    id="card"
-                    name="paymentMethod"
-                    checked={paymentMethod === 'card'}
-                    onChange={() => setPaymentMethod('card')}
-                    className="w-4 h-4 text-orange-600 focus:ring-orange-500"
-                  />
-                  <label htmlFor="card" className="ml-3 font-medium text-gray-900">Credit or Debit card</label>
-                  <div className="ml-4 flex items-center gap-2">
-                    <div className="w-10 h-6 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">RP</div>
-                    <div className="w-10 h-6 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">VISA</div>
-                    <div className="w-10 h-6 bg-red-600 rounded text-white text-xs flex items-center justify-center font-bold">MC</div>
-                  </div>
-                </div>
-
-                {paymentMethod === 'card' && (
-                  <div className="ml-7 space-y-4">
-                    <p className="text-xs text-gray-600">
-                      Please ensure that you enable your card for online payments from your bank's app.
-                    </p>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        className="p-2 border border-gray-300 rounded"
-                        placeholder="Enter Card number"
-                        value={cardForm.cardNumber}
-                        onChange={(e) => handleCardFormChange('cardNumber', e.target.value)}
-                        maxLength={16}
-                      />
-                      <input
-                        type="text"
-                        className="p-2 border border-gray-300 rounded"
-                        placeholder="Enter name"
-                        value={cardForm.cardName}
-                        onChange={(e) => handleCardFormChange('cardName', e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="flex gap-3 max-w-md">
-                      <select
-                        className="block w-1/2 px-2 py-2 border border-gray-300 rounded bg-white"
-                        value={cardForm.expiryMonth}
-                        onChange={(e) => handleCardFormChange('expiryMonth', e.target.value)}
-                      >
-                        <option value="">Month</option>
-                        {Array.from({length: 12}, (_, i) => (
-                          <option key={i+1} value={String(i+1).padStart(2, '0')}>
-                            {String(i+1).padStart(2, '0')}
-                          </option>
-                        ))}
-                      </select>
-                      
-                      <select
-                        className="block w-1/2 px-2 py-2 border border-gray-300 rounded bg-white"
-                        value={cardForm.expiryYear}
-                        onChange={(e) => handleCardFormChange('expiryYear', e.target.value)}
-                      >
-                        <option value="">Year</option>
-                        {Array.from({length: 10}, (_, i) => {
-                          const year = new Date().getFullYear() + i;
-                          return <option key={year} value={year}>{year}</option>;
-                        })}
-                      </select>
-                      
-                      <input
-                        type="password"
-                        className="block w-1/2 px-2 py-2 border border-gray-300 rounded"
-                        placeholder="CVV"
-                        value={cardForm.cvv}
-                        onChange={(e) => handleCardFormChange('cvv', e.target.value)}
-                        maxLength={4}
-                      />
-                    </div>
-                    
-                    <button
-                      type="button"
-                      className="bg-orange-500 text-white px-6 py-2 rounded font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
-                      disabled={!isPaymentValid()}
-                    >
-                      Verify
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* COD Option */}

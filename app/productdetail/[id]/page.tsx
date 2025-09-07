@@ -28,7 +28,7 @@ import Link from "next/link"
 import Zoom from "react-medium-image-zoom"
 import "react-medium-image-zoom/dist/styles.css"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
   // Sync wishlist state for all products shown (related + popular)
 
 interface Product {

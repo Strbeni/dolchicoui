@@ -72,7 +72,7 @@ export default function Men({ show }: { show: boolean }) {
                       <Link
                         href="#"
                         className="hover:text-black hover:font-medium transition-all duration-200 block"
-                        legacyBehavior>
+                      >
                         {item}
                       </Link>
                     </li>

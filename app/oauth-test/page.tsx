@@ -1,7 +1,8 @@
 "use client" 
 import { NextPage } from 'next';
 import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAppSelector } from '@/lib/store/hooks';
+import { selectUser, selectIsAuthenticated } from '@/lib/store/userSlice';
 
 type ApiResult<T = any> = {
   success: boolean;
@@ -12,7 +13,7 @@ type ApiResult<T = any> = {
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') ||
-  'http://localhost:4000';
+  'http://localhost:3001';
 
 const withCreds = (input: RequestInfo | URL, init: RequestInit = {}) => {
   return fetch(input, {
@@ -37,7 +38,8 @@ const safeJson = async (res: Response) => {
 const now = () => new Date().toLocaleTimeString();
 
 const TestOAuth: NextPage = () => {
-  const { user, checkAuth } = useAuth();
+  const user = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   const [testResults, setTestResults] = useState<string[]>([]);
   const [loading, setLoading] = useState<{
@@ -131,7 +133,7 @@ const TestOAuth: NextPage = () => {
           `Logout Test: ${ok ? 'PASS' : 'FAIL'} - ${body?.message || 'Done'}`
         );
         if (ok) {
-          await checkAuth(); // refresh auth state
+          window.location.reload(); // Refresh to update UI
         }
       }
     } catch (err: any) {
@@ -162,14 +164,10 @@ const TestOAuth: NextPage = () => {
     if (typeof window === 'undefined') return;
     const p = new URLSearchParams(window.location.search);
     if (p.get('loggedIn') === '1') {
-      checkAuth().finally(() => {
-        // Clean the query param from the URL without refresh
-        const url = new URL(window.location.href);
-        url.searchParams.delete('loggedIn');
-        window.history.replaceState({}, '', url.toString());
-      });
+      // Auth state will be updated automatically through Redux
+      window.location.reload();
     }
-  }, [checkAuth]);
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -189,9 +187,6 @@ const TestOAuth: NextPage = () => {
               </p>
               <p>
                 <strong>Email:</strong> {user.email}
-              </p>
-              <p>
-                <strong>Role:</strong> {user.role}
               </p>
             </div>
           ) : (
@@ -265,7 +260,7 @@ const TestOAuth: NextPage = () => {
             Clear Results
           </button>
           <button
-            onClick={() => checkAuth()}
+            onClick={() => window.location.reload()}
             className="bg-indigo-500 text-white py-1 px-3 rounded hover:bg-indigo-600 text-sm"
           >
             Refresh Auth
