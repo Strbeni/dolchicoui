@@ -220,6 +220,9 @@ const verifyAuthStatus = async () => {
 
   // UI state
   const [loading, setLoading] = useState(false)
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [otpLoading, setOtpLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
   const [error, setError] = useState("")
   const [redirecting, setRedirecting] = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
@@ -598,7 +601,7 @@ const verifyAuthStatus = async () => {
   // Enhanced OTP verification with proper redirect handling
   const handleVerifyOTP = React.useCallback(async (): Promise<void> => {
     setError("")
-    setLoading(true)
+    setOtpLoading(true)
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
     const endpoint = verifiedContactType === "mobile" ? "verify-phone-otp" : "verify-email-otp"
@@ -645,14 +648,14 @@ const verifyAuthStatus = async () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
-      setLoading(false)
+      setOtpLoading(false)
     }
   }, [verifiedContactType, verifiedContact, otp, setAuthTokens, router])
 
   // Handle password login with verification check
   const handlePasswordLogin = React.useCallback(async (): Promise<void> => {
     setError("")
-    setLoading(true)
+    setPasswordLoading(true)
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
     const payload = { emailOrPhone: verifiedContact, password }
@@ -696,7 +699,7 @@ const verifyAuthStatus = async () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
-      setLoading(false)
+      setPasswordLoading(false)
     }
   }, [verifiedContact, password, setAuthTokens, handleSendOTPForExistingUser])
 
@@ -797,7 +800,7 @@ const verifyAuthStatus = async () => {
     if (resendTimer > 0) return
 
     setError("")
-    setLoading(true)
+    setResendLoading(true)
 
     try {
       if (userExists) {
@@ -809,7 +812,7 @@ const verifyAuthStatus = async () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend OTP")
     } finally {
-      setLoading(false)
+      setResendLoading(false)
     }
   }, [resendTimer, userExists, verifiedContact, handleSendOTPForExistingUser, handleSendOTPForNewUser])
 
@@ -851,14 +854,14 @@ const verifyAuthStatus = async () => {
   // Handle request OTP for existing users
   const handleRequestOTP = React.useCallback(async (): Promise<void> => {
     setError("")
-    setLoading(true)
+    setOtpLoading(true)
 
     try {
       await handleSendOTPForExistingUser(verifiedContact)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send OTP")
     } finally {
-      setLoading(false)
+      setOtpLoading(false)
     }
   }, [verifiedContact, handleSendOTPForExistingUser])
 
@@ -1224,20 +1227,20 @@ const verifyAuthStatus = async () => {
 
                       <Button
                         onClick={handlePasswordLogin}
-                        disabled={loading || !password.trim()}
+                        disabled={passwordLoading || !password.trim()}
                         className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                       >
-                        {loading ? "Signing In..." : "Sign In"}
-                        {!loading && <ArrowRight className="ml-2" size={18} />}
+                        {passwordLoading ? "Signing In..." : "Sign In"}
+                        {!passwordLoading && <ArrowRight className="ml-2" size={18} />}
                       </Button>
 
                       <Button
                         onClick={handleRequestOTP}
-                        disabled={loading || otpSent}
+                        disabled={otpLoading || otpSent}
                         variant="outline"
                         className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white bg-transparent"
                       >
-                        {loading ? "Sending OTP..." : otpSent ? "OTP Sent" : "Send OTP Instead"}
+                        {otpLoading ? "Sending OTP..." : otpSent ? "OTP Sent" : "Send OTP Instead"}
                       </Button>
 
                       <div className="text-center">
@@ -1284,20 +1287,20 @@ const verifyAuthStatus = async () => {
                         <button
                           type="button"
                           onClick={handleResendOTP}
-                          disabled={resendTimer > 0 || loading}
+                          disabled={resendTimer > 0 || resendLoading}
                           className="text-sm text-orange-600 hover:text-orange-700 underline disabled:text-gray-400 disabled:no-underline transition-colors"
                         >
-                          {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP`}
+                          {resendLoading ? "Sending..." : resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP`}
                         </button>
                       </div>
 
                       <Button
                         onClick={handleVerifyOTP}
-                        disabled={loading || otp.length !== 6}
+                        disabled={otpLoading || otp.length !== 6}
                         className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                       >
-                        {loading ? "Verifying..." : "Verify OTP"}
-                        {!loading && <ArrowRight className="ml-2" size={18} />}
+                        {otpLoading ? "Verifying..." : "Verify OTP"}
+                        {!otpLoading && <ArrowRight className="ml-2" size={18} />}
                       </Button>
                     </>
                   )}

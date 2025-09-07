@@ -518,12 +518,35 @@ export const Navbar5 = () => {
     return () => clearInterval(interval)
   }, [mounted, isAuthenticated, fetchWishlistCount, fetchCartCount])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // Call backend logout API to clear server-side session
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.error('Error during logout API call:', error);
+      // Continue with client-side logout even if API call fails
+    }
+
+    // Clear client-side storage
     if (typeof window !== 'undefined') {
       localStorage.removeItem("token")
       sessionStorage.removeItem("token")
+      localStorage.removeItem("user")
+      sessionStorage.removeItem("user")
+      
+      // Clear auth cookie
+      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
     }
-    dispatch(clearUser()) // Clear user data in Redux
+    
+    // Clear user data in Redux
+    dispatch(clearUser())
     setWishlistCount(0)
     setCartCount(0)
     setUserMenuOpen(false)
