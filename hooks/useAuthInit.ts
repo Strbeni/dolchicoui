@@ -1,53 +1,76 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
-import { fetchUser, setUser, selectIsAuthenticated, selectUser } from '@/lib/store/userSlice';
+import { fetchUser, setUser, selectIsAuthenticated, selectUser, selectUserLoading } from '@/lib/store/userSlice';
 
 export const useAuthInit = () => {
     const dispatch = useAppDispatch();
     const isAuthenticated = useAppSelector(selectIsAuthenticated);
     const user = useAppSelector(selectUser);
+    const userLoading = useAppSelector(selectUserLoading);
+    const [authInitialized, setAuthInitialized] = useState(false);
+    const [hasToken, setHasToken] = useState(false);
 
     useEffect(() => {
         const initializeAuth = async () => {
             if (typeof window === 'undefined') return;
 
-            // Check for existing token
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            try {
+                // Check for existing token
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                setHasToken(!!token);
 
-            if (token && !user && !isAuthenticated) {
-                try {
+                if (token) {
                     // Check if user data exists in localStorage
                     const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
 
-                    if (storedUser) {
+                    if (storedUser && !user && !isAuthenticated) {
                         try {
                             const userData = JSON.parse(storedUser);
+                            console.log('Setting user from localStorage:', userData);
                             dispatch(setUser(userData));
                         } catch (error) {
                             console.error('Error parsing stored user data:', error);
                             // If stored user data is corrupted, fetch from server
                             await dispatch(fetchUser()).unwrap();
                         }
-                    } else {
+                    } else if (!storedUser && !user && !isAuthenticated) {
                         // No stored user data, fetch from server
+                        console.log('Fetching user from server...');
                         await dispatch(fetchUser()).unwrap();
                     }
-                } catch (error) {
-                    console.error('Auth initialization failed:', error);
-                    // Clear invalid tokens
-                    localStorage.removeItem('token');
-                    sessionStorage.removeItem('token');
+                } else {
+                    // No token found, clear any leftover user data
+                    console.log('No token found, clearing user data');
                     localStorage.removeItem('user');
                     sessionStorage.removeItem('user');
-                    document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
                 }
+            } catch (error) {
+                console.error('Auth initialization failed:', error);
+                // Clear invalid tokens
+                localStorage.removeItem('token');
+                sessionStorage.removeItem('token');
+                localStorage.removeItem('user');
+                sessionStorage.removeItem('user');
+                document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                setHasToken(false);
+            } finally {
+                setAuthInitialized(true);
+                console.log('Auth initialization completed');
             }
         };
 
-        initializeAuth();
-    }, [dispatch, isAuthenticated, user]);
+        if (!authInitialized) {
+            initializeAuth();
+        }
+    }, [dispatch, isAuthenticated, user, authInitialized]);
 
-    return { isAuthenticated, user };
+    return { 
+        isAuthenticated, 
+        user, 
+        authInitialized,
+        userLoading,
+        hasToken
+    };
 };

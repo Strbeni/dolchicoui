@@ -39,7 +39,7 @@ export default function AccountSettings() {
   const dispatch = useAppDispatch();
   const logout = useLogout();
 
-  const { isAuthorized, isLoading: authLoading } = useAuthGuard({
+  const { isAuthorized, isLoading: authLoading, authInitialized } = useAuthGuard({
     requireAuth: true,
     redirectTo: '/login'
   });
@@ -559,12 +559,14 @@ export default function AccountSettings() {
   };
 
   // Show loading if authentication is being checked
-  if (authLoading || !isAuthorized) {
+  if (authLoading || !isAuthorized || !authInitialized) {
     return (
       <div className="flex min-h-screen bg-gray-100 p-6 items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3">
           <div className="w-6 h-6 border-2 border-[#d9673f] border-t-transparent rounded-full animate-spin" />
-          <span className="text-gray-700 font-medium">Loading your profile...</span>
+          <span className="text-gray-700 font-medium">
+            {authLoading ? 'Checking authentication...' : 'Loading your profile...'}
+          </span>
         </div>
       </div>
     );

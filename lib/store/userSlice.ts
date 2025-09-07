@@ -42,29 +42,64 @@ export const fetchUser = createAsyncThunk(
         throw new Error('Not in browser environment');
       }
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (!token) {
         throw new Error('No token found');
       }
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://valyris-i.onrender.com';
       const response = await fetch(`${API_BASE_URL}/api/user/get-user`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch user');
+        // If token is invalid, clear it
+        if (response.status === 401 || response.status === 403) {
+          console.log('Invalid token detected, clearing authentication data');
+          localStorage.removeItem('token');
+          sessionStorage.removeItem('token');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('user');
+          document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        }
+        
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch user`);
       }
 
       const responseData = await response.json();
       // Extract user data from the response
       const userData = responseData.user || responseData;
+      
+      // Validate that we have essential user data
+      if (!userData || !userData.id) {
+        throw new Error('Invalid user data received from server');
+      }
+      
+      // Store the updated user data
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(userData));
+        sessionStorage.setItem('user', JSON.stringify(userData));
+      }
+      
       return userData;
     } catch (error) {
+      console.error('fetchUser error:', error);
+      
+      // Clear authentication data on any error
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
+      
       return rejectWithValue(error instanceof Error ? error.message : 'An error occurred');
     }
   }
@@ -124,6 +159,7 @@ const userSlice = createSlice({
       // Also store in localStorage for persistence
       if (typeof window !== 'undefined') {
         localStorage.setItem('user', JSON.stringify(action.payload));
+        sessionStorage.setItem('user', JSON.stringify(action.payload));
       }
     },
     // Action to clear user data (logout)

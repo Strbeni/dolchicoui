@@ -205,6 +205,7 @@ const verifyAuthStatus = async () => {
   const [userExists, setUserExists] = useState(false)
   const [showPasswordOption, setShowPasswordOption] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
+  const [showOtpMethod, setShowOtpMethod] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
 
   // Contact management
@@ -502,6 +503,7 @@ const verifyAuthStatus = async () => {
         if (needsVerification) {
           console.log("User exists but needs verification, sending OTP")
           await handleSendOTPForExistingUser(cleanContact)
+          // Don't set showOtpMethod for unverified users - they should go straight to OTP
         }
         
         setStep(2)
@@ -566,6 +568,7 @@ const verifyAuthStatus = async () => {
       setOtpSent(false)
       setOtp("")
       setOtpBoxes(["", "", "", "", "", ""])
+      setShowOtpMethod(false)
       
       // Re-check user status with new contact
       const userStatus = await checkUserExists(formattedContact)
@@ -580,10 +583,15 @@ const verifyAuthStatus = async () => {
 
         if (needsVerification) {
           await handleSendOTPForExistingUser(formattedContact)
+          // Don't set showOtpMethod for unverified users during edit
+        } else {
+          // For verified users during edit, reset to password method
+          setShowOtpMethod(false)
         }
       } else {
         // For new user creation, send OTP to new contact
         await handleSendOTPForNewUser(formattedContact)
+        setShowOtpMethod(false) // Reset for new users
       }
     } catch (err: any) {
       setError(err?.message || "Failed to update contact.")
@@ -805,6 +813,10 @@ const verifyAuthStatus = async () => {
     try {
       if (userExists) {
         await handleSendOTPForExistingUser(verifiedContact)
+        // For existing users, maintain the OTP method state
+        if (showPasswordOption) {
+          setShowOtpMethod(true)
+        }
       } else {
         await handleSendOTPForNewUser(verifiedContact)
       }
@@ -814,7 +826,7 @@ const verifyAuthStatus = async () => {
     } finally {
       setResendLoading(false)
     }
-  }, [resendTimer, userExists, verifiedContact, handleSendOTPForExistingUser, handleSendOTPForNewUser])
+  }, [resendTimer, userExists, verifiedContact, handleSendOTPForExistingUser, handleSendOTPForNewUser, showPasswordOption])
 
   // OTP box handlers (mobile design)
   const handleOtpBoxChange = React.useCallback((index: number, value: string) => {
@@ -858,12 +870,21 @@ const verifyAuthStatus = async () => {
 
     try {
       await handleSendOTPForExistingUser(verifiedContact)
+      setShowOtpMethod(true) // Show OTP method but keep password option available
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send OTP")
     } finally {
       setOtpLoading(false)
     }
   }, [verifiedContact, handleSendOTPForExistingUser])
+
+  // Handle switching back to password method
+  const handleUsePassword = React.useCallback((): void => {
+    setShowOtpMethod(false)
+    setOtp("")
+    setOtpBoxes(["", "", "", "", "", ""])
+    setError("")
+  }, [])
 
   // Utility functions
   const handleContactBlur = React.useCallback((): void => {
@@ -1202,60 +1223,131 @@ const verifyAuthStatus = async () => {
                   {/* Existing users: Password first, then OTP option */}
                   {userExists && showPasswordOption && !isEditingContact && (
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="password" className="uppercase text-xs text-orange-600 font-medium">
-                          Password
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="pr-10 h-10"
-                            autoComplete="current-password"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      {!showOtpMethod && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="password" className="uppercase text-xs text-orange-600 font-medium">
+                              Password
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="pr-10 h-10"
+                                autoComplete="current-password"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                              >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={handlePasswordLogin}
+                            disabled={passwordLoading || !password.trim()}
+                            className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                           >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                      </div>
+                            {passwordLoading ? "Signing In..." : "Sign In"}
+                            {!passwordLoading && <ArrowRight className="ml-2" size={18} />}
+                          </Button>
 
-                      <Button
-                        onClick={handlePasswordLogin}
-                        disabled={passwordLoading || !password.trim()}
-                        className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
-                      >
-                        {passwordLoading ? "Signing In..." : "Sign In"}
-                        {!passwordLoading && <ArrowRight className="ml-2" size={18} />}
-                      </Button>
+                          <Button
+                            onClick={handleRequestOTP}
+                            disabled={otpLoading}
+                            variant="outline"
+                            className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white bg-transparent"
+                          >
+                            {otpLoading ? "Sending OTP..." : "Use OTP Instead"}
+                          </Button>
 
-                      <Button
-                        onClick={handleRequestOTP}
-                        disabled={otpLoading || otpSent}
-                        variant="outline"
-                        className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white bg-transparent"
-                      >
-                        {otpLoading ? "Sending OTP..." : otpSent ? "OTP Sent" : "Send OTP Instead"}
-                      </Button>
+                          <div className="text-center">
+                            <Link
+                              href="/forgotpassword"
+                              className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+                            >
+                              Forgot Password?
+                            </Link>
+                          </div>
+                        </>
+                      )}
 
-                      <div className="text-center">
-                        <Link
-                          href="/forgotpassword"
-                          className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
-                        >
-                          Forgot Password?
-                        </Link>
-                      </div>
+                      {showOtpMethod && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="otp" className="uppercase text-xs text-orange-600 font-medium">
+                              Verification code
+                            </Label>
+                            <div className="flex items-center gap-3" onPaste={handleOtpPaste}>
+                              {otpBoxes.map((val, idx) => (
+                                <Input
+                                  key={idx}
+                                  ref={(el) => {
+                                    otpRefs.current[idx] = el
+                                  }}
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className="w-12 h-12 text-center text-lg"
+                                  value={val}
+                                  onChange={(e) => handleOtpBoxChange(idx, e.target.value)}
+                                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                                  maxLength={1}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Please enter the one-time password sent to your {verifiedContactType === "mobile" ? "phone" : "email"}.
+                            </p>
+                          </div>
+
+                          <div className="text-center">
+                            <button
+                              type="button"
+                              onClick={handleResendOTP}
+                              disabled={resendTimer > 0 || resendLoading}
+                              className="text-sm text-orange-600 hover:text-orange-700 underline disabled:text-gray-400 disabled:no-underline transition-colors"
+                            >
+                              {resendLoading ? "Sending..." : resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP`}
+                            </button>
+                          </div>
+
+                          <Button
+                            onClick={handleVerifyOTP}
+                            disabled={otpLoading || otp.length !== 6}
+                            className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
+                          >
+                            {otpLoading ? "Verifying..." : "Verify OTP"}
+                            {!otpLoading && <ArrowRight className="ml-2" size={18} />}
+                          </Button>
+
+                          <Button
+                            onClick={handleUsePassword}
+                            variant="outline"
+                            className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white bg-transparent"
+                          >
+                            Use Password Instead
+                          </Button>
+
+                          <div className="text-center">
+                            <Link
+                              href="/forgotpassword"
+                              className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+                            >
+                              Forgot Password?
+                            </Link>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
-                  {/* OTP Input: For new users (always show) OR existing users who requested OTP OR unverified users */}
-                  {((otpSent && userExists) || !userExists || (userExists && !showPasswordOption)) && !isEditingContact && (
+                  {/* OTP Input: For new users (always show) OR existing users who don't have password option (unverified) */}
+                  {(!userExists || (userExists && !showPasswordOption)) && !isEditingContact && (
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="otp" className="uppercase text-xs text-orange-600 font-medium">
