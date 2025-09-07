@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import ProfileSidebar from "@/components/ProfileSidebar";
 
 // API Configuration
 const API_BASE_URL = 'https://valyris-i.onrender.com/api';
@@ -255,28 +256,7 @@ export default function OrderHistoryPage() {
       <Tabs defaultValue="orders" className="w-full flex">
         {/* Sidebar */}
         <div className="w-1/4 pr-6">
-          <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
-            <TabsTrigger value="account" onClick={() => router.push("/profile")}>
-              Account
-            </TabsTrigger>
-            <TabsTrigger value="orderHistory" className="bg-gray-100">
-              Order History
-            </TabsTrigger>
-            <button
-              type="button"
-              onClick={() => router.push("/profile/paymentMethod")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Saved Payment Method
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile/addressBook")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Address Book
-            </button>
-          </TabsList>
+          <ProfileSidebar activeSection="order-history" />
         </div>
 
         {/* Main Content */}

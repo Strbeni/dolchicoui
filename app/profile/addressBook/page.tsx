@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs } from "@/components/ui/tabs";
+import ProfileSidebar from "@/components/ProfileSidebar";
 // FIX: Removed the unused 'Image' import.
 // import Image from "next/image";
 
@@ -211,37 +212,34 @@ export default function AddressBookPage() {
   };
 
   return (
-    <div>
+    <div className="flex min-h-screen bg-gray-100 p-6">
       <Tabs defaultValue="addressbook" className="w-full flex">
         <div className="w-1/4 pr-6">
-          <TabsList className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
-            <button type="button" onClick={() => router.push("/profile")} className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full">Account</button>
-            <button type="button" onClick={() => router.push("/profile/orderHistory")} className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full">Order History</button>
-            <button type="button" onClick={() => router.push("/profile/paymentMethod")} className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full">Saved Payment Method</button>
-            <TabsTrigger value="addressbook">Address Book</TabsTrigger>
-          </TabsList>
+          <ProfileSidebar activeSection="addresses" />
         </div>
 
-        <div className="w-3/4 p-8">
-          <h1 className="text-3xl font-bold mb-8">Your Addresses</h1>
-          
-          {loading && <p>Loading addresses...</p>}
-          {error && <p className="text-red-500">{error}</p>}
+        <div className="w-3/4">
+          <div className="bg-white p-8 rounded-lg shadow-md">
+            <h1 className="text-3xl font-bold mb-8">Your Addresses</h1>
+            
+            {loading && <p>Loading addresses...</p>}
+            {error && <p className="text-red-500">{error}</p>}
 
-          {!loading && !error && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AddAddressCard onAdd={handleAddClick} />
-              {addresses.map((address) => (
-                <AddressCard
-                  key={address.id}
-                  address={address}
-                  onEdit={() => handleEditClick(address)}
-                  onRemove={() => handleRemove(address.id)}
-                  onSetDefault={() => handleSetDefault(address.id)}
-                />
-              ))}
-            </div>
-          )}
+            {!loading && !error && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AddAddressCard onAdd={handleAddClick} />
+                {addresses.map((address) => (
+                  <AddressCard
+                    key={address.id}
+                    address={address}
+                    onEdit={() => handleEditClick(address)}
+                    onRemove={() => handleRemove(address.id)}
+                    onSetDefault={() => handleSetDefault(address.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </Tabs>
 
