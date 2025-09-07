@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { Tabs } from "@/components/ui/tabs";
 import ProfileSidebar from "@/components/ProfileSidebar";
 import { useLoading } from "@/contexts/LoadingContext";
@@ -24,11 +23,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 
 const getAuthToken = () => {
   return typeof window !== 'undefined' ? localStorage.getItem('token') || sessionStorage.getItem('token') : null;
-};
-
-// Helper function to format the address for display
-const formatAddress = (address: Omit<AddressType, 'id' | 'isDefault'>) => {
-  return `${address.street}, ${address.city}, ${address.state} ${address.zip}, ${address.country}`;
 };
 
 
@@ -145,17 +139,16 @@ function AddressCard({ address, onEdit, onRemove, onSetDefault }: {
 // --- Main Page Component ---
 
 export default function AddressBookPage() {
-  const router = useRouter();
   const { setLoading, setLoadingMessage } = useLoading();
   const [addresses, setAddresses] = useState<AddressType[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<AddressType | null>(null);
   const [loading, setComponentLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
   const initialFormState = {
-    name: "", street: "", city: "", state: "", zip: "", country: "India", phone: "", instructions: "",
+    name: "", lastName: "", street: "", city: "", zip: "", country: "India", phone: "", instructions: "",
   };
   const [form, setForm] = useState(initialFormState);
 
@@ -192,16 +185,26 @@ export default function AddressBookPage() {
   const handleAddClick = () => {
     setEditingAddress(null);
     setForm(initialFormState);
-    setModalOpen(true);
+    setShowEditForm(true);
   };
 
   const handleEditClick = (address: AddressType) => {
     setEditingAddress(address);
+    const nameParts = address.name.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     setForm({
-      ...address,
+      name: firstName,
+      lastName: lastName,
+      street: address.street,
+      city: address.city,
+      zip: address.zip,
+      country: address.country,
+      phone: address.phone,
       instructions: address.instructions || ""
     });
-    setModalOpen(true);
+    setShowEditForm(true);
   };
 
   const handleRemove = async (id: number) => {
@@ -258,6 +261,18 @@ export default function AddressBookPage() {
       ? `${API_BASE_URL}/api/addresses/${editingAddress.id}`
       : `${API_BASE_URL}/api/addresses`;
 
+    // Prepare the data to send - combine firstName and lastName into name
+    const fullName = `${form.name.trim()} ${form.lastName.trim()}`.trim();
+    const addressData = {
+      name: fullName,
+      street: form.street,
+      city: form.city,
+      zip: form.zip,
+      country: form.country,
+      phone: form.phone,
+      instructions: form.instructions
+    };
+
     try {
       const response = await fetch(url, {
         method,
@@ -265,11 +280,16 @@ export default function AddressBookPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(form)
+        body: JSON.stringify(addressData)
       });
-      if (!response.ok) throw new Error('Failed to save address.');
 
-      setModalOpen(false);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API Error Response:', errorData);
+        throw new Error(`Failed to save address: ${response.status} ${response.statusText}`);
+      }
+
+      setShowEditForm(false);
       await fetchAddresses();
     } catch (err) {
       // FIX: Log the error to the console for debugging.
@@ -278,6 +298,12 @@ export default function AddressBookPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    setShowEditForm(false);
+    setEditingAddress(null);
+    setForm(initialFormState);
   };
 
   return (
@@ -290,100 +316,218 @@ export default function AddressBookPage() {
 
           <div className="w-3/4">
             <div className="bg-white p-8 rounded-lg shadow-md">
-              {/* Header with title and Add Address button */}
-              <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-semibold">Saved Address</h1>
-                <button
-                  type="button"
-                  onClick={handleAddClick}
-                  className="flex items-center gap-2 px-4 py-2 border border-orange-500 text-orange-500 hover:text-white hover:bg-orange-500 hover:border-orange-500 font-semibold rounded-lg transition-colors cursor-pointer"
-                >
-                  Add Address +
-                </button>
-              </div>
-
-              {loading && <p>Loading addresses...</p>}
-              {error && <p className="text-red-500">{error}</p>}
-
-              {!loading && !error && (
+              {!showEditForm ? (
                 <>
-                  {addresses.length === 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <EmptyAddressCard onAdd={handleAddClick} />
-                    </div>
-                  ) : (
+                  {/* Header with title and Add Address button */}
+                  <div className="flex items-center justify-between mb-8">
+                    <h1 className="text-3xl font-semibold">Saved Address</h1>
+                    <button
+                      type="button"
+                      onClick={handleAddClick}
+                      className="flex items-center gap-2 px-4 py-2 border border-orange-500 text-orange-500 hover:text-white hover:bg-orange-500 hover:border-orange-500 font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                      Add Address +
+                    </button>
+                  </div>
+
+                  {loading && <p>Loading addresses...</p>}
+                  {error && <p className="text-red-500">{error}</p>}
+
+                  {!loading && !error && (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {(showAll ? addresses : addresses.slice(0, 6)).map((address) => (
-                          <AddressCard
-                            key={address.id}
-                            address={address}
-                            onEdit={() => handleEditClick(address)}
-                            onRemove={() => handleRemove(address.id)}
-                            onSetDefault={() => handleSetDefault(address.id)}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Show More button */}
-                      {addresses.length > 6 && !showAll && (
-                        <div className="flex justify-center mt-8">
-                          <button
-                            type="button"
-                            onClick={() => setShowAll(true)}
-                            className="text-orange-500 hover:text-orange-600 font-semibold transition-colors cursor-pointer"
-                          >
-                            Show More ({addresses.length - 6} more addresses)
-                          </button>
+                      {addresses.length === 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <EmptyAddressCard onAdd={handleAddClick} />
                         </div>
-                      )}
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {(showAll ? addresses : addresses.slice(0, 6)).map((address) => (
+                              <AddressCard
+                                key={address.id}
+                                address={address}
+                                onEdit={() => handleEditClick(address)}
+                                onRemove={() => handleRemove(address.id)}
+                                onSetDefault={() => handleSetDefault(address.id)}
+                              />
+                            ))}
+                          </div>
 
-                      {/* Show Less button */}
-                      {showAll && addresses.length > 6 && (
-                        <div className="flex justify-center mt-8">
-                          <button
-                            type="button"
-                            onClick={() => setShowAll(false)}
-                            className="text-orange-500 hover:text-orange-600 font-semibold transition-colors cursor-pointer"
-                          >
-                            See less
-                          </button>
-                        </div>
+                          {/* Show More button */}
+                          {addresses.length > 6 && !showAll && (
+                            <div className="flex justify-center mt-8">
+                              <button
+                                type="button"
+                                onClick={() => setShowAll(true)}
+                                className="text-orange-500 hover:text-orange-600 font-semibold transition-colors cursor-pointer"
+                              >
+                                Show More ({addresses.length - 6} more addresses)
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Show Less button */}
+                          {showAll && addresses.length > 6 && (
+                            <div className="flex justify-center mt-8">
+                              <button
+                                type="button"
+                                onClick={() => setShowAll(false)}
+                                className="text-orange-500 hover:text-orange-600 font-semibold transition-colors cursor-pointer"
+                              >
+                                See less
+                              </button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </>
                   )}
+                </>
+              ) : (
+                <>
+                  {/* Edit Address Form */}
+                  <div className="mb-8">
+                    <h1 className="text-3xl font-semibold mb-4">{editingAddress ? "Edit Address" : "Add Address"}</h1>
+                    {/* Breadcrumb */}
+                    <div className="flex items-center text-sm text-gray-600 mb-6">
+                      <button
+                        onClick={() => setShowEditForm(false)}
+                        className="hover:text-orange-500 transition-colors"
+                      >
+                        Saved Address
+                      </button>
+                      <span className="mx-2">{'>'}</span>
+                      <span className="text-gray-900">{editingAddress ? "Edit address" : "Add address"}</span>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleFormSubmit} className="space-y-8">
+                    {/* Personal Contact Section */}
+                    <div>
+                      <h2 className="text-xl font-semibold mb-6 text-gray-800">Personal Contact</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            First name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            name="name"
+                            value={form.name}
+                            onChange={handleFormChange}
+                            placeholder="Enter first name"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Last name <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            name="lastName"
+                            value={form.lastName}
+                            onChange={handleFormChange}
+                            placeholder="Enter last name"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors"
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Mobile number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          name="phone"
+                          value={form.phone}
+                          onChange={handleFormChange}
+                          placeholder="Enter mobile number"
+                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Address Details Section */}
+                    <div>
+                      <h2 className="text-xl font-semibold mb-6 text-gray-800">Address details</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Postcode <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            name="zip"
+                            value={form.zip}
+                            onChange={handleFormChange}
+                            placeholder="Enter postcode"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            City <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            name="city"
+                            value={form.city}
+                            onChange={handleFormChange}
+                            placeholder="Enter your city"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          House / apartment number and street address <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          name="street"
+                          value={form.street}
+                          onChange={handleFormChange}
+                          placeholder="Enter your address"
+                          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                          required
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-4 pt-6">
+                      <button
+                        type="button"
+                        onClick={handleCancel}
+                        className="px-8 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-8 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors cursor-pointer flex items-center gap-2"
+                      >
+                        Save & Continue
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="9,18 15,12 9,6"></polyline>
+                        </svg>
+                      </button>
+                    </div>
+                  </form>
                 </>
               )}
             </div>
           </div>
         </Tabs>
-
-        {modalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-8 w-full max-w-md shadow-xl">
-              <h2 className="text-2xl font-semibold mb-6 text-gray-800">{editingAddress ? "Edit Address" : "Add a new address"}</h2>
-              <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
-                <input name="name" value={form.name} onChange={handleFormChange} placeholder="Full Name" className="border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors" required />
-                <input name="phone" value={form.phone} onChange={handleFormChange} placeholder="Mobile Number" className="border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors" required />
-                <textarea name="street" value={form.street} onChange={handleFormChange} placeholder="Address (House No, Building, Street, Area)" className="border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors resize-none" required rows={3} />
-                <div className="flex gap-4">
-                  <input name="city" value={form.city} onChange={handleFormChange} placeholder="City/District/Town" className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:border-orange-500 focus:outline-none transition-colors" required />
-                  <input name="state" value={form.state} onChange={handleFormChange} placeholder="State" className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:border-orange-500 focus:outline-none transition-colors" required />
-                </div>
-                <div className="flex gap-4">
-                  <input name="zip" value={form.zip} onChange={handleFormChange} placeholder="Pincode" className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:border-orange-500 focus:outline-none transition-colors" required />
-                  <input name="country" value={form.country} onChange={handleFormChange} placeholder="Country" className="border border-gray-300 rounded-lg px-4 py-3 w-full bg-gray-50 cursor-not-allowed" readOnly />
-                </div>
-                <textarea name="instructions" value={form.instructions} onChange={handleFormChange} placeholder="Delivery Instructions (Optional)" className="border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors resize-none" rows={2} />
-
-                <div className="flex justify-end gap-3 mt-4">
-                  <button type="button" className="bg-gray-200 px-4 py-2 rounded-md font-semibold hover:bg-gray-300 cursor-pointer transition-colors" onClick={() => setModalOpen(false)}>CANCEL</button>
-                  <button type="submit" className="bg-orange-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-orange-600 cursor-pointer transition-colors">SAVE ADDRESS</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
