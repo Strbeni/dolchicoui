@@ -113,6 +113,10 @@ function AddressCard({ address, onEdit, onRemove, onSetDefault }: {
           <span className="font-semibold text-black capitalize">{address.city}</span>
         </div>
         <div>
+          <span className="font-semibold text-gray-600">State : </span>
+          <span className="font-semibold text-black capitalize">{address.state}</span>
+        </div>
+        <div>
           <span className="font-semibold text-gray-600">House / Apartment No. And Street Address : </span>
           <span className="font-semibold text-black capitalize">{address.street}</span>
         </div>
@@ -148,8 +152,48 @@ export default function AddressBookPage() {
   const [showAll, setShowAll] = useState(false);
 
   const initialFormState = {
-    name: "", lastName: "", street: "", city: "", zip: "", country: "India", phone: "", instructions: "",
+    name: "", lastName: "", street: "", city: "", state: "", zip: "", country: "India", phone: "", instructions: "",
   };
+
+  // Indian states list
+  const indianStates = [
+    "Andhra Pradesh",
+    "Arunachal Pradesh", 
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Andaman and Nicobar Islands",
+    "Chandigarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Jammu and Kashmir",
+    "Ladakh",
+    "Lakshadweep",
+    "Puducherry"
+  ];
   const [form, setForm] = useState(initialFormState);
 
   const fetchAddresses = useCallback(async () => {
@@ -199,6 +243,7 @@ export default function AddressBookPage() {
       lastName: lastName,
       street: address.street,
       city: address.city,
+      state: address.state,
       zip: address.zip,
       country: address.country,
       phone: address.phone,
@@ -247,7 +292,7 @@ export default function AddressBookPage() {
     }
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -267,6 +312,7 @@ export default function AddressBookPage() {
       name: fullName,
       street: form.street,
       city: form.city,
+      state: form.state,
       zip: form.zip,
       country: form.country,
       phone: form.phone,
@@ -450,7 +496,7 @@ export default function AddressBookPage() {
                     {/* Address Details Section */}
                     <div>
                       <h2 className="text-xl font-semibold mb-6 text-gray-800">Address details</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Postcode <span className="text-red-500">*</span>
@@ -476,6 +522,25 @@ export default function AddressBookPage() {
                             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors"
                             required
                           />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            State <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="state"
+                            value={form.state}
+                            onChange={handleFormChange}
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:border-orange-500 focus:outline-none transition-colors"
+                            required
+                          >
+                            <option value="">Select your state</option>
+                            {indianStates.map((state) => (
+                              <option key={state} value={state}>
+                                {state}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                       <div className="mt-6">
