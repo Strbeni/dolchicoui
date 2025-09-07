@@ -73,11 +73,40 @@ export function NavbarCountsProvider({ children }: { children: React.ReactNode }
         await Promise.all([refreshWishlistCount(), refreshCartCount()]);
     }, [refreshWishlistCount, refreshCartCount]);
 
-    // Initial load
+    // Initial load and auth change detection
     useEffect(() => {
+        const handleAuthChange = () => {
+            console.log('Auth change detected in NavbarCountsContext');
+            if (isAuthenticated()) {
+                refreshAllCounts();
+            } else {
+                setWishlistCount(0);
+                setCartCount(0);
+            }
+        };
+
+        const handleAuthStateChange = (e: CustomEvent) => {
+            console.log('Custom auth state change detected in NavbarCountsContext:', e.detail);
+            if (e.detail && e.detail.authenticated) {
+                // User just logged in, refresh counts
+                refreshAllCounts();
+            }
+        };
+
+        // Initial load
         if (isAuthenticated()) {
             refreshAllCounts();
         }
+
+        // Listen for storage events to detect auth changes
+        window.addEventListener('storage', handleAuthChange);
+        // Listen for custom auth events
+        window.addEventListener('authStateChange', handleAuthStateChange as EventListener);
+        
+        return () => {
+            window.removeEventListener('storage', handleAuthChange);
+            window.removeEventListener('authStateChange', handleAuthStateChange as EventListener);
+        };
     }, [refreshAllCounts]);
 
     return (

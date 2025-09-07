@@ -61,9 +61,44 @@ export const useAuthInit = () => {
             }
         };
 
+        // Listen for storage events to detect authentication changes
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'token' || e.key === 'user') {
+                console.log('Storage change detected, reinitializing auth');
+                setAuthInitialized(false);
+            }
+        };
+
+        // Listen for custom storage events from login page
+        const handleCustomStorageEvent = () => {
+            console.log('Custom storage event detected, reinitializing auth');
+            setAuthInitialized(false);
+        };
+
+        // Listen for custom auth state change events
+        const handleAuthStateChange = (e: CustomEvent) => {
+            console.log('Auth state change event detected:', e.detail);
+            if (e.detail && e.detail.user && e.detail.authenticated) {
+                // Immediately set user in Redux store
+                dispatch(setUser(e.detail.user));
+                setAuthInitialized(true);
+            }
+        };
+
         if (!authInitialized) {
             initializeAuth();
         }
+
+        // Add event listeners
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('storage', handleCustomStorageEvent);
+        window.addEventListener('authStateChange', handleAuthStateChange as EventListener);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('storage', handleCustomStorageEvent);
+            window.removeEventListener('authStateChange', handleAuthStateChange as EventListener);
+        };
     }, [dispatch, isAuthenticated, user, authInitialized]);
 
     return { 

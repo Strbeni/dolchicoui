@@ -470,6 +470,39 @@ export const Navbar5 = () => {
     }
   }, [mounted, dispatch, user, userLoading, isAuthenticated])
 
+  // Listen for authentication state changes and refresh data accordingly
+  useEffect(() => {
+    if (!mounted) return
+
+    const handleAuthChange = () => {
+      console.log('Auth state change detected in navbar');
+      // Force re-check authentication state
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (token && !isAuthenticated) {
+        // Token exists but not authenticated, fetch user
+        dispatch(fetchUser());
+      }
+    };
+
+    const handleAuthStateChange = (e: CustomEvent) => {
+      console.log('Custom auth state change detected in navbar:', e.detail);
+      if (e.detail && e.detail.user && e.detail.authenticated) {
+        // User logged in, refresh immediately
+        dispatch(fetchUser());
+      }
+    };
+
+    // Listen for storage events
+    window.addEventListener('storage', handleAuthChange);
+    // Listen for custom auth events
+    window.addEventListener('authStateChange', handleAuthStateChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('authStateChange', handleAuthStateChange as EventListener);
+    };
+  }, [mounted, dispatch, isAuthenticated])
+
   const handleLogout = async () => {
     setUserMenuOpen(false);
     setMobileUserMenuOpen(false);

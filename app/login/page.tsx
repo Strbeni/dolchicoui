@@ -145,27 +145,34 @@ export default function UnifiedAuthComponent() {
         }
 
         // Verify user authentication status with backend
-// In UnifiedAuthComponent - update the verifyAuthStatus function
-// After OAuth redirect, immediately check profile
-const verifyAuthStatus = async () => {
-  try {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
-    const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-      credentials: 'include',  // Add this line
-      headers: { 'Content-Type': 'application/json' }
-    })
+        // After OAuth redirect, immediately check profile and update state
+        const verifyAuthStatus = async () => {
+          try {
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+            const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' }
+            })
 
-    if (res.ok) {
-      const data = await res.json()
-      // Update your app's authentication state
-      localStorage.setItem("user", JSON.stringify(data.user))
-      // Set logged in state in your app
-    }
-  } catch (error) {
-    console.error("Auth check failed:", error)
-  }
-}
-
+            if (res.ok) {
+              const data = await res.json()
+              // Store user data
+              localStorage.setItem("user", JSON.stringify(data.user))
+              sessionStorage.setItem("user", JSON.stringify(data.user))
+              
+              // Trigger a storage event to notify other components
+              window.dispatchEvent(new Event('storage'))
+              
+              // Navigate to home page
+              setTimeout(() => {
+                window.location.href = "/home"
+              }, 100)
+            }
+          } catch (error) {
+            console.error("Auth check failed:", error)
+          }
+        }
+        
 
 
         verifyAuthStatus()
@@ -247,6 +254,9 @@ const verifyAuthStatus = async () => {
     if (typeof window !== "undefined") {
       document.cookie = `auth-token=${token}; path=/; max-age=${7*24*60*60}`
     }
+
+    // Trigger storage event to notify other components of auth state change
+    window.dispatchEvent(new Event('storage'))
 
     console.log("Authentication successful, redirecting...")
   }, [])
@@ -645,10 +655,25 @@ const verifyAuthStatus = async () => {
         if (data.token) {
           setAuthTokens(data.token, data.user)
 
+          // Force immediate state sync
+          if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user))
+            sessionStorage.setItem("user", JSON.stringify(data.user))
+            // Trigger custom event for immediate state sync
+            window.dispatchEvent(new CustomEvent('authStateChange', { detail: { user: data.user, authenticated: true } }))
+          }
+
           // Add delay to ensure tokens are stored, then redirect
           setTimeout(() => {
-            router.push("/home")
-          }, 100)
+            // Force a final state sync before redirect
+            if (data.user) {
+              localStorage.setItem("user", JSON.stringify(data.user))
+              sessionStorage.setItem("user", JSON.stringify(data.user))
+            }
+            
+            // Use replace to ensure fresh page load
+            window.location.replace("/home")
+          }, 200)
         } else {
           throw new Error("No authentication token received")
         }
@@ -696,6 +721,14 @@ const verifyAuthStatus = async () => {
       // Login successful
       if (data.token) {
         setAuthTokens(data.token, data.user)
+
+        // Force immediate state sync
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user))
+          sessionStorage.setItem("user", JSON.stringify(data.user))
+          // Trigger custom event for immediate state sync
+          window.dispatchEvent(new CustomEvent('authStateChange', { detail: { user: data.user, authenticated: true } }))
+        }
 
         // Add delay to ensure tokens are stored, then redirect
         setTimeout(() => {
@@ -752,6 +785,14 @@ const verifyAuthStatus = async () => {
       // Profile completion successful
       if (data.token) {
         setAuthTokens(data.token, data.user)
+
+        // Force immediate state sync
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user))
+          sessionStorage.setItem("user", JSON.stringify(data.user))
+          // Trigger custom event for immediate state sync
+          window.dispatchEvent(new CustomEvent('authStateChange', { detail: { user: data.user, authenticated: true } }))
+        }
 
         // Add delay to ensure tokens are stored, then redirect
         setTimeout(() => {
