@@ -253,6 +253,7 @@ const verifyAuthStatus = async () => {
 
     if (!trimmedInput) {
       setContactType("email")
+      setLastCheckedContact("")
       return
     }
 
@@ -356,9 +357,15 @@ const verifyAuthStatus = async () => {
     [countryCode],
   )
 
+  const [lastCheckedContact, setLastCheckedContact] = useState("")
+
   // Enhanced user check with verification status
   const checkUserExists = React.useCallback(async (emailOrPhone: string): Promise<UserCheckResponse> => {
     if (!emailOrPhone.trim()) return { exists: false }
+
+    if (emailOrPhone === lastCheckedContact) {
+      return { exists: userExists }
+    }
 
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
@@ -374,6 +381,7 @@ const verifyAuthStatus = async () => {
 
       if (res.ok) {
         setUserExists(data.exists)
+        setLastCheckedContact(emailOrPhone)
         
         // Enhanced logic for verification status
         const hasPasswordMethod = (data.loginMethods || []).includes("password")
@@ -388,15 +396,17 @@ const verifyAuthStatus = async () => {
         console.error("Check auth API error:", data)
         setUserExists(false)
         setShowPasswordOption(false)
+        setLastCheckedContact(emailOrPhone)
         return { exists: false }
       }
     } catch (error) {
       console.error("Error checking user:", error)
       setUserExists(false)
       setShowPasswordOption(false)
+      setLastCheckedContact(emailOrPhone)
       return { exists: false }
     }
-  }, [])
+  }, [lastCheckedContact, userExists])
 
   // Send OTP for new user registration
   const handleSendOTPForNewUser = React.useCallback(
@@ -468,8 +478,15 @@ const verifyAuthStatus = async () => {
         localStorage.setItem("dolchi_last_contact", contactInput)
       }
 
-      // Check if user exists first
-      const userStatus = await checkUserExists(cleanContact)
+      // Check if user exists - only call API if not already checked for this contact
+      let userStatus: UserCheckResponse
+      if (cleanContact === lastCheckedContact) {
+        // Use cached result
+        userStatus = { exists: userExists }
+      } else {
+        // Call API for new contact
+        userStatus = await checkUserExists(cleanContact)
+      }
 
       if (userStatus.exists) {
         // Check verification status for existing users
@@ -500,7 +517,7 @@ const verifyAuthStatus = async () => {
     } finally {
       setLoading(false)
     }
-  }, [contactInput, contactType, acceptTerms, formatContactForAPI, checkUserExists, handleSendOTPForNewUser, handleSendOTPForExistingUser])
+  }, [contactInput, contactType, acceptTerms, formatContactForAPI, checkUserExists, handleSendOTPForNewUser, handleSendOTPForExistingUser, lastCheckedContact, userExists])
 
   // Handle edit contact (inline editing with pencil icon)
   const handleEditContact = React.useCallback((): void => {
@@ -849,9 +866,11 @@ const verifyAuthStatus = async () => {
   const handleContactBlur = React.useCallback((): void => {
     if (contactInput.trim()) {
       const cleanContact = formatContactForAPI(contactInput, contactType)
-      void checkUserExists(cleanContact)
+      if (cleanContact !== lastCheckedContact) {
+        void checkUserExists(cleanContact)
+      }
     }
-  }, [contactInput, contactType, formatContactForAPI, checkUserExists])
+  }, [contactInput, contactType, formatContactForAPI, checkUserExists, lastCheckedContact])
 
   const handleCountrySelect = React.useCallback((countryCodeValue: string): void => {
     setCountryCode(countryCodeValue)

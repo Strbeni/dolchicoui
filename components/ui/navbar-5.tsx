@@ -1,6 +1,6 @@
 "use client"
 import { useCallback } from "react";
-import { Heart, Menu, ShoppingCart, User } from "lucide-react"
+import { Heart, Menu, ShoppingCart, User, ShoppingBag, MapPin, LogOut } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   NavigationMenu,
@@ -14,6 +14,14 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { SearchBar } from "./search-bar"
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks"
+import { 
+  fetchUser, 
+  clearUser, 
+  selectUser, 
+  selectIsAuthenticated, 
+  selectUserLoading 
+} from "@/lib/store/userSlice"
 
 /* -------------------------------------------------------------------------- */
 /*  dummy data                                                                */
@@ -397,16 +405,27 @@ const homes: NavigationSection[] = [
 
 export const Navbar5 = () => {
   const router = useRouter()
+  const dispatch = useAppDispatch()
 
-  /* ----------------------- auth / menu state ------------------------------ */
+  // Redux state
+  const user = useAppSelector(selectUser)
+  const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const userLoading = useAppSelector(selectUserLoading)
+
+  /* ----------------------- local UI state ------------------------------ */
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileUserMenuOpen, setMobileUserMenuOpen] = useState(false)
   const desktopDropdownRef = useRef<HTMLDivElement | null>(null)
   const mobileDropdownRef = useRef<HTMLDivElement | null>(null)
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [wishlistCount, setWishlistCount] = useState(0)
   const [cartCount, setCartCount] = useState(0)
+  const [mounted, setMounted] = useState(false)
+
+  // Ensure component is mounted before accessing localStorage
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const mobileNavData = [
     { id: "men", label: "Men", data: men },
@@ -419,6 +438,8 @@ export const Navbar5 = () => {
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
 
   const authHeaders = () => {
+    if (typeof window === 'undefined') return { "Content-Type": "application/json" }
+    
     const token = localStorage.getItem("token") || sessionStorage.getItem("token")
     return {
       "Content-Type": "application/json",
@@ -427,7 +448,8 @@ export const Navbar5 = () => {
   }
 
   const fetchWishlistCount = useCallback(async () => {
-    if (!isLoggedIn) {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+    if (!token) {
       setWishlistCount(0)
       return
     }
@@ -442,10 +464,11 @@ export const Navbar5 = () => {
     } catch (err) {
       console.error("Error fetching wishlist count:", err)
     }
-  }, [isLoggedIn, API_BASE])
+  }, [API_BASE])
 
   const fetchCartCount = useCallback(async () => {
-    if (!isLoggedIn) {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+    if (!token) {
       setCartCount(0)
       return
     }
@@ -464,24 +487,28 @@ export const Navbar5 = () => {
     } catch (err) {
       console.error("Error fetching cart count:", err)
     }
-  }, [isLoggedIn, API_BASE])
+  }, [API_BASE])
 
   useEffect(() => {
+    if (!mounted) return
+    
     const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-    const loggedIn = !!token
-    setIsLoggedIn(loggedIn)
-
-    if (loggedIn) {
+    
+    if (token) {
+      if (!user && !userLoading) {
+        dispatch(fetchUser())
+      }
+      
       fetchWishlistCount()
       fetchCartCount()
     } else {
       setWishlistCount(0)
       setCartCount(0)
     }
-  }, [fetchCartCount, fetchWishlistCount])
+  }, [mounted, dispatch, user, userLoading, fetchWishlistCount, fetchCartCount])
 
   useEffect(() => {
-    if (!isLoggedIn) return
+    if (!mounted || !isAuthenticated) return
 
     const interval = setInterval(() => {
       fetchWishlistCount()
@@ -489,16 +516,27 @@ export const Navbar5 = () => {
     }, 30000) // Refresh every 30 seconds
 
     return () => clearInterval(interval)
-  }, [isLoggedIn, fetchCartCount, fetchWishlistCount])
+  }, [mounted, isAuthenticated, fetchWishlistCount, fetchCartCount])
 
   const handleLogout = () => {
-    localStorage.removeItem("token")
-    sessionStorage.removeItem("token")
-    setIsLoggedIn(false)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("token")
+      sessionStorage.removeItem("token")
+    }
+    dispatch(clearUser()) // Clear user data in Redux
     setWishlistCount(0)
     setCartCount(0)
     setUserMenuOpen(false)
     router.push("/login")
+  }
+
+  const getUserInitials = (name: string) => {
+    if (!name) return "U"
+    const nameParts = name.split(" ")
+    if (nameParts.length >= 2) {
+      return (nameParts[0][0] + nameParts[1][0]).toUpperCase()
+    }
+    return name[0].toUpperCase()
   }
 
   /* close user dropdown when clicking outside - desktop */
@@ -582,7 +620,6 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
-                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -594,7 +631,6 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
-                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -632,7 +668,6 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
-                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -644,7 +679,6 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
-                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -682,7 +716,6 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
-                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -694,7 +727,6 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
-                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -732,7 +764,6 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
-                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -744,7 +775,6 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
-                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -782,7 +812,6 @@ export const Navbar5 = () => {
                                 <Link
                                   href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
-                                  legacyBehavior
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
                                     {section.title}
@@ -794,7 +823,6 @@ export const Navbar5 = () => {
                                       <Link
                                         href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
-                                        legacyBehavior
                                       >
                                         {item}
                                       </Link>
@@ -823,43 +851,73 @@ export const Navbar5 = () => {
             <div className="relative" ref={desktopDropdownRef}>
               <User className="w-5 h-5 cursor-pointer" onClick={() => setUserMenuOpen((p) => !p)} />
               {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md text-sm z-50">
-                  {isLoggedIn ? (
+                <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-md text-sm z-50">
+                  {isAuthenticated ? (
                     <>
-                      <Link
-                        href="/profile"
-                        className="block px-4 py-2 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        Profile
-                      </Link>
-                      <Link
-                        href="/profile/orderHistory"
-                        className="block px-4 py-2 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        Order History
-                      </Link>
-                      <Link
-                        href="/profile/paymentMethod"
-                        className="block px-4 py-2 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        Saved Payment Method
-                      </Link>
-                      <Link
-                        href="/profile/addressBook"
-                        className="block px-4 py-2 hover:bg-gray-100"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        Address Book
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-red-400 hover:bg-gray-100"
-                      >
-                        Logout
-                      </button>
+                      {/* User Info Header */}
+                      <div className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                            <span className="text-[#F3612A] font-medium text-sm">
+                              {getUserInitials(user?.name || "")}
+                            </span>
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900 truncate">{user?.name || "User"}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Menu Items */}
+                      <div className="p-2">
+                        <Link
+                          href="/profile"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <ShoppingBag className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">Dashboard</span>
+                        </Link>
+                        <Link
+                          href="/profile/orderHistory"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <ShoppingCart className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">Order history</span>
+                        </Link>
+                        <Link
+                          href="/wishlist"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Heart className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">Wishlist</span>
+                        </Link>
+                        <Link
+                          href="/profile"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <User className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">Personal info</span>
+                        </Link>
+                        <Link
+                          href="/profile/addressBook"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <MapPin className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">Addresses</span>
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors hover:cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4 text-red-500" />
+                          <span className="text-red-500">Log out</span>
+                        </button>
+                      </div>
                     </>
                   ) : (
                     <Link
@@ -998,40 +1056,73 @@ export const Navbar5 = () => {
                 </button>
 
                 {mobileUserMenuOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg rounded-md text-sm">
-                    {isLoggedIn ? (
+                  <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 shadow-lg rounded-md text-sm">
+                    {isAuthenticated ? (
                       <>
-                        <Link
-                          href="/profile"
-                          className="block px-4 py-2 hover:bg-gray-100"
-                          onClick={() => setMobileUserMenuOpen(false)}
-                        >
-                          Profile
-                        </Link>
-                        <Link
-                          href="/profile/orderHistory"
-                          className="block px-4 py-2 hover:bg-gray-100"
-                          onClick={() => setMobileUserMenuOpen(false)}
-                        >
-                          Order History
-                        </Link>
-                        <Link
-                          href="/profile/paymentMethod"
-                          className="block px-4 py-2 hover:bg-gray-100"
-                          onClick={() => setMobileUserMenuOpen(false)}
-                        >
-                          Saved Payment Method
-                        </Link>
-                        <Link
-                          href="/profile/addressBook"
-                          className="block px-4 py-2 hover:bg-gray-100"
-                          onClick={() => setMobileUserMenuOpen(false)}
-                        >
-                          Address Book
-                        </Link>
-                        <button onClick={handleLogout} className="block w-full text-red-400 text-left px-4 py-2 hover:bg-gray-100">
-                          Logout
-                        </button>
+                        {/* User Info Header */}
+                        <div className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                              <span className="text-[#F3612A] font-medium text-sm">
+                                {getUserInitials(user?.name || "")}
+                              </span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900 truncate">{user?.name || "User"}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Menu Items */}
+                        <div className="py-2">
+                          <Link
+                            href="/profile"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <ShoppingBag className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Dashboard</span>
+                          </Link>
+                          <Link
+                            href="/profile/orderHistory"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <ShoppingCart className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Order history</span>
+                          </Link>
+                          <Link
+                            href="/wishlist"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <Heart className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Wishlist</span>
+                          </Link>
+                          <Link
+                            href="/profile"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <User className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Personal info</span>
+                          </Link>
+                          <Link
+                            href="/profile/addressBook"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <MapPin className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Addresses</span>
+                          </Link>
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4 text-red-500" />
+                            <span className="text-red-500">Log out</span>
+                          </button>
+                        </div>
                       </>
                     ) : (
                       <button

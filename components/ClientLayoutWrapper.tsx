@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Navbar from './navbar';
 import Footer from './footer/page';
+import { ReduxProvider } from './ReduxProvider';
 
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -12,10 +13,10 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
   const shouldHide = hideLayout.includes(pathname);
 
   return (
-    <>
+    <ReduxProvider>
       {!shouldHide && <Navbar />}
       <main>{children}</main>
       {!shouldHide && <Footer />}
-    </>
+    </ReduxProvider>
   );
 }

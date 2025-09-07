@@ -1,5 +1,5 @@
 // lib/paymentApi.ts
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 interface OrderItem {
   productId: number;
@@ -44,7 +44,7 @@ const getAuthToken = () => {
 export const createPaymentOrder = async (orderData: CreateOrderData) => {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_BASE}/payment/create-order`, {
+  const response = await fetch(`${API_BASE}/api/payment/create-order`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ export const createPaymentOrder = async (orderData: CreateOrderData) => {
 export const verifyPayment = async (paymentData: PaymentVerificationData) => {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_BASE}/payment/verify`, {
+  const response = await fetch(`${API_BASE}/api/payment/verify`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ export const verifyPayment = async (paymentData: PaymentVerificationData) => {
 export const getPaymentStatus = async (orderId: string) => {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_BASE}/payment/status/${orderId}`, {
+  const response = await fetch(`${API_BASE}/api/payment/status/${orderId}`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -104,7 +104,7 @@ export const getPaymentStatus = async (orderId: string) => {
 export const retryPayment = async (orderId: string) => {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_BASE}/payment/retry/${orderId}`, {
+  const response = await fetch(`${API_BASE}/api/payment/retry/${orderId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
