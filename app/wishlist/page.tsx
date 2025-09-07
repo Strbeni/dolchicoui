@@ -15,6 +15,19 @@ import {
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { useNavbarCounts } from '@/contexts/NavbarCountsContext';
+import { useLoading } from '@/contexts/LoadingContext';
+import {
+  selectWishlistItems,
+  selectWishlistLoading,
+  selectWishlistError,
+  removeFromWishlist,
+  clearWishlist as clearReduxWishlist,
+  loadWishlistItems,
+  setWishlistLoading,
+} from '@/lib/store/wishlistSlice';
+
 
 /* ────────────────  Models  ──────────────── */
 interface Product {
@@ -69,13 +82,19 @@ const authHeaders = (): HeadersInit => {
   };
 };
 
+const isAuthenticated = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const token =
+    localStorage.getItem('token') || sessionStorage.getItem('token');
+  return !!token;
+};
+
 const toast = (msg: string, ok = true) => {
   if (typeof window === 'undefined') return;
   const el = document.createElement('div');
   el.textContent = msg;
-  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 transition-all duration-300 ${
-    ok ? 'bg-green-600' : 'bg-red-600'
-  }`;
+  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 transition-all duration-300 ${ok ? 'bg-green-600' : 'bg-red-600'
+    }`;
   document.body.appendChild(el);
   setTimeout(() => {
     el.classList.add('opacity-0', 'translate-x-full');
@@ -83,11 +102,48 @@ const toast = (msg: string, ok = true) => {
   }, 2700);
 };
 
+const formatDate = (dateString: string): string => {
+  try {
+    // Use consistent date formatting to avoid hydration issues
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return 'Invalid date';
+  }
+};
+
 /* ────────────────  Component  ──────────────── */
-export default function WishlistPage() {
-  /* Data */
-  const [items, setItems] = useState<WishlistItem[]>([]);
+function WishlistPage() {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { refreshWishlistCount, refreshCartCount } = useNavbarCounts();
+  const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading();
+
+  // Redux selectors for unauthenticated users
+  const reduxWishlistItems = useAppSelector(selectWishlistItems);
+  const reduxWishlistLoading = useAppSelector(selectWishlistLoading);
+  const reduxWishlistError = useAppSelector(selectWishlistError);
+
+  /* Hydration state */
+  const [isMounted, setIsMounted] = useState(false);
+
+  /* Data - for authenticated users (API) */
+  const [apiItems, setApiItems] = useState<WishlistItem[]>([]);
   const [summary, setSummary] = useState<WishlistSummary | null>(null);
+
+  // Determine which data source to use
+  const isAuth = isMounted && isAuthenticated();
+  const items = isAuth ? apiItems : reduxWishlistItems.map(item => ({
+    id: item.id,
+    userId: 0, // Not applicable for Redux items
+    productId: item.id,
+    createdAt: item.addedAt,
+    product: item.product
+  }));
 
   /* UI state */
   const [loading, setLoading] = useState(true);
@@ -98,6 +154,7 @@ export default function WishlistPage() {
   const [selectedSize, setSelectedSize] = useState<Record<number, string>>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
 
   /* Filters & pagination */
   const [currentPage, setCurrentPage] = useState(1);
@@ -105,8 +162,6 @@ export default function WishlistPage() {
   const [sortBy, setSortBy] = useState('newest');
   const [filterCategory, setFilterCategory] = useState('');
   const [pagination, setPagination] = useState<PaginationData | null>(null);
-
-  const router = useRouter();
 
   /* ── Fetch wishlist (paginated) ── */
   const fetchWishlist = useCallback(async () => {
@@ -145,7 +200,7 @@ export default function WishlistPage() {
 
       if (!success) throw new Error(message || 'API error');
 
-      setItems(data.wishlist);
+      setApiItems(data.wishlist);
       setPagination(data.pagination);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load wishlist');
@@ -175,48 +230,86 @@ export default function WishlistPage() {
   const removeItem = async (pid: number) => {
     try {
       setRemoving(pid);
-      const res = await fetch(`${API_BASE}/api/user/wishlist/${pid}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-      if (!res.ok)
-        throw new Error((await res.json()).message || 'Remove failed');
-      toast('Removed from wishlist!');
-      await fetchWishlist();
-      await fetchSummary();
+
+      if (isAuth) {
+        // Authenticated user - use API with global loading
+        setLoadingMessage("Removing from wishlist...");
+        setGlobalLoading(true);
+
+        const res = await fetch(`${API_BASE}/api/user/wishlist/${pid}`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+        if (!res.ok)
+          throw new Error((await res.json()).message || 'Remove failed');
+        toast('Removed from wishlist!');
+        await fetchWishlist();
+        await fetchSummary();
+        // Refresh navbar count
+        refreshWishlistCount();
+      } else {
+        // Unauthenticated user - use Redux
+        dispatch(removeFromWishlist(pid));
+        toast('Removed from wishlist!');
+      }
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Remove failed', false);
     } finally {
+      if (isAuth) {
+        setGlobalLoading(false);
+      }
       setRemoving(null);
     }
   };
 
   const clearWishlist = async () => {
-    if (
-      !window.confirm('Are you sure you want to clear your entire wishlist?')
-    )
-      return;
     try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE}/api/user/wishlist`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-      if (!res.ok)
-        throw new Error((await res.json()).message || 'Clear failed');
-      setItems([]);
-      setSummary(null);
+      if (isAuth) {
+        // Authenticated user - use API with global loading
+        setLoadingMessage("Clearing wishlist...");
+        setGlobalLoading(true);
+
+        const res = await fetch(`${API_BASE}/api/user/wishlist`, {
+          method: 'DELETE',
+          headers: authHeaders(),
+        });
+        if (!res.ok)
+          throw new Error((await res.json()).message || 'Clear failed');
+        setApiItems([]);
+        setSummary(null);
+        // Refresh navbar count
+        refreshWishlistCount();
+      } else {
+        // Unauthenticated user - use Redux with local loading
+        setLoading(true);
+        dispatch(clearReduxWishlist());
+      }
+
       toast('Wishlist cleared!');
+      setShowClearModal(false);
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Clear failed', false);
     } finally {
-      setLoading(false);
+      if (isAuth) {
+        setGlobalLoading(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
   const addToCart = async (pid: number, size: string) => {
+    if (!isAuth) {
+      toast('Please login to add items to cart', false);
+      router.push('/login');
+      return;
+    }
+
     try {
       setAddingToCart(pid);
+      setLoadingMessage("Adding to cart...");
+      setGlobalLoading(true);
+
       const res = await fetch(`${API_BASE}/api/cart/items`, {
         method: 'POST',
         headers: authHeaders(),
@@ -226,19 +319,33 @@ export default function WishlistPage() {
         throw new Error((await res.json()).message || 'Add failed');
       setAddedToCart(pid);
       toast('Added to cart!');
+      // Refresh navbar cart count
+      refreshCartCount();
       setTimeout(() => setAddedToCart(null), 2_000);
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Add failed', false);
     } finally {
+      setGlobalLoading(false);
       setAddingToCart(null);
     }
   };
 
   /* ── Effects ── */
   useEffect(() => {
-    fetchWishlist();
-    fetchSummary();
-  }, [fetchWishlist, fetchSummary]);
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isAuth) {
+      // For authenticated users, fetch from API
+      fetchWishlist();
+      fetchSummary();
+    } else {
+      // For unauthenticated users, load from Redux (already available)
+      setLoading(false);
+      setError(reduxWishlistError || '');
+    }
+  }, [fetchWishlist, fetchSummary, isAuth, reduxWishlistError]);
 
   /* ── Helpers ── */
   const categories = Array.from(new Set(items.map((i) => i.product.category)));
@@ -257,29 +364,60 @@ export default function WishlistPage() {
     setShowFilters(false);
   };
 
+  const handleRefresh = () => {
+    if (isAuth) {
+      fetchWishlist();
+      fetchSummary();
+    } else {
+      // For non-authenticated users, just refresh the error state
+      setError('');
+    }
+  };
+
   /* ── UI ── */
-  if (loading) {
+  const isLoadingData = isAuth ? loading : reduxWishlistLoading;
+  const errorMessage = isAuth ? error : reduxWishlistError;
+
+  // Prevent hydration mismatch during initial mount
+  if (!isMounted) {
     return (
-      <div className="px-4 md:px-6 lg:px-20 py-10 flex justify-center">
-        <div className="text-center">
-          <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-gray-300 border-t-[#d4a524] rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-base md:text-lg">Loading wishlist...</p>
+      <div className="px-4 md:px-6 lg:px-20 py-6 md:py-10">
+        <div className="flex justify-center py-10">
+          <div className="text-center">
+            <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-gray-300 border-t-[#d4a524] rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-base md:text-lg">Loading...</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (isLoadingData) {
     return (
-      <div className="px-4 md:px-6 lg:px-20 py-10 flex justify-center">
-        <div className="text-center">
-          <p className="text-base md:text-lg text-red-600 mb-4">{error}</p>
-          <Button 
-            onClick={fetchWishlist}
-            className="bg-pink-500 hover:bg-pink-600"
-          >
-            Try Again
-          </Button>
+      <div className="px-4 md:px-6 lg:px-20 py-6 md:py-10">
+        <div className="flex justify-center py-10">
+          <div className="text-center">
+            <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-gray-300 border-t-[#d4a524] rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-base md:text-lg">Loading wishlist...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="px-4 md:px-6 lg:px-20 py-6 md:py-10">
+        <div className="flex justify-center py-10">
+          <div className="text-center">
+            <p className="text-base md:text-lg text-red-600 mb-4">{errorMessage}</p>
+            <Button
+              onClick={handleRefresh}
+              className="bg-pink-500 hover:bg-pink-600"
+            >
+              Try Again
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -295,10 +433,15 @@ export default function WishlistPage() {
               <Heart className="text-red-500" size={28} />
               MY WISHLIST
             </h1>
-            {summary && (
+            {isAuth && summary && (
               <p className="text-gray-500 text-sm md:text-base mt-1">
                 {summary.totalItems} items · Value IDR{' '}
                 {summary.totalValue.toLocaleString()}
+              </p>
+            )}
+            {!isAuth && (
+              <p className="text-gray-500 text-sm md:text-base mt-1">
+                {items.length} items · Sign in to sync across devices
               </p>
             )}
           </div>
@@ -306,14 +449,14 @@ export default function WishlistPage() {
           {/* Desktop Actions */}
           {items.length > 0 && (
             <div className="hidden md:flex gap-2">
-              <Button variant="outline" size="sm" onClick={fetchWishlist}>
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
                 Refresh
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="text-red-600 hover:text-red-700"
-                onClick={clearWishlist}
+                onClick={() => setShowClearModal(true)}
               >
                 Clear All
               </Button>
@@ -325,9 +468,9 @@ export default function WishlistPage() {
         {items.length > 0 && (
           <div className="flex md:hidden gap-2 justify-between">
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center gap-1"
               >
@@ -344,14 +487,14 @@ export default function WishlistPage() {
               </Button>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={fetchWishlist}>
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
                 Refresh
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="text-red-600"
-                onClick={clearWishlist}
+                onClick={() => setShowClearModal(true)}
               >
                 Clear All
               </Button>
@@ -420,14 +563,14 @@ export default function WishlistPage() {
             <div className="md:hidden mb-6 p-4 bg-gray-50 rounded-lg border space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold">Filters & Sort</h3>
-                <button 
+                <button
                   onClick={() => setShowFilters(false)}
                   className="p-1 hover:bg-gray-200 rounded"
                 >
                   <X size={20} />
                 </button>
               </div>
-              
+
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium mb-1">Category</label>
@@ -476,7 +619,7 @@ export default function WishlistPage() {
           <Heart className="mx-auto text-gray-300 mb-4" size={48} />
           <h2 className="text-xl font-semibold text-gray-600 mb-2">Your wishlist is empty</h2>
           <p className="text-gray-500 mb-4">Save your favorite items to buy them later</p>
-          <Button 
+          <Button
             onClick={() => router.push('/productlist')}
             className="bg-[#d46331] hover:bg-[#d46331]  text-white"
           >
@@ -539,11 +682,10 @@ export default function WishlistPage() {
                             <button
                               key={s}
                               onClick={() => handleSizeSelect(it.productId, s)}
-                              className={`px-1.5 py-0.5 md:px-2 md:py-1 text-xs border rounded transition-colors ${
-                                selectedSize[it.productId] === s
-                                  ? 'border-black bg-black text-white'
-                                  : 'border-gray-300 hover:bg-black hover:text-white'
-                              }`}
+                              className={`px-1.5 py-0.5 md:px-2 md:py-1 text-xs border rounded transition-colors ${selectedSize[it.productId] === s
+                                ? 'border-black bg-black text-white'
+                                : 'border-gray-300 hover:bg-black hover:text-white'
+                                }`}
                             >
                               {s}
                             </button>
@@ -574,7 +716,7 @@ export default function WishlistPage() {
                       </button>
 
                       <span className="text-xs text-gray-400 hidden md:block">
-                        {new Date(it.createdAt).toLocaleDateString()}
+                        {formatDate(it.createdAt)}
                       </span>
                     </div>
                   </div>
@@ -626,7 +768,7 @@ export default function WishlistPage() {
                       </p>
 
                       <p className="text-xs text-gray-500 mb-2 md:mb-3">
-                        {it.product.category} • {new Date(it.createdAt).toLocaleDateString()}
+                        {it.product.category} • {formatDate(it.createdAt)}
                       </p>
 
                       {/* Size Selection - Compact */}
@@ -637,11 +779,10 @@ export default function WishlistPage() {
                               <button
                                 key={s}
                                 onClick={() => handleSizeSelect(it.productId, s)}
-                                className={`px-2 py-1 text-xs border rounded transition-colors ${
-                                  selectedSize[it.productId] === s
-                                    ? 'border-black bg-black text-white'
-                                    : 'border-gray-300 hover:bg-black hover:text-white'
-                                }`}
+                                className={`px-2 py-1 text-xs border rounded transition-colors ${selectedSize[it.productId] === s
+                                  ? 'border-black bg-black text-white'
+                                  : 'border-gray-300 hover:bg-black hover:text-white'
+                                  }`}
                               >
                                 {s}
                               </button>
@@ -704,6 +845,62 @@ export default function WishlistPage() {
           )}
         </>
       )}
+
+      {/* Clear All Confirmation Modal */}
+      {showClearModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowClearModal(false);
+            }
+          }}
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all duration-200 scale-100 opacity-100">
+            <div className="relative p-6">
+              {/* Close button */}
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <Heart className="w-6 h-6 text-red-600" />
+              </div>
+
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                Clear Entire Wishlist?
+              </h3>
+
+              <p className="text-sm text-gray-500 text-center mb-6">
+                Are you sure you want to remove all {items.length} items from your wishlist?
+                This action cannot be undone.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowClearModal(false)}
+                  className="flex-1 order-2 sm:order-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={clearWishlist}
+                  className="flex-1 order-1 sm:order-2 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Clear All Items
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+// Export directly without protection
+export default WishlistPage;

@@ -4,6 +4,16 @@ import { usePathname } from 'next/navigation';
 import Navbar from './navbar';
 import Footer from './footer/page';
 import { ReduxProvider } from './ReduxProvider';
+import { LoadingProvider } from '@/contexts/LoadingContext';
+import { NavbarCountsProvider } from '@/contexts/NavbarCountsContext';
+import { useAuthInit } from '@/hooks/useAuthInit';
+import { useWishlistInit } from '@/hooks/useWishlistInit';
+
+function AuthInitializer() {
+  useAuthInit();
+  useWishlistInit();
+  return null;
+}
 
 export function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,9 +24,14 @@ export function ClientLayoutWrapper({ children }: { children: React.ReactNode })
 
   return (
     <ReduxProvider>
-      {!shouldHide && <Navbar />}
-      <main>{children}</main>
-      {!shouldHide && <Footer />}
+      <LoadingProvider>
+        <NavbarCountsProvider>
+          <AuthInitializer />
+          {!shouldHide && <Navbar />}
+          <main>{children}</main>
+          {!shouldHide && <Footer />}
+        </NavbarCountsProvider>
+      </LoadingProvider>
     </ReduxProvider>
   );
 }

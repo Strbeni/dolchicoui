@@ -1,4 +1,3 @@
-"use client"
 import { useCallback } from "react";
 import { Heart, Menu, ShoppingCart, User, ShoppingBag, MapPin, LogOut } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -15,13 +14,17 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { SearchBar } from "./search-bar"
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks"
-import { 
-  fetchUser, 
-  clearUser, 
-  selectUser, 
-  selectIsAuthenticated, 
-  selectUserLoading 
+import { selectWishlistCount } from "@/lib/store/wishlistSlice"
+import {
+  fetchUser,
+  clearUser,
+  selectUser,
+  selectIsAuthenticated,
+  selectUserLoading
 } from "@/lib/store/userSlice"
+import { useLoading } from "@/contexts/LoadingContext"
+import { useLogout } from "@/hooks/useLogout"
+import { useNavbarCounts } from "@/contexts/NavbarCountsContext"
 
 /* -------------------------------------------------------------------------- */
 /*  dummy data                                                                */
@@ -406,6 +409,11 @@ const homes: NavigationSection[] = [
 export const Navbar5 = () => {
   const router = useRouter()
   const dispatch = useAppDispatch()
+  const { setLoading, setLoadingMessage } = useLoading()
+  const logout = useLogout()
+
+  // Context for navbar counts
+  const { wishlistCount: contextWishlistCount, cartCount: contextCartCount } = useNavbarCounts()
 
   // Redux state
   const user = useAppSelector(selectUser)
@@ -418,9 +426,12 @@ export const Navbar5 = () => {
   const desktopDropdownRef = useRef<HTMLDivElement | null>(null)
   const mobileDropdownRef = useRef<HTMLDivElement | null>(null)
 
-  const [wishlistCount, setWishlistCount] = useState(0)
-  const [cartCount, setCartCount] = useState(0)
+  const reduxWishlistCount = useAppSelector(selectWishlistCount) // For unauthenticated users
   const [mounted, setMounted] = useState(false)
+
+  // Get wishlist count based on authentication status
+  const wishlistCount = isAuthenticated ? contextWishlistCount : reduxWishlistCount
+  const cartCount = isAuthenticated ? contextCartCount : 0 // Cart only for authenticated users
 
   // Ensure component is mounted before accessing localStorage
   useEffect(() => {
@@ -439,7 +450,7 @@ export const Navbar5 = () => {
 
   const authHeaders = () => {
     if (typeof window === 'undefined') return { "Content-Type": "application/json" }
-    
+
     const token = localStorage.getItem("token") || sessionStorage.getItem("token")
     return {
       "Content-Type": "application/json",
@@ -447,110 +458,22 @@ export const Navbar5 = () => {
     }
   }
 
-  const fetchWishlistCount = useCallback(async () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-    if (!token) {
-      setWishlistCount(0)
-      return
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/user/wishlist`, { headers: authHeaders() })
-      if (!res.ok) return
-      const data = await res.json()
-      if (data.success && Array.isArray(data.data?.wishlist)) {
-        setWishlistCount(data.data.wishlist.length)
-      }
-    } catch (err) {
-      console.error("Error fetching wishlist count:", err)
-    }
-  }, [API_BASE])
-
-  const fetchCartCount = useCallback(async () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-    if (!token) {
-      setCartCount(0)
-      return
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/cart`, { headers: authHeaders() })
-      if (!res.ok) return
-      const data = await res.json()
-      if (data.success && Array.isArray(data.data?.items)) {
-        // Calculate total quantity of all items in cart
-        const totalQuantity = data.data.items.reduce((total: number, item: CartItem) => total + item.quantity, 0)
-        setCartCount(totalQuantity)
-      } else if (data.success && typeof data.data?.totalItems === "number") {
-        setCartCount(data.data.totalItems)
-      }
-    } catch (err) {
-      console.error("Error fetching cart count:", err)
-    }
-  }, [API_BASE])
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!mounted) return
-    
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-    
-    if (token) {
-      if (!user && !userLoading) {
-        dispatch(fetchUser())
-      }
-      
-      fetchWishlistCount()
-      fetchCartCount()
-    } else {
-      setWishlistCount(0)
-      setCartCount(0)
+
+    if (!user && !userLoading && isAuthenticated) {
+      dispatch(fetchUser())
     }
-  }, [mounted, dispatch, user, userLoading, fetchWishlistCount, fetchCartCount])
-
-  useEffect(() => {
-    if (!mounted || !isAuthenticated) return
-
-    const interval = setInterval(() => {
-      fetchWishlistCount()
-      fetchCartCount()
-    }, 30000) // Refresh every 30 seconds
-
-    return () => clearInterval(interval)
-  }, [mounted, isAuthenticated, fetchWishlistCount, fetchCartCount])
+  }, [mounted, dispatch, user, userLoading, isAuthenticated])
 
   const handleLogout = async () => {
-    try {
-      // Call backend logout API to clear server-side session
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (error) {
-      console.error('Error during logout API call:', error);
-      // Continue with client-side logout even if API call fails
-    }
-
-    // Clear client-side storage
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem("token")
-      sessionStorage.removeItem("token")
-      localStorage.removeItem("user")
-      sessionStorage.removeItem("user")
-      
-      // Clear auth cookie
-      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    }
-    
-    // Clear user data in Redux
-    dispatch(clearUser())
-    setWishlistCount(0)
-    setCartCount(0)
-    setUserMenuOpen(false)
-    router.push("/login")
+    setUserMenuOpen(false);
+    setMobileUserMenuOpen(false);
+    await logout('/login');
   }
 
   const getUserInitials = (name: string) => {
@@ -890,11 +813,11 @@ export const Navbar5 = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Menu Items */}
                       <div className="p-2">
                         <Link
-                          href="/profile"
+                          href="/dashboard"
                           className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
                         >
@@ -1095,11 +1018,11 @@ export const Navbar5 = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Menu Items */}
                         <div className="py-2">
                           <Link
-                            href="/profile"
+                            href="/dashboard"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >

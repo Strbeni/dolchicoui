@@ -16,6 +16,8 @@ import {
   selectUserLoading,
   selectUserError
 } from "@/lib/store/userSlice";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useLogout } from "@/hooks/useLogout";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
@@ -23,9 +25,8 @@ const toast = (msg: string, ok = true) => {
   if (typeof window === 'undefined') return;
   const el = document.createElement('div');
   el.textContent = msg;
-  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 transition-all duration-300 ${
-    ok ? 'bg-green-600' : 'bg-red-600'
-  }`;
+  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 transition-all duration-300 ${ok ? 'bg-green-600' : 'bg-red-600'
+    }`;
   document.body.appendChild(el);
   setTimeout(() => {
     el.classList.add('opacity-0', 'translate-x-full');
@@ -36,6 +37,12 @@ const toast = (msg: string, ok = true) => {
 export default function AccountSettings() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const logout = useLogout();
+
+  const { isAuthorized, isLoading: authLoading } = useAuthGuard({
+    requireAuth: true,
+    redirectTo: '/login'
+  });
 
   const user = useAppSelector(selectUser);
   const userLoading = useAppSelector(selectUserLoading);
@@ -388,9 +395,7 @@ export default function AccountSettings() {
 
       if (response.ok) {
         toast("Account deleted successfully. Redirecting to home screen.");
-        localStorage.removeItem('token');
-        sessionStorage.removeItem('token');
-        router.push("/");
+        await logout('/');
       } else {
         const data = await response.json();
         toast(data.error || 'Invalid OTP', false);
@@ -552,6 +557,18 @@ export default function AccountSettings() {
       setPhoneVerifyLoading(false);
     }
   };
+
+  // Show loading if authentication is being checked
+  if (authLoading || !isAuthorized) {
+    return (
+      <div className="flex min-h-screen bg-gray-100 p-6 items-center justify-center">
+        <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-[#d9673f] border-t-transparent rounded-full animate-spin" />
+          <span className="text-gray-700 font-medium">Loading your profile...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100 p-6">
@@ -740,7 +757,7 @@ export default function AccountSettings() {
                             )}
                           </Button>
                         </div>
-                        
+
                         {showEmailOtpContact && (
                           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                             <h4 className="text-sm font-medium text-gray-700 mb-3">Verification Code</h4>
@@ -782,7 +799,7 @@ export default function AccountSettings() {
                                 />
                               ))}
                             </div>
-                            <Button 
+                            <Button
                               type="button"
                               onClick={handleVerifyEmailOtpContact}
                               disabled={emailVerifyLoading}
@@ -870,7 +887,7 @@ export default function AccountSettings() {
                                 />
                               ))}
                             </div>
-                            <Button 
+                            <Button
                               type="button"
                               onClick={handleVerifyPhoneOtp}
                               disabled={phoneVerifyLoading}
@@ -953,7 +970,7 @@ export default function AccountSettings() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-6">                      
+                    <div className="space-y-6">
                       <form className="grid grid-cols-1 gap-6" onSubmit={handleResetPassword}>
                         <div>
                           <Label>OTP sent to {email}</Label>

@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trash2, Heart, Plus, Minus, Share, X, ChevronDown, Check, ShoppingBag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 // Types matching your API response
-type Product = { 
-  name: string; 
+type Product = {
+  name: string;
   image: string[];
   id?: number;
   price?: number;
@@ -52,9 +53,8 @@ const authHeaders = () => {
 const showToast = (msg, success = true) => {
   const el = document.createElement('div');
   el.textContent = msg;
-  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 ${
-    success ? 'bg-green-600' : 'bg-red-600'
-  }`;
+  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 ${success ? 'bg-green-600' : 'bg-red-600'
+    }`;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);
 };
@@ -69,6 +69,13 @@ const availableCoupons = [
 
 export default function ShoppingCartComplete() {
   const router = useRouter();
+
+  // Authentication guard - redirect to login if not authenticated
+  const { isAuthorized, isLoading: authLoading } = useAuthGuard({
+    requireAuth: true,
+    redirectTo: '/login'
+  });
+
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState(new Set()); // Track selected items
   const [summary, setSummary] = useState({ totalItems: 0, subtotal: 0 });
@@ -84,7 +91,7 @@ export default function ShoppingCartComplete() {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [wishlistItems, setWishlistItems] = useState(new Set());
   const [addingToWishlist, setAddingToWishlist] = useState(null);
-  
+
   // Delete confirmation modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -133,7 +140,13 @@ export default function ShoppingCartComplete() {
     try {
       setLoading(true);
       setError('');
-      
+
+      // Check authentication before making the request
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to view your cart');
+      }
+
       const res = await fetch(`${API_BASE}/api/cart`, {
         method: 'GET',
         headers: authHeaders(),
@@ -141,29 +154,41 @@ export default function ShoppingCartComplete() {
 
       if (!res.ok) {
         if (res.status === 401) {
+          // Clear invalid tokens and redirect to login
+          localStorage.removeItem('token');
+          sessionStorage.removeItem('token');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('user');
+          document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
           throw new Error('Please login to view your cart');
         }
         throw new Error(`Failed to fetch cart: ${res.status}`);
       }
 
       const response = await res.json();
-      
+
       if (!response.success) {
         throw new Error(response.message || 'API returned success: false');
       }
-      
+
       const { data } = response;
       const cartItems = data.items || [];
-      
+
       // Select all items by default when cart loads
       const allItemIds = new Set(cartItems.map(item => item.id));
       setItems(cartItems);
       setSelectedItems(allItemIds);
       setSummary(calculateSummary(cartItems, allItemIds));
-      
+
     } catch (err) {
       console.error('Cart fetch error:', err);
-      setError(`Failed to load cart: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Failed to load cart: ${errorMessage}`);
+
+      // If it's an authentication error, redirect to login
+      if (errorMessage.includes('Please login')) {
+        router.push('/login');
+      }
     } finally {
       setLoading(false);
     }
@@ -205,10 +230,10 @@ export default function ShoppingCartComplete() {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (!token) return;
 
-      const res = await fetch(`${API_BASE}/api/user/wishlist`, { 
-        headers: authHeaders() 
+      const res = await fetch(`${API_BASE}/api/user/wishlist`, {
+        headers: authHeaders()
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.data?.wishlist)) {
@@ -224,21 +249,24 @@ export default function ShoppingCartComplete() {
   }, []);
 
   useEffect(() => {
-    fetchCart();
-    fetchProducts();
-    fetchWishlist();
+    // Only fetch cart if user is authenticated and not loading
+    if (isAuthorized && !authLoading) {
+      fetchCart();
+      fetchProducts();
+      fetchWishlist();
+    }
     // Coupon sync from localStorage
     const storedCoupon = localStorage.getItem("appliedCoupon");
     if (storedCoupon) {
       setAppliedCoupon(JSON.parse(storedCoupon));
     }
-  }, [fetchCart, fetchProducts, fetchWishlist]);
+  }, [isAuthorized, authLoading, fetchCart, fetchProducts, fetchWishlist]);
 
   // Update quantity
   const updateQuantity = async (cartItemId, newQuantity) => {
     try {
       setUpdating(cartItemId);
-      
+
       const res = await fetch(`${API_BASE}/api/cart/items/${cartItemId}`, {
         method: 'PUT',
         headers: authHeaders(),
@@ -251,7 +279,7 @@ export default function ShoppingCartComplete() {
       }
 
       // Update local state immediately
-      const updatedItems = items.map(item => 
+      const updatedItems = items.map(item =>
         item.id === cartItemId ? { ...item, quantity: newQuantity } : item
       );
       setItems(updatedItems);
@@ -269,7 +297,7 @@ export default function ShoppingCartComplete() {
   const removeItem = async (cartItemId) => {
     try {
       setUpdating(cartItemId);
-      
+
       const res = await fetch(`${API_BASE}/api/cart/items/${cartItemId}`, {
         method: 'DELETE',
         headers: authHeaders(),
@@ -284,11 +312,11 @@ export default function ShoppingCartComplete() {
       const updatedItems = items.filter(item => item.id !== cartItemId);
       const updatedSelected = new Set(selectedItems);
       updatedSelected.delete(cartItemId);
-      
+
       setItems(updatedItems);
       setSelectedItems(updatedSelected);
       setSummary(calculateSummary(updatedItems, updatedSelected));
-      
+
       setShowDeleteModal(false);
       setItemToDelete(null);
       showToast('Item removed from cart');
@@ -305,12 +333,12 @@ export default function ShoppingCartComplete() {
   const saveForLater = async (cartItemId) => {
     try {
       setUpdating(cartItemId);
-      
+
       // In a real implementation, you'd call an API to save the item
       // For now, we'll just remove it from cart and show a message
       await removeItem(cartItemId);
       showToast('Item saved for later');
-      
+
     } catch (error) {
       console.error('Failed to save item for later:', error);
       showToast('Failed to save item for later', false);
@@ -323,9 +351,9 @@ export default function ShoppingCartComplete() {
   const handleQuantityChange = async (cartItemId, delta) => {
     const item = items.find(i => i.id === cartItemId);
     if (!item) return;
-    
+
     const newQuantity = Math.max(0, item.quantity + delta);
-    
+
     if (newQuantity === 0) {
       setItemToDelete({ id: cartItemId, action: 'delete' });
       setShowDeleteModal(true);
@@ -365,7 +393,7 @@ export default function ShoppingCartComplete() {
   // Handle checkout
   const handleCheckout = async () => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    
+
     if (!token) {
       showToast('Please login to proceed with checkout', false);
       router.push('/login');
@@ -378,7 +406,7 @@ export default function ShoppingCartComplete() {
     }
 
     const selectedCartItems = items.filter(item => selectedItems.has(item.id));
-    
+
     if (selectedCartItems.length === 0) {
       showToast('Please select items to checkout', false);
       return;
@@ -463,7 +491,7 @@ export default function ShoppingCartComplete() {
     setCouponLoading(true);
     try {
       const coupon = availableCoupons.find(c => c.code.toLowerCase() === code.toLowerCase());
-      
+
       if (!coupon) {
         throw new Error('Invalid coupon code');
       }
@@ -505,6 +533,18 @@ export default function ShoppingCartComplete() {
   const deliveryCharges = 0; // Free delivery
   const total = Math.max(0, subtotal - discount + deliveryCharges);
 
+  // Show loading if authentication is being checked
+  if (authLoading || !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -521,15 +561,26 @@ export default function ShoppingCartComplete() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={() => {
-              setError('');
-              fetchCart();
-            }}
-            className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
-          >
-            Try Again
-          </button>
+          <div className="space-x-4">
+            {error.includes('Please login') ? (
+              <button
+                onClick={() => router.push('/login')}
+                className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+              >
+                Go to Login
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setError('');
+                  fetchCart();
+                }}
+                className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+              >
+                Try Again
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -548,8 +599,8 @@ export default function ShoppingCartComplete() {
               {itemToDelete?.action === 'saveForLater' ? 'Save for Later?' : 'Remove from Cart?'}
             </h3>
             <p className="text-gray-600 mb-6">
-              {itemToDelete?.action === 'saveForLater' 
-                ? 'Do you want to save this item for later?' 
+              {itemToDelete?.action === 'saveForLater'
+                ? 'Do you want to save this item for later?'
                 : 'Do you want to remove this item from cart?'
               }
             </p>
@@ -571,7 +622,7 @@ export default function ShoppingCartComplete() {
               </button>
             </div>
             <div className="mt-4 p-2 font-bold h-[40px] border-2 border-[#B8B8B8] bg-[#FFFFFF] rounded-lg">
-              <button 
+              <button
                 onClick={async () => {
                   if (itemToDelete?.action === 'saveForLater') {
                     // Switch to delete action
@@ -604,8 +655,8 @@ export default function ShoppingCartComplete() {
             {items.length > 0 && (
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center space-x-2">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="w-4 h-4 text-orange-500 border-gray-300 rounded"
                     checked={allSelected}
                     onChange={(e) => handleSelectAll(e.target.checked)}
@@ -630,8 +681,8 @@ export default function ShoppingCartComplete() {
                     <div className="flex items-start space-x-3">
                       {/* Checkbox */}
                       <div className="flex-shrink-0 pt-1">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           className="w-4 h-4 text-orange-500 border-gray-300 rounded"
                           checked={selectedItems.has(item.id)}
                           onChange={(e) => handleItemSelect(item.id, e.target.checked)}
@@ -640,9 +691,9 @@ export default function ShoppingCartComplete() {
 
                       {/* Product Image - Clickable */}
                       <div className="flex-shrink-0">
-                        <img 
-                          src={Array.isArray(item.product.image) ? item.product.image[0] : item.product.image || '/api/placeholder/80/100'} 
-                          alt={item.product.name} 
+                        <img
+                          src={Array.isArray(item.product.image) ? item.product.image[0] : item.product.image || '/api/placeholder/80/100'}
+                          alt={item.product.name}
                           className="w-16 h-20 object-cover rounded cursor-pointer hover:opacity-80"
                           onClick={() => handleProductClick(item.productId)}
                         />
@@ -650,7 +701,7 @@ export default function ShoppingCartComplete() {
 
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
-                        <h3 
+                        <h3
                           className="font-medium text-sm line-clamp-2 mb-1 cursor-pointer hover:text-orange-500"
                           onClick={() => handleProductClick(item.productId)}
                         >
@@ -658,7 +709,7 @@ export default function ShoppingCartComplete() {
                         </h3>
                         <p className="text-xs text-gray-500 mb-1">Color: White</p>
                         <p className="text-xs text-gray-500 mb-2">Size: {item.size}</p>
-                        
+
                         {/* Price */}
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="font-bold">₹{item.price.toLocaleString()}</span>
@@ -670,7 +721,7 @@ export default function ShoppingCartComplete() {
                         {/* Quantity Controls */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <button 
+                            <button
                               onClick={() => handleQuantityChange(item.id, -1)}
                               disabled={updating === item.id}
                               className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-50"
@@ -680,7 +731,7 @@ export default function ShoppingCartComplete() {
                             <span className="text-sm font-medium min-w-[20px] text-center">
                               {updating === item.id ? '...' : item.quantity}
                             </span>
-                            <button 
+                            <button
                               onClick={() => handleQuantityChange(item.id, 1)}
                               disabled={updating === item.id}
                               className="w-6 h-6 flex items-center justify-center border rounded text-sm disabled:opacity-50"
@@ -691,7 +742,7 @@ export default function ShoppingCartComplete() {
 
                           {/* Actions */}
                           <div className="flex items-center space-x-3">
-                            <button 
+                            <button
                               onClick={() => handleDeleteClick(item.id)}
                               disabled={updating === item.id}
                               className="text-gray-400 disabled:opacity-50"
@@ -709,13 +760,13 @@ export default function ShoppingCartComplete() {
 
                         {/* Save for later / Delete */}
                         <div className="flex items-center space-x-4 mt-2 pt-2 border-t">
-                          <button 
+                          <button
                             onClick={() => handleDeleteClick(item.id)}
                             className="text-xs text-gray-600 hover:text-red-600"
                           >
                             Delete
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleSaveForLaterClick(item.id)}
                             className="text-xs text-gray-600 hover:text-blue-600"
                           >
@@ -752,7 +803,7 @@ export default function ShoppingCartComplete() {
                     {appliedCoupon ? (
                       <span className="text-green-600">-₹{discount.toLocaleString()}</span>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => setShowMobileCoupons(true)}
                         className="text-orange-500 text-xs"
                       >
@@ -774,8 +825,8 @@ export default function ShoppingCartComplete() {
                   <span>₹{total.toLocaleString()}</span>
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={handleCheckout}
                 disabled={selectedCount === 0}
                 className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium mt-4 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -792,27 +843,26 @@ export default function ShoppingCartComplete() {
                 <h2 className="text-lg font-semibold">Save up to ₹120 with this cloths. Shop now!</h2>
                 <button className="text-orange-500 text-sm">View All</button>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 {recommendedProducts.slice(0, 4).map((product) => (
                   <div key={product.id} className="bg-white rounded-lg p-3 shadow-sm">
                     <div className="relative mb-2">
-                      <img 
-                        src={product.image || '/api/placeholder/150/180'} 
-                        alt={product.name} 
+                      <img
+                        src={product.image || '/api/placeholder/150/180'}
+                        alt={product.name}
                         className="w-full h-36 object-cover rounded cursor-pointer"
                         onClick={() => handleProductClick(product.id)}
                       />
                       <button
                         onClick={() => handleWishlistToggle(product)}
                         disabled={addingToWishlist === product.id}
-                        className={`absolute top-1 right-1 p-1 rounded-full bg-white shadow ${
-                          wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400'
-                        }`}
+                        className={`absolute top-1 right-1 p-1 rounded-full bg-white shadow ${wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400'
+                          }`}
                       >
-                        <Heart 
-                          className="w-3 h-3" 
-                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'} 
+                        <Heart
+                          className="w-3 h-3"
+                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'}
                         />
                       </button>
                       {product.isNew && (
@@ -821,9 +871,9 @@ export default function ShoppingCartComplete() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="space-y-1">
-                      <h3 
+                      <h3
                         className="font-medium text-xs line-clamp-2 cursor-pointer hover:text-orange-500"
                         onClick={() => handleProductClick(product.id)}
                       >
@@ -849,33 +899,32 @@ export default function ShoppingCartComplete() {
                 <h2 className="text-lg font-semibold">Frequently bought together with Long Sleeve Oversize</h2>
                 <button className="text-orange-500 text-sm">View All</button>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 {recommendedProducts.slice(0, 4).map((product) => (
                   <div key={`freq-${product.id}`} className="bg-white rounded-lg p-3 shadow-sm">
                     <div className="relative mb-2">
-                      <img 
-                        src={product.image || '/api/placeholder/150/180'} 
-                        alt={product.name} 
+                      <img
+                        src={product.image || '/api/placeholder/150/180'}
+                        alt={product.name}
                         className="w-full h-36 object-cover rounded cursor-pointer"
                         onClick={() => handleProductClick(product.id)}
                       />
                       <button
                         onClick={() => handleWishlistToggle(product)}
                         disabled={addingToWishlist === product.id}
-                        className={`absolute top-1 right-1 p-1 rounded-full bg-white shadow ${
-                          wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400'
-                        }`}
+                        className={`absolute top-1 right-1 p-1 rounded-full bg-white shadow ${wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400'
+                          }`}
                       >
-                        <Heart 
-                          className="w-3 h-3" 
-                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'} 
+                        <Heart
+                          className="w-3 h-3"
+                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'}
                         />
                       </button>
                     </div>
-                    
+
                     <div className="space-y-1">
-                      <h3 
+                      <h3
                         className="font-medium text-xs line-clamp-2 cursor-pointer hover:text-orange-500"
                         onClick={() => handleProductClick(product.id)}
                       >
@@ -910,7 +959,7 @@ export default function ShoppingCartComplete() {
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-                
+
                 <div className="p-4">
                   {/* Coupon Input */}
                   <div className="flex space-x-2 mb-4">
@@ -939,8 +988,8 @@ export default function ShoppingCartComplete() {
                           <div className="flex-1">
                             <h4 className="font-medium text-sm">{appliedCoupon.code}</h4>
                             <p className="text-xs text-gray-600">
-                              {appliedCoupon.type === 'percentage' 
-                                ? `${appliedCoupon.discount}% OFF` 
+                              {appliedCoupon.type === 'percentage'
+                                ? `${appliedCoupon.discount}% OFF`
                                 : `₹${appliedCoupon.discount.toLocaleString()} OFF`
                               }
                             </p>
@@ -959,8 +1008,8 @@ export default function ShoppingCartComplete() {
                           <div>
                             <h4 className="font-medium text-sm">{coupon.code}</h4>
                             <p className="text-xs text-gray-600">
-                              {coupon.type === 'percentage' 
-                                ? `${coupon.discount}% OFF` 
+                              {coupon.type === 'percentage'
+                                ? `${coupon.discount}% OFF`
                                 : `₹${coupon.discount.toLocaleString()} OFF`
                               }
                             </p>
@@ -968,7 +1017,7 @@ export default function ShoppingCartComplete() {
                               <p className="text-xs text-gray-500">Min order: ₹{coupon.minAmount.toLocaleString()}</p>
                             )}
                           </div>
-                          <button 
+                          <button
                             onClick={() => applyCoupon(coupon.code)}
                             className="text-orange-500 text-xs border border-orange-300 px-3 py-1 rounded hover:bg-orange-50"
                           >
@@ -994,8 +1043,8 @@ export default function ShoppingCartComplete() {
                 {items.length > 0 && (
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="w-5 h-5 text-orange-500 border-gray-300 rounded"
                         checked={allSelected}
                         onChange={(e) => handleSelectAll(e.target.checked)}
@@ -1005,7 +1054,7 @@ export default function ShoppingCartComplete() {
                   </div>
                 )}
               </div>
-              
+
               {items.length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-lg">
                   <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -1016,24 +1065,24 @@ export default function ShoppingCartComplete() {
                   {items.map((item, index) => (
                     <div key={item.id} className={`flex items-start space-x-4 p-6 ${index !== items.length - 1 ? 'border-b' : ''}`}>
                       {/* Checkbox */}
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="w-5 h-5 text-orange-500 border-gray-300 rounded mt-1"
                         checked={selectedItems.has(item.id)}
                         onChange={(e) => handleItemSelect(item.id, e.target.checked)}
                       />
-                      
+
                       {/* Product Image - Clickable */}
-                      <img 
-                        src={Array.isArray(item.product.image) ? item.product.image[0] : item.product.image || '/api/placeholder/120/150'} 
-                        alt={item.product.name} 
+                      <img
+                        src={Array.isArray(item.product.image) ? item.product.image[0] : item.product.image || '/api/placeholder/120/150'}
+                        alt={item.product.name}
                         className="w-24 h-32 object-cover rounded cursor-pointer hover:opacity-80"
                         onClick={() => handleProductClick(item.productId)}
                       />
-                      
+
                       {/* Product Details */}
                       <div className="flex-1">
-                        <h3 
+                        <h3
                           className="font-medium text-lg mb-2 cursor-pointer hover:text-orange-500"
                           onClick={() => handleProductClick(item.productId)}
                         >
@@ -1044,7 +1093,7 @@ export default function ShoppingCartComplete() {
                           <p>Size: {item.size}</p>
                           <p>SKU: 138 GB</p>
                         </div>
-                        
+
                         {/* Price */}
                         <div className="flex items-center space-x-3 mt-3 mb-4">
                           <span className="text-2xl font-bold">₹{item.price.toLocaleString()}</span>
@@ -1056,7 +1105,7 @@ export default function ShoppingCartComplete() {
                         {/* Quantity Controls */}
                         <div className="flex items-center space-x-4">
                           <div className="flex items-center space-x-2">
-                            <button 
+                            <button
                               onClick={() => handleQuantityChange(item.id, -1)}
                               disabled={updating === item.id}
                               className="w-8 h-8 flex items-center justify-center border rounded disabled:opacity-50 hover:bg-gray-50"
@@ -1066,7 +1115,7 @@ export default function ShoppingCartComplete() {
                             <span className="text-lg font-medium min-w-[30px] text-center">
                               {updating === item.id ? '...' : item.quantity}
                             </span>
-                            <button 
+                            <button
                               onClick={() => handleQuantityChange(item.id, 1)}
                               disabled={updating === item.id}
                               className="w-8 h-8 flex items-center justify-center border rounded disabled:opacity-50 hover:bg-gray-50"
@@ -1077,7 +1126,7 @@ export default function ShoppingCartComplete() {
 
                           {/* Action Buttons */}
                           <div className="flex items-center space-x-4">
-                            <button 
+                            <button
                               onClick={() => handleDeleteClick(item.id)}
                               disabled={updating === item.id}
                               className="flex items-center space-x-1 text-gray-500 hover:text-red-500 disabled:opacity-50"
@@ -1085,7 +1134,7 @@ export default function ShoppingCartComplete() {
                               <Trash2 className="w-4 h-4" />
                               <span>Delete</span>
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleSaveForLaterClick(item.id)}
                               className="flex items-center space-x-1 text-gray-500 hover:text-blue-500"
                             >
@@ -1109,14 +1158,14 @@ export default function ShoppingCartComplete() {
             <div className="w-96">
               <div className="bg-white rounded-lg p-6 sticky top-6">
                 <h2 className="text-xl font-semibold mb-6">Order summary</h2>
-                
+
                 {/* Summary Details */}
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span>Contact ({summary.totalItems} items)</span>
                     <span>₹{subtotal.toLocaleString()}</span>
                   </div>
-                  
+
                   <div className="flex justify-between">
                     <span>Delivery charges</span>
                     <span className="text-green-600">Free Delivery</span>
@@ -1126,7 +1175,7 @@ export default function ShoppingCartComplete() {
                     {appliedCoupon ? (
                       <span className="text-green-600">-₹{discount.toLocaleString()}</span>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => setShowPromoInput(true)}
                         className="text-orange-500 hover:text-orange-600"
                       >
@@ -1134,7 +1183,7 @@ export default function ShoppingCartComplete() {
                       </button>
                     )}
                   </div>
-                  
+
                   {appliedCoupon && (
                     <div className="flex justify-between items-center bg-green-50 px-3 py-2 rounded">
                       <span className="text-green-700 text-xs">COUPON APPLIED</span>
@@ -1143,7 +1192,7 @@ export default function ShoppingCartComplete() {
                       </button>
                     </div>
                   )}
-                  
+
                   <div className="border-t pt-3">
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Estimated total</span>
@@ -1171,21 +1220,21 @@ export default function ShoppingCartComplete() {
                         {couponLoading ? 'Applying...' : 'Apply'}
                       </button>
                     </div>
-                    
+
                     {/* Available Coupons */}
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-gray-700">Available offers:</p>
                       {availableCoupons.map((coupon) => (
-                        <div 
-                          key={coupon.code} 
+                        <div
+                          key={coupon.code}
                           className="flex justify-between items-center p-2 border rounded cursor-pointer hover:bg-gray-50"
                           onClick={() => applyCoupon(coupon.code)}
                         >
                           <div>
                             <span className="font-medium text-sm">{coupon.code}</span>
                             <p className="text-xs text-gray-600">
-                              {coupon.type === 'percentage' 
-                                ? `${coupon.discount}% OFF` 
+                              {coupon.type === 'percentage'
+                                ? `${coupon.discount}% OFF`
                                 : `₹${coupon.discount.toLocaleString()} OFF`
                               }
                             </p>
@@ -1199,8 +1248,8 @@ export default function ShoppingCartComplete() {
                         </div>
                       ))}
                     </div>
-                    
-                    <button 
+
+                    <button
                       onClick={() => setShowPromoInput(false)}
                       className="w-full text-center text-xs text-gray-500 mt-2"
                     >
@@ -1209,7 +1258,7 @@ export default function ShoppingCartComplete() {
                   </div>
                 )}
 
-                <button 
+                <button
                   onClick={handleCheckout}
                   disabled={selectedCount === 0}
                   className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium mt-6 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1245,27 +1294,26 @@ export default function ShoppingCartComplete() {
                 <h2 className="text-xl font-semibold">Save up to ₹120 with this cloths. Shop now!</h2>
                 <button className="text-orange-500 text-sm hover:text-orange-600">View All</button>
               </div>
-              
+
               <div className="grid grid-cols-4 gap-4">
                 {recommendedProducts.map((product) => (
                   <div key={product.id} className="bg-white rounded-lg p-4 border hover:shadow-md transition-shadow">
                     <div className="relative mb-3">
-                      <img 
-                        src={product.image || '/api/placeholder/200/240'} 
-                        alt={product.name} 
+                      <img
+                        src={product.image || '/api/placeholder/200/240'}
+                        alt={product.name}
                         className="w-full h-48 object-cover rounded cursor-pointer hover:opacity-80"
                         onClick={() => handleProductClick(product.id)}
                       />
                       <button
                         onClick={() => handleWishlistToggle(product)}
                         disabled={addingToWishlist === product.id}
-                        className={`absolute top-2 right-2 p-1.5 rounded-full bg-white shadow ${
-                          wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
-                        }`}
+                        className={`absolute top-2 right-2 p-1.5 rounded-full bg-white shadow ${wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
+                          }`}
                       >
-                        <Heart 
-                          className="w-4 h-4" 
-                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'} 
+                        <Heart
+                          className="w-4 h-4"
+                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'}
                         />
                       </button>
                       {product.isNew && (
@@ -1274,9 +1322,9 @@ export default function ShoppingCartComplete() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
-                      <h3 
+                      <h3
                         className="font-medium text-sm cursor-pointer hover:text-orange-500"
                         onClick={() => handleProductClick(product.id)}
                       >
@@ -1302,33 +1350,32 @@ export default function ShoppingCartComplete() {
                 <h2 className="text-xl font-semibold">Frequently bought together with Long Sleeve Oversize</h2>
                 <button className="text-orange-500 text-sm hover:text-orange-600">View All</button>
               </div>
-              
+
               <div className="grid grid-cols-4 gap-4">
                 {recommendedProducts.slice(0, 4).map((product) => (
                   <div key={`freq-${product.id}`} className="bg-white rounded-lg p-4 border hover:shadow-md transition-shadow">
                     <div className="relative mb-3">
-                      <img 
-                        src={product.image || '/api/placeholder/200/240'} 
-                        alt={product.name} 
+                      <img
+                        src={product.image || '/api/placeholder/200/240'}
+                        alt={product.name}
                         className="w-full h-48 object-cover rounded cursor-pointer hover:opacity-80"
                         onClick={() => handleProductClick(product.id)}
                       />
                       <button
                         onClick={() => handleWishlistToggle(product)}
                         disabled={addingToWishlist === product.id}
-                        className={`absolute top-2 right-2 p-1.5 rounded-full bg-white shadow ${
-                          wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
-                        }`}
+                        className={`absolute top-2 right-2 p-1.5 rounded-full bg-white shadow ${wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
+                          }`}
                       >
-                        <Heart 
-                          className="w-4 h-4" 
-                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'} 
+                        <Heart
+                          className="w-4 h-4"
+                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'}
                         />
                       </button>
                     </div>
-                    
+
                     <div className="space-y-2">
-                      <h3 
+                      <h3
                         className="font-medium text-sm cursor-pointer hover:text-orange-500"
                         onClick={() => handleProductClick(product.id)}
                       >

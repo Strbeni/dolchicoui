@@ -3,8 +3,17 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image"
 import Link from "next/link"
-import {useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Check, Heart, ChevronDown, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react"
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+import {
+  addToWishlist,
+  removeFromWishlist,
+  selectWishlistItems,
+  selectIsInWishlist
+} from "@/lib/store/wishlistSlice";
+import { useNavbarCounts } from "@/contexts/NavbarCountsContext";
+import { useLoading } from "@/contexts/LoadingContext";
 
 interface Product {
   id: number
@@ -48,14 +57,25 @@ const showToast = (msg: string, success = true) => {
   if (typeof window === "undefined") return
   const el = document.createElement("div")
   el.textContent = msg
-  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 ${
-    success ? "bg-green-600" : "bg-red-600"
-  }`
+  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 ${success ? "bg-green-600" : "bg-red-600"
+    }`
   document.body.appendChild(el)
   setTimeout(() => el.remove(), 3000)
 }
 
 export default function ProductListClient({ category = "Men" }: ProductListClientProps) {
+  const router = useRouter()
+  const dispatch = useAppDispatch()
+
+  // Redux wishlist for unauthenticated users
+  const reduxWishlistItems = useAppSelector(selectWishlistItems)
+
+  // Context for refreshing navbar counts
+  const { refreshWishlistCount } = useNavbarCounts()
+
+  // Global loading context
+  const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading()
+
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -70,21 +90,27 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   const [sortBy, setSortBy] = useState("Newest")
   const [addingToCart, setAddingToCart] = useState<number | null>(null)
   const [addedToCart, setAddedToCart] = useState<number | null>(null)
-  const [wishlistItems, setWishlistItems] = useState<Set<number>>(new Set())
+  const [apiWishlistItems, setApiWishlistItems] = useState<Set<number>>(new Set()) // For authenticated users
   const [addingToWishlist, setAddingToWishlist] = useState<number | null>(null)
   const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [expandedFilterSection, setExpandedFilterSection] = useState<string | null>(null)
 
-    // Cart count state - used for fetching cart items count
-    const [cartCount, setCartCount] = useState<number>(0)
+  // Cart count state - used for fetching cart items count
+  const [cartCount, setCartCount] = useState<number>(0)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(12) // 12 items per page for better mobile experience
 
-  // Cart count state - used for fetching cart items count
+  // Determine authentication status
+  const isAuthenticated = () => {
+    if (typeof window === "undefined") return false
+    return !!(localStorage.getItem("token") || sessionStorage.getItem("token"))
+  }
 
-  // const searchParams = useSearchParams() // Removed unused variable
-  const router = useRouter()
+  // Get wishlist items based on authentication status
+  const wishlistItems = isAuthenticated()
+    ? apiWishlistItems
+    : new Set(reduxWishlistItems.map(item => item.id))
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -160,8 +186,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   }, [cartCount])
 
   useEffect(() => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-    if (!token) return
+    if (!isAuthenticated()) return // Only fetch wishlist for authenticated users
 
     // Fetch wishlist
     const fetchWishlistStatus = async () => {
@@ -173,7 +198,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
           const wishlistProductIds = new Set<number>(
             (data.data.wishlist as WishlistEntry[]).map((item) => item.productId),
           )
-          setWishlistItems(wishlistProductIds)
+          setApiWishlistItems(wishlistProductIds)
         }
       } catch (err) {
         console.error("[v0] Error fetching wishlist:", err)
@@ -320,52 +345,73 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   }
 
   const handleWishlistToggle = async (product: Product) => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-    if (!token) {
-      router.push("/login")
-      return
-    }
-
+    const isAuth = isAuthenticated()
     const isInWishlist = wishlistItems.has(product.id)
     setAddingToWishlist(product.id)
 
     try {
-      if (isInWishlist) {
-        const response = await fetch(`${API_BASE}/api/user/wishlist/${product.id}`, {
-          method: "DELETE",
-          headers: authHeaders(),
-        })
+      if (isAuth) {
+        // Authenticated user - use API with global loading
+        setLoadingMessage(isInWishlist ? "Removing from wishlist..." : "Adding to wishlist...")
+        setGlobalLoading(true)
 
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.message || "Failed to remove from wishlist")
+        if (isInWishlist) {
+          const response = await fetch(`${API_BASE}/api/user/wishlist/${product.id}`, {
+            method: "DELETE",
+            headers: authHeaders(),
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.message || "Failed to remove from wishlist")
+          }
+
+          setApiWishlistItems((prev) => {
+            const next = new Set(prev)
+            next.delete(product.id)
+            return next
+          })
+          showToast("Removed from wishlist!")
+          // Refresh navbar count
+          refreshWishlistCount()
+        } else {
+          const response = await fetch(`${API_BASE}/api/user/wishlist`, {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ productId: product.id }),
+          })
+
+          if (!response.ok) {
+            const errorData = await response.json()
+            throw new Error(errorData.message || "Failed to add to wishlist")
+          }
+
+          setApiWishlistItems((prev) => new Set([...prev, product.id]))
+          showToast("Added to wishlist!")
+          // Refresh navbar count
+          refreshWishlistCount()
         }
-
-        setWishlistItems((prev) => {
-          const next = new Set(prev)
-          next.delete(product.id)
-          return next
-        })
-        showToast("Removed from wishlist!")
       } else {
-        const response = await fetch(`${API_BASE}/api/user/wishlist`, {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({ productId: product.id }),
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.message || "Failed to add to wishlist")
+        // Unauthenticated user - use Redux
+        if (isInWishlist) {
+          dispatch(removeFromWishlist(product.id))
+          showToast("Removed from wishlist!")
+        } else {
+          dispatch(addToWishlist({
+            ...product,
+            bestseller: product.badge === "bestseller" || false,
+            createdAt: new Date().toISOString()
+          }))
+          showToast("Added to wishlist!")
         }
-
-        setWishlistItems((prev) => new Set([...prev, product.id]))
-        showToast("Added to wishlist!")
       }
     } catch (error) {
       console.error("[v0] Wishlist toggle error:", error)
       showToast(error instanceof Error ? error.message : "Wishlist operation failed", false)
     } finally {
+      if (isAuth) {
+        setGlobalLoading(false)
+      }
       setAddingToWishlist(null)
     }
   }
@@ -502,7 +548,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
           <Link
             href={`/${category.toLowerCase()}`}
             className="hover:text-black truncate"
-            >
+          >
             {category}
           </Link>
           <span>›</span>
@@ -558,11 +604,10 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                 <button
                   key={size}
                   onClick={() => handleSizeFilter(size)}
-                  className={`px-3 py-1 border text-sm transition-colors ${
-                    selectedSizes.includes(size)
+                  className={`px-3 py-1 border text-sm transition-colors ${selectedSizes.includes(size)
                       ? "bg-black text-white border-black"
                       : "border-gray-300 hover:border-black"
-                  }`}
+                    }`}
                 >
                   {size}
                 </button>
@@ -581,11 +626,10 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                 <button
                   key={color.name}
                   onClick={() => handleColorFilter(color.name)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    selectedColors.includes(color.name)
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColors.includes(color.name)
                       ? "border-black scale-110"
                       : "border-gray-300 hover:border-gray-400"
-                  }`}
+                    }`}
                   style={{ backgroundColor: color.hex }}
                   title={color.name}
                 />
@@ -766,11 +810,10 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                           <button
                             key={size}
                             onClick={() => handleSizeFilter(size)}
-                            className={`px-4 py-2 border text-sm rounded transition-colors min-w-[48px] ${
-                              selectedSizes.includes(size)
+                            className={`px-4 py-2 border text-sm rounded transition-colors min-w-[48px] ${selectedSizes.includes(size)
                                 ? "bg-black text-white border-black"
                                 : "border-gray-300 hover:border-black"
-                            }`}
+                              }`}
                           >
                             {size}
                           </button>
@@ -795,11 +838,10 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                           <button
                             key={color.name}
                             onClick={() => handleColorFilter(color.name)}
-                            className={`w-10 h-10 rounded-full border-2 transition-all ${
-                              selectedColors.includes(color.name)
+                            className={`w-10 h-10 rounded-full border-2 transition-all ${selectedColors.includes(color.name)
                                 ? "border-black scale-110"
                                 : "border-gray-300 hover:border-gray-400"
-                            }`}
+                              }`}
                             style={{ backgroundColor: color.hex }}
                             title={color.name}
                           />
@@ -938,9 +980,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   <button
                     onClick={() => handleWishlistToggle(product)}
                     disabled={addingToWishlist === product.id}
-                    className={`absolute top-1 md:top-2 right-1 md:right-2 p-1 md:p-1.5 rounded-full transition-colors z-10 ${
-                      wishlistItems.has(product.id) ? "text-red-500" : "text-gray-400 hover:text-red-500"
-                    }`}
+                    className={`absolute top-1 md:top-2 right-1 md:right-2 p-1 md:p-1.5 rounded-full transition-colors z-10 ${wishlistItems.has(product.id) ? "text-red-500" : "text-gray-400 hover:text-red-500"
+                      }`}
                   >
                     <Heart
                       className="w-4 h-4 md:w-5 md:h-5"
@@ -949,8 +990,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   </button>
 
                   <div className="aspect-[4/5] bg-gray-100 rounded overflow-hidden">
-                    <Image 
-                    onClick={() => router.push(`/productdetail/${product.id}`)}
+                    <Image
+                      onClick={() => router.push(`/productdetail/${product.id}`)}
                       src={product.image[0] || "/placeholder.svg"}
                       alt={product.name}
                       width={300}
@@ -974,9 +1015,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                       <span className="text-xs text-gray-500 hidden md:inline">({product.reviews})</span>
                     </div>
                     <span
-                      className={`text-xs px-1.5 py-0.5 rounded ${
-                        product.stock > 0 ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
-                      }`}
+                      className={`text-xs px-1.5 py-0.5 rounded ${product.stock > 0 ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
+                        }`}
                     >
                       {product.stock > 0 ? "In Stock" : "Out of Stock"}
                     </span>
@@ -995,11 +1035,10 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   <button
                     onClick={() => handleAddToCart(product)}
                     disabled={addingToCart === product.id || product.stock <= 0}
-                    className={`w-full py-2 md:py-2.5 text-sm font-medium rounded transition-colors flex items-center justify-center space-x-2 ${
-                      product.stock <= 0
+                    className={`w-full py-2 md:py-2.5 text-sm font-medium rounded transition-colors flex items-center justify-center space-x-2 ${product.stock <= 0
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-gray-800 text-white hover:bg-black disabled:opacity-50"
-                    }`}
+                      }`}
                   >
                     {addingToCart === product.id ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1049,9 +1088,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`px-3 py-2 text-sm rounded transition-colors ${
-                          currentPage === pageNum ? "bg-black text-white" : "border border-gray-300 hover:bg-gray-50"
-                        }`}
+                        className={`px-3 py-2 text-sm rounded transition-colors ${currentPage === pageNum ? "bg-black text-white" : "border border-gray-300 hover:bg-gray-50"
+                          }`}
                       >
                         {pageNum}
                       </button>

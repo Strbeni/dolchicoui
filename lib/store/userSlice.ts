@@ -119,6 +119,12 @@ const userSlice = createSlice({
       state.user = action.payload;
       state.isAuthenticated = true;
       state.error = null;
+      state.loading = false;
+
+      // Also store in localStorage for persistence
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(action.payload));
+      }
     },
     // Action to clear user data (logout)
     clearUser: (state) => {
@@ -126,6 +132,12 @@ const userSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
       state.loading = false;
+
+      // Clear from localStorage as well
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+      }
     },
     // Action to clear errors
     clearError: (state) => {
