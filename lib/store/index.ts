@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import userReducer from './userSlice';
+import wishlistReducer from './wishlistSlice';
 
 // Create a function to make the store for SSR compatibility
 export function makeStore() {
   return configureStore({
     reducer: {
       user: userReducer,
+      wishlist: wishlistReducer,
     },
   });
 }

@@ -145,27 +145,34 @@ export default function UnifiedAuthComponent() {
         }
 
         // Verify user authentication status with backend
-// In UnifiedAuthComponent - update the verifyAuthStatus function
-// After OAuth redirect, immediately check profile
-const verifyAuthStatus = async () => {
-  try {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
-    const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-      credentials: 'include',  // Add this line
-      headers: { 'Content-Type': 'application/json' }
-    })
+        // After OAuth redirect, immediately check profile and update state
+        const verifyAuthStatus = async () => {
+          try {
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+            const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' }
+            })
 
-    if (res.ok) {
-      const data = await res.json()
-      // Update your app's authentication state
-      localStorage.setItem("user", JSON.stringify(data.user))
-      // Set logged in state in your app
-    }
-  } catch (error) {
-    console.error("Auth check failed:", error)
-  }
-}
-
+            if (res.ok) {
+              const data = await res.json()
+              // Store user data
+              localStorage.setItem("user", JSON.stringify(data.user))
+              sessionStorage.setItem("user", JSON.stringify(data.user))
+              
+              // Trigger a storage event to notify other components
+              window.dispatchEvent(new Event('storage'))
+              
+              // Navigate to home page
+              setTimeout(() => {
+                window.location.href = "/home"
+              }, 100)
+            }
+          } catch (error) {
+            console.error("Auth check failed:", error)
+          }
+        }
+        
 
 
         verifyAuthStatus()
@@ -205,6 +212,7 @@ const verifyAuthStatus = async () => {
   const [userExists, setUserExists] = useState(false)
   const [showPasswordOption, setShowPasswordOption] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
+  const [showOtpMethod, setShowOtpMethod] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
 
   // Contact management
@@ -220,6 +228,9 @@ const verifyAuthStatus = async () => {
 
   // UI state
   const [loading, setLoading] = useState(false)
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [otpLoading, setOtpLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
   const [error, setError] = useState("")
   const [redirecting, setRedirecting] = useState(false)
   const [resendTimer, setResendTimer] = useState(0)
@@ -243,6 +254,9 @@ const verifyAuthStatus = async () => {
     if (typeof window !== "undefined") {
       document.cookie = `auth-token=${token}; path=/; max-age=${7*24*60*60}`
     }
+
+    // Trigger storage event to notify other components of auth state change
+    window.dispatchEvent(new Event('storage'))
 
     console.log("Authentication successful, redirecting...")
   }, [])
@@ -499,6 +513,7 @@ const verifyAuthStatus = async () => {
         if (needsVerification) {
           console.log("User exists but needs verification, sending OTP")
           await handleSendOTPForExistingUser(cleanContact)
+          // Don't set showOtpMethod for unverified users - they should go straight to OTP
         }
         
         setStep(2)
@@ -563,6 +578,7 @@ const verifyAuthStatus = async () => {
       setOtpSent(false)
       setOtp("")
       setOtpBoxes(["", "", "", "", "", ""])
+      setShowOtpMethod(false)
       
       // Re-check user status with new contact
       const userStatus = await checkUserExists(formattedContact)
@@ -577,10 +593,15 @@ const verifyAuthStatus = async () => {
 
         if (needsVerification) {
           await handleSendOTPForExistingUser(formattedContact)
+          // Don't set showOtpMethod for unverified users during edit
+        } else {
+          // For verified users during edit, reset to password method
+          setShowOtpMethod(false)
         }
       } else {
         // For new user creation, send OTP to new contact
         await handleSendOTPForNewUser(formattedContact)
+        setShowOtpMethod(false) // Reset for new users
       }
     } catch (err: any) {
       setError(err?.message || "Failed to update contact.")
@@ -598,7 +619,7 @@ const verifyAuthStatus = async () => {
   // Enhanced OTP verification with proper redirect handling
   const handleVerifyOTP = React.useCallback(async (): Promise<void> => {
     setError("")
-    setLoading(true)
+    setOtpLoading(true)
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
     const endpoint = verifiedContactType === "mobile" ? "verify-phone-otp" : "verify-email-otp"
@@ -634,10 +655,25 @@ const verifyAuthStatus = async () => {
         if (data.token) {
           setAuthTokens(data.token, data.user)
 
+          // Force immediate state sync
+          if (data.user) {
+            localStorage.setItem("user", JSON.stringify(data.user))
+            sessionStorage.setItem("user", JSON.stringify(data.user))
+            // Trigger custom event for immediate state sync
+            window.dispatchEvent(new CustomEvent('authStateChange', { detail: { user: data.user, authenticated: true } }))
+          }
+
           // Add delay to ensure tokens are stored, then redirect
           setTimeout(() => {
-            router.push("/home")
-          }, 100)
+            // Force a final state sync before redirect
+            if (data.user) {
+              localStorage.setItem("user", JSON.stringify(data.user))
+              sessionStorage.setItem("user", JSON.stringify(data.user))
+            }
+            
+            // Use replace to ensure fresh page load
+            window.location.replace("/home")
+          }, 200)
         } else {
           throw new Error("No authentication token received")
         }
@@ -645,14 +681,14 @@ const verifyAuthStatus = async () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
-      setLoading(false)
+      setOtpLoading(false)
     }
   }, [verifiedContactType, verifiedContact, otp, setAuthTokens, router])
 
   // Handle password login with verification check
   const handlePasswordLogin = React.useCallback(async (): Promise<void> => {
     setError("")
-    setLoading(true)
+    setPasswordLoading(true)
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
     const payload = { emailOrPhone: verifiedContact, password }
@@ -686,6 +722,14 @@ const verifyAuthStatus = async () => {
       if (data.token) {
         setAuthTokens(data.token, data.user)
 
+        // Force immediate state sync
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user))
+          sessionStorage.setItem("user", JSON.stringify(data.user))
+          // Trigger custom event for immediate state sync
+          window.dispatchEvent(new CustomEvent('authStateChange', { detail: { user: data.user, authenticated: true } }))
+        }
+
         // Add delay to ensure tokens are stored, then redirect
         setTimeout(() => {
           window.location.href = "/home"
@@ -696,7 +740,7 @@ const verifyAuthStatus = async () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
-      setLoading(false)
+      setPasswordLoading(false)
     }
   }, [verifiedContact, password, setAuthTokens, handleSendOTPForExistingUser])
 
@@ -741,6 +785,14 @@ const verifyAuthStatus = async () => {
       // Profile completion successful
       if (data.token) {
         setAuthTokens(data.token, data.user)
+
+        // Force immediate state sync
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user))
+          sessionStorage.setItem("user", JSON.stringify(data.user))
+          // Trigger custom event for immediate state sync
+          window.dispatchEvent(new CustomEvent('authStateChange', { detail: { user: data.user, authenticated: true } }))
+        }
 
         // Add delay to ensure tokens are stored, then redirect
         setTimeout(() => {
@@ -797,11 +849,15 @@ const verifyAuthStatus = async () => {
     if (resendTimer > 0) return
 
     setError("")
-    setLoading(true)
+    setResendLoading(true)
 
     try {
       if (userExists) {
         await handleSendOTPForExistingUser(verifiedContact)
+        // For existing users, maintain the OTP method state
+        if (showPasswordOption) {
+          setShowOtpMethod(true)
+        }
       } else {
         await handleSendOTPForNewUser(verifiedContact)
       }
@@ -809,9 +865,9 @@ const verifyAuthStatus = async () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend OTP")
     } finally {
-      setLoading(false)
+      setResendLoading(false)
     }
-  }, [resendTimer, userExists, verifiedContact, handleSendOTPForExistingUser, handleSendOTPForNewUser])
+  }, [resendTimer, userExists, verifiedContact, handleSendOTPForExistingUser, handleSendOTPForNewUser, showPasswordOption])
 
   // OTP box handlers (mobile design)
   const handleOtpBoxChange = React.useCallback((index: number, value: string) => {
@@ -851,16 +907,25 @@ const verifyAuthStatus = async () => {
   // Handle request OTP for existing users
   const handleRequestOTP = React.useCallback(async (): Promise<void> => {
     setError("")
-    setLoading(true)
+    setOtpLoading(true)
 
     try {
       await handleSendOTPForExistingUser(verifiedContact)
+      setShowOtpMethod(true) // Show OTP method but keep password option available
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send OTP")
     } finally {
-      setLoading(false)
+      setOtpLoading(false)
     }
   }, [verifiedContact, handleSendOTPForExistingUser])
+
+  // Handle switching back to password method
+  const handleUsePassword = React.useCallback((): void => {
+    setShowOtpMethod(false)
+    setOtp("")
+    setOtpBoxes(["", "", "", "", "", ""])
+    setError("")
+  }, [])
 
   // Utility functions
   const handleContactBlur = React.useCallback((): void => {
@@ -1199,60 +1264,131 @@ const verifyAuthStatus = async () => {
                   {/* Existing users: Password first, then OTP option */}
                   {userExists && showPasswordOption && !isEditingContact && (
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="password" className="uppercase text-xs text-orange-600 font-medium">
-                          Password
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="pr-10 h-10"
-                            autoComplete="current-password"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      {!showOtpMethod && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="password" className="uppercase text-xs text-orange-600 font-medium">
+                              Password
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="pr-10 h-10"
+                                autoComplete="current-password"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                              >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={handlePasswordLogin}
+                            disabled={passwordLoading || !password.trim()}
+                            className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                           >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                      </div>
+                            {passwordLoading ? "Signing In..." : "Sign In"}
+                            {!passwordLoading && <ArrowRight className="ml-2" size={18} />}
+                          </Button>
 
-                      <Button
-                        onClick={handlePasswordLogin}
-                        disabled={loading || !password.trim()}
-                        className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
-                      >
-                        {loading ? "Signing In..." : "Sign In"}
-                        {!loading && <ArrowRight className="ml-2" size={18} />}
-                      </Button>
+                          <Button
+                            onClick={handleRequestOTP}
+                            disabled={otpLoading}
+                            variant="outline"
+                            className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white bg-transparent"
+                          >
+                            {otpLoading ? "Sending OTP..." : "Use OTP Instead"}
+                          </Button>
 
-                      <Button
-                        onClick={handleRequestOTP}
-                        disabled={loading || otpSent}
-                        variant="outline"
-                        className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white bg-transparent"
-                      >
-                        {loading ? "Sending OTP..." : otpSent ? "OTP Sent" : "Send OTP Instead"}
-                      </Button>
+                          <div className="text-center">
+                            <Link
+                              href="/forgotpassword"
+                              className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+                            >
+                              Forgot Password?
+                            </Link>
+                          </div>
+                        </>
+                      )}
 
-                      <div className="text-center">
-                        <Link
-                          href="/forgotpassword"
-                          className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
-                        >
-                          Forgot Password?
-                        </Link>
-                      </div>
+                      {showOtpMethod && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="otp" className="uppercase text-xs text-orange-600 font-medium">
+                              Verification code
+                            </Label>
+                            <div className="flex items-center gap-3" onPaste={handleOtpPaste}>
+                              {otpBoxes.map((val, idx) => (
+                                <Input
+                                  key={idx}
+                                  ref={(el) => {
+                                    otpRefs.current[idx] = el
+                                  }}
+                                  inputMode="numeric"
+                                  pattern="[0-9]*"
+                                  className="w-12 h-12 text-center text-lg"
+                                  value={val}
+                                  onChange={(e) => handleOtpBoxChange(idx, e.target.value)}
+                                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                                  maxLength={1}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              Please enter the one-time password sent to your {verifiedContactType === "mobile" ? "phone" : "email"}.
+                            </p>
+                          </div>
+
+                          <div className="text-center">
+                            <button
+                              type="button"
+                              onClick={handleResendOTP}
+                              disabled={resendTimer > 0 || resendLoading}
+                              className="text-sm text-orange-600 hover:text-orange-700 underline disabled:text-gray-400 disabled:no-underline transition-colors"
+                            >
+                              {resendLoading ? "Sending..." : resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP`}
+                            </button>
+                          </div>
+
+                          <Button
+                            onClick={handleVerifyOTP}
+                            disabled={otpLoading || otp.length !== 6}
+                            className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
+                          >
+                            {otpLoading ? "Verifying..." : "Verify OTP"}
+                            {!otpLoading && <ArrowRight className="ml-2" size={18} />}
+                          </Button>
+
+                          <Button
+                            onClick={handleUsePassword}
+                            variant="outline"
+                            className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white bg-transparent"
+                          >
+                            Use Password Instead
+                          </Button>
+
+                          <div className="text-center">
+                            <Link
+                              href="/forgotpassword"
+                              className="text-sm text-gray-500 hover:text-gray-700 underline transition-colors"
+                            >
+                              Forgot Password?
+                            </Link>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
-                  {/* OTP Input: For new users (always show) OR existing users who requested OTP OR unverified users */}
-                  {((otpSent && userExists) || !userExists || (userExists && !showPasswordOption)) && !isEditingContact && (
+                  {/* OTP Input: For new users (always show) OR existing users who don't have password option (unverified) */}
+                  {(!userExists || (userExists && !showPasswordOption)) && !isEditingContact && (
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="otp" className="uppercase text-xs text-orange-600 font-medium">
@@ -1284,20 +1420,20 @@ const verifyAuthStatus = async () => {
                         <button
                           type="button"
                           onClick={handleResendOTP}
-                          disabled={resendTimer > 0 || loading}
+                          disabled={resendTimer > 0 || resendLoading}
                           className="text-sm text-orange-600 hover:text-orange-700 underline disabled:text-gray-400 disabled:no-underline transition-colors"
                         >
-                          {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP`}
+                          {resendLoading ? "Sending..." : resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : `Resend OTP`}
                         </button>
                       </div>
 
                       <Button
                         onClick={handleVerifyOTP}
-                        disabled={loading || otp.length !== 6}
+                        disabled={otpLoading || otp.length !== 6}
                         className="w-full bg-[#d9673f] hover:bg-[#c2552d] text-white h-11 font-medium tracking-wide"
                       >
-                        {loading ? "Verifying..." : "Verify OTP"}
-                        {!loading && <ArrowRight className="ml-2" size={18} />}
+                        {otpLoading ? "Verifying..." : "Verify OTP"}
+                        {!otpLoading && <ArrowRight className="ml-2" size={18} />}
                       </Button>
                     </>
                   )}

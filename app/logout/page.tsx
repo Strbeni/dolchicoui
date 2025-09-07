@@ -1,25 +1,17 @@
 'use client';
 
-// import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { useLogout } from '@/hooks/useLogout';
 
 export default function Logout() {
   const router = useRouter();
+  const logout = useLogout();
 
-  const handleLogout = () => {
-    // Clear both localStorage and sessionStorage
-    localStorage.removeItem('token');
-    sessionStorage.removeItem('token');
-
-    // Optional: clear all if needed
-    // localStorage.clear();
-    // sessionStorage.clear();
-
-    // Redirect to login
-    router.push('/login');
+  const handleLogout = async () => {
+    await logout('/login');
   };
 
   return (
