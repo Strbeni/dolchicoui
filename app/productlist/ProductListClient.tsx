@@ -32,6 +32,7 @@ interface Product {
   reviews?: number
   isNew?: boolean
   badge?: string
+  tags?: string[]
 }
 
 interface WishlistEntry {
@@ -131,24 +132,31 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
         console.log("[v0] API Response:", data)
 
         if (data.success && Array.isArray(data.products)) {
-          const transformedProducts = data.products.map((product: Product, index: number) => ({
-            id: product.id || index + 1,
-            name: product.name || "Product",
-            description: product.description || "",
-            price: product.price || 600,
-            originalPrice: product.originalPrice || product.price * 2,
-            discount: product.discount || 55,
-            image: Array.isArray(product.image) ? product.image : [product.image || "/images/hoodie-placeholder.png"],
-            category: product.category || "Men",
-            subCategory: product.subCategory || "T-Shirt",
-            sizes: Array.isArray(product.sizes) ? product.sizes : ["S", "M", "L", "XL"],
-            color: Array.isArray(product.color) ? product.color : ["Gray"],
-            stock: product.stock || 10,
-            rating: product.rating || 5.0,
-            reviews: product.reviews || 10,
-            isNew: index % 4 === 2,
-            badge: index % 4 === 2 ? "New" : undefined,
-          }))
+          const transformedProducts = data.products.map((product: any, index: number) => {
+            const discount = product.discount || 0
+            const originalPrice = product.price
+            const discountedPrice = discount > 0 ? Math.round(originalPrice * (1 - discount / 100)) : originalPrice
+
+            return {
+              id: product.id || index + 1,
+              name: product.name || "Product",
+              description: product.description || "",
+              price: discountedPrice,
+              originalPrice: discount > 0 ? originalPrice : undefined,
+              discount: discount,
+              image: Array.isArray(product.image) ? product.image : ["/images/hoodie-placeholder.png"],
+              category: product.category?.name || "Men",
+              subCategory: product.subcategory?.name || "Topwear",
+              sizes: Array.isArray(product.sizes) ? product.sizes : ["S", "M", "L", "XL"],
+              color: [], // Not in API, set empty
+              stock: product.stock || 10,
+              rating: 5.0, // Default
+              reviews: 10, // Default
+              isNew: false, // Can be based on date if needed
+              badge: product.bestseller ? "Bestseller" : undefined,
+              tags: product.tags || [],
+            }
+          })
 
           setProducts(transformedProducts)
         } else {
@@ -169,12 +177,13 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
           category: "Men",
           subCategory: "T-Shirt",
           sizes: ["S", "M", "L", "XL"],
-          color: ["Gray"],
+          color: [],
           stock: 10,
           rating: 5.0,
           reviews: 10,
           isNew: i === 2 || i === 8,
           badge: i === 2 || i === 8 ? "New" : undefined,
+          tags: [],
         }))
         setProducts(mockProducts)
       } finally {
@@ -969,7 +978,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
             {paginatedProducts.map((product) => (
-              <div key={product.id} className="group">
+              <div key={product.id} className="group cursor-pointer" onClick={() => router.push(`/productdetail/${product.id}`)}>
                 <div className="relative mb-2 md:mb-3">
                   {product.badge && (
                     <div className="absolute top-1 md:top-2 left-1 md:left-2 bg-orange-500 text-white text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded z-10">
@@ -978,7 +987,10 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   )}
 
                   <button
-                    onClick={() => handleWishlistToggle(product)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleWishlistToggle(product)
+                    }}
                     disabled={addingToWishlist === product.id}
                     className={`absolute top-1 md:top-2 right-1 md:right-2 p-1 md:p-1.5 rounded-full transition-colors z-10 ${wishlistItems.has(product.id) ? "text-red-500" : "text-gray-400 hover:text-red-500"
                       }`}
@@ -991,7 +1003,6 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
 
                   <div className="aspect-[4/5] bg-gray-100 rounded overflow-hidden">
                     <Image
-                      onClick={() => router.push(`/productdetail/${product.id}`)}
                       src={product.image[0] || "/placeholder.svg"}
                       alt={product.name}
                       width={300}
@@ -1033,9 +1044,12 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   </div>
 
                   <button
-                    onClick={() => handleAddToCart(product)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleAddToCart(product)
+                    }}
                     disabled={addingToCart === product.id || product.stock <= 0}
-                    className={`w-full py-2 md:py-2.5 text-sm font-medium rounded transition-colors flex items-center justify-center space-x-2 ${product.stock <= 0
+                    className={`w-full py-2 md:py-2.5 text-sm font-medium rounded transition-colors flex items-center hover:cursor-pointer justify-center space-x-2 ${product.stock <= 0
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-gray-800 text-white hover:bg-black disabled:opacity-50"
                       }`}
