@@ -72,7 +72,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   const reduxWishlistItems = useAppSelector(selectWishlistItems)
 
   // Context for refreshing navbar counts
-  const { refreshWishlistCount } = useNavbarCounts()
+  const { refreshWishlistCount, refreshCartCount } = useNavbarCounts()
 
   // Global loading context
   const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading()
@@ -299,6 +299,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
     }
 
     setAddingToCart(product.id)
+    setLoadingMessage("Adding to cart...")
+    setGlobalLoading(true)
     console.log("[v0] Adding to cart - Product ID:", product.id, "Stock:", product.stock)
 
     try {
@@ -344,12 +346,16 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
       setAddedToCart(product.id)
       showToast("Added to cart successfully!")
       setTimeout(() => setAddedToCart(null), 2000)
+      
+      // Refresh cart count in navbar
+      refreshCartCount()
     } catch (error) {
       console.error("[v0] Add to cart error:", error)
       const errorMessage = error instanceof Error ? error.message : "Failed to add to cart"
       showToast(errorMessage, false)
     } finally {
       setAddingToCart(null)
+      setGlobalLoading(false)
     }
   }
 

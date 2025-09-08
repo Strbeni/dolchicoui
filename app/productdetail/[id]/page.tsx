@@ -27,6 +27,8 @@ import Image from "next/image"
 import Link from "next/link"
 import Zoom from "react-medium-image-zoom"
 import "react-medium-image-zoom/dist/styles.css"
+import { useNavbarCounts } from "@/contexts/NavbarCountsContext"
+import { useLoading } from "@/contexts/LoadingContext"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
   // Sync wishlist state for all products shown (related + popular)
@@ -108,6 +110,12 @@ export default function ProductDetailPage() {
   }
   const params = useParams()
   const router = useRouter()
+
+  // Context for refreshing navbar counts
+  const { refreshCartCount } = useNavbarCounts()
+
+  // Global loading context
+  const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading()
 
   // Product state
   const [product, setProduct] = useState<Product | null>(null)
@@ -265,6 +273,8 @@ export default function ProductDetailPage() {
 
     setAddingToCart(true)
     setCartSuccess(false)
+    setLoadingMessage("Adding to cart...")
+    setGlobalLoading(true)
 
     try {
       const response = await fetch(`${API_BASE}/api/cart/items`, {
@@ -290,11 +300,15 @@ export default function ProductDetailPage() {
       setTimeout(() => {
         setCartSuccess(false)
       }, 2000)
+      
+      // Refresh cart count in navbar
+      refreshCartCount()
     } catch (error) {
       console.error("Failed to add to cart:", error)
       alert(error instanceof Error ? error.message : "Failed to add to cart")
     } finally {
       setAddingToCart(false)
+      setGlobalLoading(false)
     }
   }
 

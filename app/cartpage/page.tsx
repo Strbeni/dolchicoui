@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Trash2, Heart, Plus, Minus, Share, X, ChevronDown, Check, ShoppingBag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { useNavbarCounts } from '@/contexts/NavbarCountsContext';
+import { useLoading } from '@/contexts/LoadingContext';
 
 // Types matching your API response
 type Product = {
@@ -75,6 +77,12 @@ export default function ShoppingCartComplete() {
     requireAuth: true,
     redirectTo: '/login'
   });
+
+  // Context for refreshing navbar counts
+  const { refreshCartCount } = useNavbarCounts();
+
+  // Global loading context
+  const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading();
 
   const [items, setItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState(new Set()); // Track selected items
@@ -266,6 +274,8 @@ export default function ShoppingCartComplete() {
   const updateQuantity = async (cartItemId, newQuantity) => {
     try {
       setUpdating(cartItemId);
+      setLoadingMessage("Updating quantity...");
+      setGlobalLoading(true);
 
       const res = await fetch(`${API_BASE}/api/cart/items/${cartItemId}`, {
         method: 'PUT',
@@ -284,12 +294,16 @@ export default function ShoppingCartComplete() {
       );
       setItems(updatedItems);
       setSummary(calculateSummary(updatedItems, selectedItems));
+      
+      // Refresh cart count in navbar
+      refreshCartCount()
 
     } catch (error) {
       console.error('Failed to update quantity:', error);
       showToast(error.message, false);
     } finally {
       setUpdating(null);
+      setGlobalLoading(false);
     }
   };
 
@@ -297,6 +311,8 @@ export default function ShoppingCartComplete() {
   const removeItem = async (cartItemId) => {
     try {
       setUpdating(cartItemId);
+      setLoadingMessage("Removing item...");
+      setGlobalLoading(true);
 
       const res = await fetch(`${API_BASE}/api/cart/items/${cartItemId}`, {
         method: 'DELETE',
@@ -320,12 +336,16 @@ export default function ShoppingCartComplete() {
       setShowDeleteModal(false);
       setItemToDelete(null);
       showToast('Item removed from cart');
+      
+      // Refresh cart count in navbar
+      refreshCartCount()
 
     } catch (error) {
       console.error('Failed to remove item:', error);
       showToast(error.message, false);
     } finally {
       setUpdating(null);
+      setGlobalLoading(false);
     }
   };
 
