@@ -11,28 +11,829 @@ import KidsSection from "@/components/kids-section"
 import MenSection from "@/components/men-section"
 import WomenSection from "@/components/women-section"
 
-const topDeals = [
-  { id: "deal-1", productId: 1, title: "Ethnic wears", image: "/w1.svg", badge: "New", discount: "50 - 30% OFF" },
-  { id: "deal-2", productId: 2, title: "Casual Wear", image: "/w2.svg", badge: "Hot Deal", discount: "50 - 30% OFF" },
-  { id: "deal-3", productId: 3, title: "Womens active", image: "/w3.svg", badge: "New", discount: "50 - 30% OFF" },
-  { id: "deal-4", productId: 4, title: "Mens active", image: "/w4.svg", badge: "New", discount: "50 - 30% OFF" },
-]
+const apiData = {
+  "categories": [
+    {
+      "name": "Men",
+      "subCategories": [
+        {
+          "name": "TShirt",
+          "icon": "https://example.com/icons/tshirt.png",
+          "grouping": "Topwear",
+          "originalPrice": 1299,
+          "discountedPrice": 649
+        },
+        {
+          "name": "Pant",
+          "icon": "https://example.com/icons/pant.png",
+          "grouping": "Bottomwear",
+          "originalPrice": 1899,
+          "discountedPrice": 949
+        },
+        {
+          "name": "Trouser",
+          "icon": "https://example.com/icons/trouser.png",
+          "grouping": "Bottomwear",
+          "originalPrice": 1599,
+          "discountedPrice": 799
+        },
+        {
+          "name": "Shirt",
+          "icon": "https://example.com/icons/shirt.png",
+          "grouping": "Topwear",
+          "originalPrice": 2199,
+          "discountedPrice": 1099
+        },
+        {
+          "name": "Jeans",
+          "icon": "https://example.com/icons/jeans.png",
+          "grouping": "Bottomwear",
+          "originalPrice": 2499,
+          "discountedPrice": 1249
+        },
+        {
+          "name": "Jacket",
+          "icon": "https://example.com/icons/jacket.png",
+          "grouping": "Outerwear",
+          "originalPrice": 3999,
+          "discountedPrice": 1999
+        },
+        {
+          "name": "Sweater",
+          "icon": "https://example.com/icons/sweater.png",
+          "grouping": "Topwear",
+          "originalPrice": 1799,
+          "discountedPrice": 899
+        },
+        {
+          "name": "Shorts",
+          "icon": "https://example.com/icons/shorts.png",
+          "grouping": "Bottomwear",
+          "originalPrice": 999,
+          "discountedPrice": 499
+        },
+        {
+          "name": "Hoodie",
+          "icon": "https://example.com/icons/hoodie.png",
+          "grouping": "Topwear",
+          "originalPrice": 2299,
+          "discountedPrice": 1149
+        },
+        {
+          "name": "Blazer",
+          "icon": "https://example.com/icons/blazer.png",
+          "grouping": "Outerwear",
+          "originalPrice": 4599,
+          "discountedPrice": 2299
+        }
+      ],
+      "offers": [
+        {
+          "name": "50-60% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 10,
+              "max_discount": 60,
+              "tags": ["Navratri", "Garbha", "BestSeller"],
+              "subCategoriesName": "TShirt"
+            }
+          ]
+        },
+        {
+          "name": "40-50% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 40,
+              "max_discount": 50,
+              "tags": ["Trending", "HotDeal"],
+              "subCategoriesName": "Jacket"
+            }
+          ]
+        },
+        {
+          "name": "30-40% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 30,
+              "max_discount": 40,
+              "tags": ["NewArrival", "Limited"],
+              "subCategoriesName": "Sweater"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Women",
+      "subCategories": [
+        {
+          "name": "Kurta",
+          "icon": "https://example.com/icons/kurta.png",
+          "grouping": "Ethnic",
+          "originalPrice": 1899,
+          "discountedPrice": 949
+        },
+        {
+          "name": "Pant",
+          "icon": "https://example.com/icons/women-pant.png",
+          "grouping": "Bottomwear",
+          "originalPrice": 1599,
+          "discountedPrice": 799
+        },
+        {
+          "name": "Plazo",
+          "icon": "https://example.com/icons/plazo.png",
+          "grouping": "Bottomwear",
+          "originalPrice": 1299,
+          "discountedPrice": 649
+        },
+        {
+          "name": "Saree",
+          "icon": "https://example.com/icons/saree.png",
+          "grouping": "Ethnic",
+          "originalPrice": 3499,
+          "discountedPrice": 1749
+        },
+        {
+          "name": "Dress",
+          "icon": "https://example.com/icons/dress.png",
+          "grouping": "Dresses",
+          "originalPrice": 2299,
+          "discountedPrice": 1149
+        },
+        {
+          "name": "Top",
+          "icon": "https://example.com/icons/top.png",
+          "grouping": "Topwear",
+          "originalPrice": 999,
+          "discountedPrice": 499
+        },
+        {
+          "name": "Skirt",
+          "icon": "https://example.com/icons/skirt.png",
+          "grouping": "Bottomwear",
+          "originalPrice": 1399,
+          "discountedPrice": 699
+        },
+        {
+          "name": "Blouse",
+          "icon": "https://example.com/icons/blouse.png",
+          "grouping": "Ethnic",
+          "originalPrice": 899,
+          "discountedPrice": 449
+        }
+      ],
+      "offers": [
+        {
+          "name": "50-60% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 10,
+              "max_discount": 60,
+              "tags": ["Navratri", "Garbha", "BestSeller"],
+              "subCategoriesName": "Kurta"
+            }
+          ]
+        },
+        {
+          "name": "45-55% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 45,
+              "max_discount": 55,
+              "tags": ["Festival", "Exclusive"],
+              "subCategoriesName": "Saree"
+            }
+          ]
+        },
+        {
+          "name": "35-45% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 35,
+              "max_discount": 45,
+              "tags": ["Trending", "Popular"],
+              "subCategoriesName": "Dress"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Kids",
+      "subCategories": [
+        {
+          "name": "Boys",
+          "icon": "https://example.com/icons/boys.png",
+          "grouping": "Kidswear",
+          "originalPrice": 899,
+          "discountedPrice": 449
+        },
+        {
+          "name": "Girls",
+          "icon": "https://example.com/icons/girls.png",
+          "grouping": "Kidswear",
+          "originalPrice": 799,
+          "discountedPrice": 399
+        },
+        {
+          "name": "Two Year Old",
+          "icon": "https://example.com/icons/two-year-old.png",
+          "grouping": "Infantwear",
+          "originalPrice": 599,
+          "discountedPrice": 299
+        },
+        {
+          "name": "Five Year Old",
+          "icon": "https://example.com/icons/five-year-old.png",
+          "grouping": "Kidswear",
+          "originalPrice": 699,
+          "discountedPrice": 349
+        },
+        {
+          "name": "Teen Boys",
+          "icon": "https://example.com/icons/teen-boys.png",
+          "grouping": "Teenwear",
+          "originalPrice": 1199,
+          "discountedPrice": 599
+        },
+        {
+          "name": "Teen Girls",
+          "icon": "https://example.com/icons/teen-girls.png",
+          "grouping": "Teenwear",
+          "originalPrice": 1099,
+          "discountedPrice": 549
+        },
+        {
+          "name": "Baby Rompers",
+          "icon": "https://example.com/icons/baby-rompers.png",
+          "grouping": "Infantwear",
+          "originalPrice": 499,
+          "discountedPrice": 249
+        },
+        {
+          "name": "Kids Party Wear",
+          "icon": "https://example.com/icons/kids-party.png",
+          "grouping": "Party Wear",
+          "originalPrice": 1599,
+          "discountedPrice": 799
+        }
+      ],
+      "offers": [
+        {
+          "name": "50-60% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 10,
+              "max_discount": 60,
+              "tags": ["Navratri", "Garbha", "BestSeller"],
+              "subCategoriesName": "Boys"
+            }
+          ]
+        },
+        {
+          "name": "40-50% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 40,
+              "max_discount": 50,
+              "tags": ["KidsSpecial", "Fun"],
+              "subCategoriesName": "Teen Boys"
+            }
+          ]
+        },
+        {
+          "name": "30-40% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 30,
+              "max_discount": 40,
+              "tags": ["PartyWear", "Cute"],
+              "subCategoriesName": "Kids Party Wear"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Accessories",
+      "subCategories": [
+        {
+          "name": "Watches",
+          "icon": "https://example.com/icons/watch.png",
+          "grouping": "Fashion Accessories",
+          "originalPrice": 2999,
+          "discountedPrice": 1499
+        },
+        {
+          "name": "Clutcher",
+          "icon": "https://example.com/icons/clutcher.png",
+          "grouping": "Hair Accessories",
+          "originalPrice": 799,
+          "discountedPrice": 399
+        },
+        {
+          "name": "Bands",
+          "icon": "https://example.com/icons/bands.png",
+          "grouping": "Fashion Accessories",
+          "originalPrice": 299,
+          "discountedPrice": 149
+        },
+        {
+          "name": "Belts",
+          "icon": "https://example.com/icons/belts.png",
+          "grouping": "Fashion Accessories",
+          "originalPrice": 599,
+          "discountedPrice": 299
+        },
+        {
+          "name": "Sunglasses",
+          "icon": "https://example.com/icons/sunglasses.png",
+          "grouping": "Fashion Accessories",
+          "originalPrice": 1499,
+          "discountedPrice": 749
+        },
+        {
+          "name": "Jewelry",
+          "icon": "https://example.com/icons/jewelry.png",
+          "grouping": "Fashion Accessories",
+          "originalPrice": 1999,
+          "discountedPrice": 999
+        },
+        {
+          "name": "Scarves",
+          "icon": "https://example.com/icons/scarves.png",
+          "grouping": "Fashion Accessories",
+          "originalPrice": 899,
+          "discountedPrice": 449
+        },
+        {
+          "name": "Hats",
+          "icon": "https://example.com/icons/hats.png",
+          "grouping": "Fashion Accessories",
+          "originalPrice": 699,
+          "discountedPrice": 349
+        }
+      ],
+      "offers": [
+        {
+          "name": "50-60% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 10,
+              "max_discount": 60,
+              "tags": ["Navratri", "Garbha", "BestSeller"],
+              "subCategoriesName": "Watches"
+            }
+          ]
+        },
+        {
+          "name": "40-50% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 40,
+              "max_discount": 50,
+              "tags": ["Luxury", "Premium"],
+              "subCategoriesName": "Jewelry"
+            }
+          ]
+        },
+        {
+          "name": "35-45% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 35,
+              "max_discount": 45,
+              "tags": ["Fashion", "Style"],
+              "subCategoriesName": "Sunglasses"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HomeLiving",
+      "subCategories": [
+        {
+          "name": "Curtain",
+          "icon": "https://example.com/icons/curtain.png",
+          "grouping": "Home Essentials",
+          "originalPrice": 2499,
+          "discountedPrice": 1249
+        },
+        {
+          "name": "Pillow",
+          "icon": "https://example.com/icons/pillow.png",
+          "grouping": "Home Essentials",
+          "originalPrice": 899,
+          "discountedPrice": 449
+        },
+        {
+          "name": "Bedsheet",
+          "icon": "https://example.com/icons/bedsheet.png",
+          "grouping": "Home Essentials",
+          "originalPrice": 1899,
+          "discountedPrice": 949
+        },
+        {
+          "name": "Towels",
+          "icon": "https://example.com/icons/towels.png",
+          "grouping": "Home Essentials",
+          "originalPrice": 1299,
+          "discountedPrice": 649
+        },
+        {
+          "name": "Cushions",
+          "icon": "https://example.com/icons/cushions.png",
+          "grouping": "Home Decor",
+          "originalPrice": 799,
+          "discountedPrice": 399
+        },
+        {
+          "name": "Table Linen",
+          "icon": "https://example.com/icons/table-linen.png",
+          "grouping": "Home Essentials",
+          "originalPrice": 1599,
+          "discountedPrice": 799
+        },
+        {
+          "name": "Wall Art",
+          "icon": "https://example.com/icons/wall-art.png",
+          "grouping": "Home Decor",
+          "originalPrice": 2999,
+          "discountedPrice": 1499
+        },
+        {
+          "name": "Vases",
+          "icon": "https://example.com/icons/vases.png",
+          "grouping": "Home Decor",
+          "originalPrice": 1199,
+          "discountedPrice": 599
+        }
+      ],
+      "offers": [
+        {
+          "name": "50-60% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 10,
+              "max_discount": 60,
+              "tags": ["Navratri", "Garbha", "BestSeller"],
+              "subCategoriesName": "Curtain"
+            }
+          ]
+        },
+        {
+          "name": "40-50% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 40,
+              "max_discount": 50,
+              "tags": ["HomeDecor", "Beautiful"],
+              "subCategoriesName": "Wall Art"
+            }
+          ]
+        },
+        {
+          "name": "30-40% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 30,
+              "max_discount": 40,
+              "tags": ["Comfort", "Essential"],
+              "subCategoriesName": "Cushions"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Footwear",
+      "subCategories": [
+        {
+          "name": "Sneakers",
+          "icon": "https://example.com/icons/sneakers.png",
+          "grouping": "Casual",
+          "originalPrice": 3499,
+          "discountedPrice": 1749
+        },
+        {
+          "name": "Boots",
+          "icon": "https://example.com/icons/boots.png",
+          "grouping": "Casual",
+          "originalPrice": 4299,
+          "discountedPrice": 2149
+        },
+        {
+          "name": "Sandals",
+          "icon": "https://example.com/icons/sandals.png",
+          "grouping": "Casual",
+          "originalPrice": 1499,
+          "discountedPrice": 749
+        },
+        {
+          "name": "Formal Shoes",
+          "icon": "https://example.com/icons/formal-shoes.png",
+          "grouping": "Formal",
+          "originalPrice": 3999,
+          "discountedPrice": 1999
+        },
+        {
+          "name": "Sports Shoes",
+          "icon": "https://example.com/icons/sports-shoes.png",
+          "grouping": "Sports",
+          "originalPrice": 2999,
+          "discountedPrice": 1499
+        },
+        {
+          "name": "Heels",
+          "icon": "https://example.com/icons/heels.png",
+          "grouping": "Formal",
+          "originalPrice": 2499,
+          "discountedPrice": 1249
+        },
+        {
+          "name": "Flip Flops",
+          "icon": "https://example.com/icons/flip-flops.png",
+          "grouping": "Casual",
+          "originalPrice": 499,
+          "discountedPrice": 249
+        },
+        {
+          "name": "Loafers",
+          "icon": "https://example.com/icons/loafers.png",
+          "grouping": "Casual",
+          "originalPrice": 3199,
+          "discountedPrice": 1599
+        }
+      ],
+      "offers": [
+        {
+          "name": "50-60% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 10,
+              "max_discount": 60,
+              "tags": ["Navratri", "Garbha", "BestSeller"],
+              "subCategoriesName": "Sneakers"
+            }
+          ]
+        },
+        {
+          "name": "45-55% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 45,
+              "max_discount": 55,
+              "tags": ["Sports", "Comfort"],
+              "subCategoriesName": "Sports Shoes"
+            }
+          ]
+        },
+        {
+          "name": "35-45% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 35,
+              "max_discount": 45,
+              "tags": ["Casual", "Trendy"],
+              "subCategoriesName": "Boots"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Beauty",
+      "subCategories": [
+        {
+          "name": "Makeup",
+          "icon": "https://example.com/icons/makeup.png",
+          "grouping": "Cosmetics",
+          "originalPrice": 1999,
+          "discountedPrice": 999
+        },
+        {
+          "name": "Skincare",
+          "icon": "https://example.com/icons/skincare.png",
+          "grouping": "Cosmetics",
+          "originalPrice": 2499,
+          "discountedPrice": 1249
+        },
+        {
+          "name": "Hair Care",
+          "icon": "https://example.com/icons/hair-care.png",
+          "grouping": "Cosmetics",
+          "originalPrice": 1499,
+          "discountedPrice": 749
+        },
+        {
+          "name": "Fragrances",
+          "icon": "https://example.com/icons/fragrances.png",
+          "grouping": "Cosmetics",
+          "originalPrice": 2999,
+          "discountedPrice": 1499
+        },
+        {
+          "name": "Nail Care",
+          "icon": "https://example.com/icons/nail-care.png",
+          "grouping": "Cosmetics",
+          "originalPrice": 799,
+          "discountedPrice": 399
+        },
+        {
+          "name": "Bath & Body",
+          "icon": "https://example.com/icons/bath-body.png",
+          "grouping": "Cosmetics",
+          "originalPrice": 1299,
+          "discountedPrice": 649
+        },
+        {
+          "name": "Tools & Brushes",
+          "icon": "https://example.com/icons/tools-brushes.png",
+          "grouping": "Accessories",
+          "originalPrice": 999,
+          "discountedPrice": 499
+        },
+        {
+          "name": "Men's Grooming",
+          "icon": "https://example.com/icons/mens-grooming.png",
+          "grouping": "Cosmetics",
+          "originalPrice": 1799,
+          "discountedPrice": 899
+        }
+      ],
+      "offers": [
+        {
+          "name": "50-60% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 10,
+              "max_discount": 60,
+              "tags": ["Navratri", "Garbha", "BestSeller"],
+              "subCategoriesName": "Makeup"
+            }
+          ]
+        },
+        {
+          "name": "40-50% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 40,
+              "max_discount": 50,
+              "tags": ["Skincare", "Glow"],
+              "subCategoriesName": "Skincare"
+            }
+          ]
+        },
+        {
+          "name": "35-45% Discount",
+          "icon": "https://example.com/icons/discount.png",
+          "grouping": "Offers",
+          "offerType": [
+            {
+              "price_below": 500,
+              "price_above": 600,
+              "min_discount": 35,
+              "max_discount": 45,
+              "tags": ["Fragrance", "Luxury"],
+              "subCategoriesName": "Fragrances"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
 
-const categories = [
-  { id: "cat-1", productId: 1, title: "T-shirts", image: "/h1.svg", badge: "New", discount: "50 - 30% OFF" },
-  { id: "cat-2", productId: 2, title: "Shirts", image: "/h2.svg", badge: "Trending", discount: "60 - 70% OFF" },
-  { id: "cat-3", productId: 3, title: "Jeans", image: "/h3.svg", badge: "Trending", discount: "50 - 30% OFF" },
-  { id: "cat-4", productId: 4, title: "Trousers", image: "/h4.svg", badge: "New", discount: "50 - 30% OFF" },
-  { id: "cat-5", productId: 1, title: "Sports Shoes", image: "/h1.svg", badge: "Hot Deal", discount: "60 - 70% OFF" },
-  { id: "cat-6", productId: 2, title: "Sneakers", image: "/h2.svg", badge: "Hot Deal", discount: "60 - 70% OFF" },
-  { id: "cat-7", productId: 3, title: "Track Pants", image: "/h3.svg", badge: "New", discount: "50 - 30% OFF" },
-  { id: "cat-8", productId: 4, title: "Kurtas", image: "/h4.svg", badge: "Hot Deal", discount: "60 - 70% OFF" },
-]
+const availableTopDealImages = ["/w1.svg", "/w2.svg", "/w3.svg", "/w4.svg", "/product.jpg", "/casual.jpg", "/formal-men.jpg"]
+const availableCategoryImages = ["/h1.svg", "/h2.svg", "/h3.svg", "/h4.svg", "/w1.svg", "/w2.svg", "/w3.svg", "/w4.svg"]
+
+// Top Deals - show ONLY products with offers OR tags
+const topDealsByCategory = apiData.categories.map((cat, catIndex) => ({
+  categoryName: cat.name,
+  offers: cat.offers.flatMap((offer, offerIndex) => {
+    // Find the subcategory that matches this offer
+    const matchingSubCategory = cat.subCategories.find(
+      sub => sub.name === offer.offerType[0]?.subCategoriesName
+    )
+
+    if (matchingSubCategory) {
+      const discountPercent = Math.round(((matchingSubCategory.originalPrice - matchingSubCategory.discountedPrice) / matchingSubCategory.originalPrice) * 100)
+      return [{
+        id: `${cat.name}-${matchingSubCategory.name}-${offerIndex}`,
+        productId: catIndex * 10 + offerIndex + 1,
+        title: matchingSubCategory.name,
+        image: availableTopDealImages[(catIndex + offerIndex) % availableTopDealImages.length],
+        badge: offer.offerType[0]?.tags[0] || null,
+        discount: `${discountPercent}% OFF`,
+        originalPrice: matchingSubCategory.originalPrice,
+        discountedPrice: matchingSubCategory.discountedPrice
+      }]
+    }
+    return []
+  })
+})).filter(categoryGroup => categoryGroup.offers.length > 0) // Only show categories that have offers
+
+const categoriesByCategory = apiData.categories.map((cat, catIndex) => ({
+  categoryName: cat.name,
+  subCategories: cat.subCategories.map((sub, subIndex) => ({
+    id: `${cat.name}-${sub.name}-${subIndex}`,
+    productId: catIndex * 10 + subIndex + 1,
+    title: sub.name,
+    image: availableCategoryImages[(catIndex * 3 + subIndex) % availableCategoryImages.length],
+    badge: null, // No badges in Shop by Category - keep it clean
+    discount: "", // No discount display in Shop by Category
+    originalPrice: sub.originalPrice,
+    discountedPrice: sub.discountedPrice
+  }))
+}))
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("All")
   const [currentSlide, setCurrentSlide] = useState(0)
   const [showPromoBanner, setShowPromoBanner] = useState(false)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
 
   const navigationTabs = ["All", "Men", "Women", "Kids"]
   const categoryIcons = [
@@ -273,81 +1074,146 @@ export default function Home() {
       </section>
 
       {/* Top Deals */}
-      <section className="px-6 lg:px-20 mt-10">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-2xl font-semibold">Top Deals</h3>
-            <p className="text-sm text-gray-600">Effortless style, inspired by the future of fashion</p>
-          </div>
-          <Link href="/">
-            <Button variant="outline" className="rounded-full bg-transparent">
-              See More →
-            </Button>
-          </Link>
+      <section className="px-6 lg:px-20 mt-16">
+        <div className="mb-6">
+          <h3 className="text-2xl font-semibold">Top Deals</h3>
+          <p className="text-sm text-gray-600">Effortless style, inspired by the future of fashion</p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {topDeals.map((item) => {
-            const accent = item.discount.includes("60")
+        <div className="space-y-8">
+          {topDealsByCategory.map((categoryGroup) => {
+            const isExpanded = expandedCategories.has(categoryGroup.categoryName)
+            const displayedOffers = isExpanded ? categoryGroup.offers : categoryGroup.offers.slice(0, 6)
+            const hasMore = categoryGroup.offers.length > 6
+
             return (
-              <Link key={item.id} href={`/productdetail/${item.productId}`}>
-                <Card className="bg-transparent border-none shadow-none p-0">
-                  <div className="relative h-60 md:h-64 lg:h-72 rounded-[18px] overflow-hidden bg-white">
-                    <Image src={item.image || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
-                    <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
-                      {item.badge}
-                    </div>
-                  </div>
-                  <CardContent className="px-1 pt-3 pb-0">
-                    <p className="text-[13px] text-gray-700">{item.title}</p>
-                    <p
-                      className={`mt-1 text-[26px] leading-tight font-extrabold tracking-tight ${accent ? "text-[#ff5c39]" : "text-gray-900"}`}
+              <div key={categoryGroup.categoryName}>
+                <h4 className="text-lg font-semibold mb-4 text-gray-800">{categoryGroup.categoryName}</h4>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {displayedOffers.map((item) => {
+                    const accent = item.discount.includes("60")
+                    return (
+                      <Link key={item.id} href={`/productdetail/${item.productId}`}>
+                        <Card className="bg-transparent border-none shadow-none p-0 hover:shadow-lg transition-shadow duration-300">
+                          <div className="relative h-52 md:h-56 lg:h-60 rounded-[18px] overflow-hidden bg-white">
+                            <Image src={item.image || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
+                            {item.badge && (
+                              <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
+                                {item.badge}
+                              </div>
+                            )}
+                          </div>
+                          <CardContent className="px-2 pt-4 pb-2">
+                            <p className="text-sm text-gray-700 font-medium">{item.title}</p>
+                            <p className="text-xs text-gray-500 mt-1">Special Offer</p>
+                            <div className="mt-1 flex items-center gap-2">
+                              <p className={`text-xl leading-tight font-extrabold tracking-tight ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-900"}`}>
+                                ₹{item.discountedPrice}
+                              </p>
+                              <p className="text-sm text-gray-500 line-through">
+                                ₹{item.originalPrice}
+                              </p>
+                            </div>
+                            <p className={`mt-1 text-sm font-semibold ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-700"}`}>
+                              {item.discount}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    )
+                  })}
+                </div>
+                {hasMore && (
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      variant="outline"
+                      className="rounded-full bg-transparent hover:bg-gray-50"
+                      onClick={() => {
+                        setExpandedCategories(prev => {
+                          const newSet = new Set(prev)
+                          if (newSet.has(categoryGroup.categoryName)) {
+                            newSet.delete(categoryGroup.categoryName)
+                          } else {
+                            newSet.add(categoryGroup.categoryName)
+                          }
+                          return newSet
+                        })
+                      }}
                     >
-                      {item.discount}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
+                      {isExpanded ? 'See Less' : 'See More'} →
+                    </Button>
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>
       </section>
 
       {/* Shop by Category */}
-      <section className="px-6 lg:px-20 mt-10 mb-14">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-2xl font-semibold">Shop by Category</h3>
-            <p className="text-sm text-gray-600">Style, inspired by the future of fashion</p>
-          </div>
-          <Link href="/">
-            <Button variant="outline" className="rounded-full bg-transparent">
-              See More →
-            </Button>
-          </Link>
+      <section className="px-6 lg:px-20 mt-16 mb-20">
+        <div className="mb-6">
+          <h3 className="text-2xl font-semibold">Shop by Category</h3>
+          <p className="text-sm text-gray-600">Style, inspired by the future of fashion</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categories.map((item) => {
-            const accent = item.discount.includes("60")
+        <div className="space-y-8">
+          {categoriesByCategory.map((categoryGroup) => {
+            const isExpanded = expandedCategories.has(categoryGroup.categoryName)
+            const displayedSubCategories = isExpanded ? categoryGroup.subCategories : categoryGroup.subCategories.slice(0, 6)
+            const hasMore = categoryGroup.subCategories.length > 6
+
             return (
-              <Link key={item.id} href={`/productdetail/${item.productId}`}>
-                <Card className="bg-transparent border-none shadow-none p-0">
-                  <div className="relative h-60 md:h-64 lg:h-72 rounded-[18px] overflow-hidden bg-white">
-                    <Image src={item.image || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
-                    <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
-                      {item.badge}
-                    </div>
-                  </div>
-                  <CardContent className="px-1 pt-3 pb-0">
-                    <p className="text-[13px] text-gray-700">{item.title}</p>
-                    <p
-                      className={`mt-1 text-[26px] leading-tight font-extrabold tracking-tight ${accent ? "text-[#ff5c39]" : "text-gray-900"}`}
+              <div key={categoryGroup.categoryName}>
+                <h4 className="text-lg font-semibold mb-4 text-gray-800">{categoryGroup.categoryName}</h4>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {displayedSubCategories.map((item) => {
+                    const accent = item.discount.includes("60")
+                    return (
+                      <Link key={item.id} href={`/productdetail/${item.productId}`}>
+                        <Card className="bg-transparent border-none shadow-none p-0 hover:shadow-lg transition-shadow duration-300">
+                          <div className="relative h-52 md:h-56 lg:h-60 rounded-[18px] overflow-hidden bg-white">
+                            <Image src={item.image || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
+                            {item.badge && (
+                              <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
+                                {item.badge}
+                              </div>
+                            )}
+                          </div>
+                          <CardContent className="px-2 pt-4 pb-2">
+                            <p className="text-sm text-gray-700 font-medium">{item.title}</p>
+                            <div className="mt-2">
+                              <p className="text-lg font-bold text-gray-900">
+                                ₹{item.discountedPrice}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    )
+                  })}
+                </div>
+                {hasMore && (
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      variant="outline"
+                      className="rounded-full bg-transparent hover:bg-gray-50"
+                      onClick={() => {
+                        setExpandedCategories(prev => {
+                          const newSet = new Set(prev)
+                          if (newSet.has(categoryGroup.categoryName)) {
+                            newSet.delete(categoryGroup.categoryName)
+                          } else {
+                            newSet.add(categoryGroup.categoryName)
+                          }
+                          return newSet
+                        })
+                      }}
                     >
-                      {item.discount}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
+                      {isExpanded ? 'See Less' : 'See More'} →
+                    </Button>
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>
@@ -404,11 +1270,10 @@ export default function Home() {
               <button
                 key={tab}
                 onClick={() => handleTabClick(tab)}
-                className={`text-sm font-medium pb-2 border-b-2 transition-colors ${
-                  activeTab === tab
+                className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === tab
                     ? "text-[#f05a2b] border-[#f05a2b]"
                     : "text-gray-600 border-transparent hover:text-gray-900"
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -475,9 +1340,8 @@ export default function Home() {
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    currentSlide === index ? "bg-[#f05a2b]" : "bg-gray-300"
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-colors ${currentSlide === index ? "bg-[#f05a2b]" : "bg-gray-300"
+                    }`}
                 />
               ))}
             </div>
