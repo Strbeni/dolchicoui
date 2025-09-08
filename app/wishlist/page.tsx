@@ -347,8 +347,11 @@ function WishlistPage() {
     }
   }, [fetchWishlist, fetchSummary, isAuth, reduxWishlistError]);
 
-  /* ── Helpers ── */
-  const categories = Array.from(new Set(items.map((i) => i.product.category)));
+  const categories = Array.from(new Set(items.map((i) => {
+    const cat = i.product.category;
+    if (!cat) return '';
+    return (cat as any)?.name || cat;
+  }).filter(s => s !== '')));
 
   const handleSizeSelect = (pid: number, size: string) =>
     setSelectedSize((prev) => ({ ...prev, [pid]: size }));
@@ -516,8 +519,8 @@ function WishlistPage() {
                 className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:border-pink-500"
               >
                 <option value="">All Categories</option>
-                {categories.map((c) => (
-                  <option key={c}>{c}</option>
+                {categories.map((c, index) => (
+                  <option key={`${c}-${index}`} value={c}>{c}</option>
                 ))}
               </select>
             </div>
@@ -580,8 +583,8 @@ function WishlistPage() {
                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-pink-500"
                   >
                     <option value="">All Categories</option>
-                    {categories.map((c) => (
-                      <option key={c}>{c}</option>
+                    {categories.map((c, index) => (
+                      <option key={`${c}-${index}`} value={c}>{c}</option>
                     ))}
                   </select>
                 </div>
@@ -668,7 +671,7 @@ function WishlistPage() {
                   </div>
 
                   <div className="p-2 md:p-4">
-                    <h3 className="font-semibold text-xs md:text-sm mb-1 line-clamp-2 leading-tight">{it.product.name}</h3>
+                    <h3 className="font-semibold text-xs md:text-sm mb-1 line-clamp-2 leading-tight">{(it.product.name as any)?.name || it.product.name || 'Unknown Product'}</h3>
                     <p className="text-sm md:text-base font-bold text-[#d46331] mb-2">
                       IDR {it.product.price.toLocaleString()}
                     </p>
@@ -749,7 +752,7 @@ function WishlistPage() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1 md:mb-2">
-                        <h3 className="font-semibold text-sm md:text-base line-clamp-2 pr-2">{it.product.name}</h3>
+                        <h3 className="font-semibold text-sm md:text-base line-clamp-2 pr-2">{(it.product.name as any)?.name || it.product.name || 'Unknown Product'}</h3>
                         <button
                           onClick={() => removeItem(it.productId)}
                           disabled={removing === it.productId}
@@ -768,7 +771,7 @@ function WishlistPage() {
                       </p>
 
                       <p className="text-xs text-gray-500 mb-2 md:mb-3">
-                        {it.product.category} • {formatDate(it.createdAt)}
+                        {(it.product.category as any)?.name || it.product.category || 'Unknown'} • {formatDate(it.createdAt)}
                       </p>
 
                       {/* Size Selection - Compact */}
