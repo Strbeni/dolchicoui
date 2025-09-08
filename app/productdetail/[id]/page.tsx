@@ -752,7 +752,7 @@ export default function ProductDetailPage() {
                         {relatedProduct.originalPrice && (
                           <>
                             <span className="text-xs text-gray-500 line-through">₹{relatedProduct.originalPrice}</span>
-                            <span className="text-xs text-orange-500 font-medium">{relatedProduct.discount}</span>
+                            <span className="text-xs text-orange-500 font-medium">{relatedProduct.discount}% OFF</span>
                           </>
                         )}
                       </div>
@@ -947,7 +947,7 @@ export default function ProductDetailPage() {
                           {relatedProduct.originalPrice && (
                             <>
                               <span className="text-xs text-gray-500 line-through">₹{relatedProduct.originalPrice}</span>
-                              <span className="text-xs text-orange-500 font-medium">{relatedProduct.discount}</span>
+                              <span className="text-xs text-orange-500 font-medium">{relatedProduct.discount}% OFF</span>
                             </>
                           )}
                         </div>
@@ -1345,7 +1345,7 @@ export default function ProductDetailPage() {
                             <span className="text-xs text-gray-500 line-through">₹ {item.originalPrice}</span>
                           )}
                           {item.discount && (
-                            <span className="text-xs text-orange-600 font-semibold">{item.discount} OFF</span>
+                            <span className="text-xs text-orange-600 font-semibold">{item.discount}% OFF</span>
                           )}
                         </div>
                         <div className="flex items-center justify-between mt-1">
@@ -1590,7 +1590,7 @@ export default function ProductDetailPage() {
                             <span className="text-xs text-gray-500 line-through">₹ {item.originalPrice}</span>
                           )}
                           {item.discount && (
-                            <span className="text-xs text-orange-600 font-semibold">{item.discount} OFF</span>
+                            <span className="text-xs text-orange-600 font-semibold">{item.discount}% OFF</span>
                           )}
                         </div>
                         <div className="flex items-center justify-between mt-1">
