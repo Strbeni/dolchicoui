@@ -547,6 +547,65 @@ export default function OrderDetail() {
                     </div>
                   </div>
                 ))}
+              </div>  
+            </div>
+          </div>
+
+          {/* Billing Information Section */}
+          <div className="mt-8 mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+                {/* Billing Address */}
+                <div className="p-6 border-r border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing Address</h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="font-medium text-gray-900">{order.address.name}</div>
+                    <div>{order.address.street}</div>
+                    <div>{order.address.city}, {order.address.state} {order.address.zip}</div>
+                    {order.address.phone && (
+                      <>
+                        <div className="mt-3">
+                          <span className="font-medium">Phone Number:</span> {order.address.phone}
+                        </div>
+                        <div>
+                          <span className="font-medium">Email:</span> {order.address.name.toLowerCase().replace(' ', '.')}@gmail.com
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Order Notes */}
+                <div className="p-6 border-r border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Notes</h3>
+                  <div className="text-sm text-gray-600">
+                    <p>
+                      Thank you for your order! Your items are being carefully prepared for shipment.
+                      We appreciate your business and hope you enjoy your purchase from Dolchico.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="font-medium text-gray-900">{order.paymentMethod}</div>
+                    {order.paymentId && (
+                      <div>
+                        <span className="font-medium">Payment Id:</span> #{order.paymentId}
+                      </div>
+                    )}
+                    <div className="mt-3">
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${order.payment || order.paymentId
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        {order.payment || order.paymentId ? 'Payment Completed' : 'Payment Pending'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
