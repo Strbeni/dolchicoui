@@ -548,7 +548,7 @@ export default function OrderDetail() {
               </div>
               <Button
                 className="bg-orange-600 hover:bg-orange-700 rounded-3xl text-white px-4 md:px-6 py-2 text-sm md:text-base hidden md:block"
-                onClick={() => console.log('Leave feedback')}
+                onClick={() => router.push('/contact')}
               >
                 Leave Delivery Feedback
               </Button>
@@ -758,7 +758,7 @@ export default function OrderDetail() {
                             </Button>
                             <Button 
                               className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-full text-sm py-2"
-                              onClick={() => console.log('Leave feedback for item:', item.id)}
+                              onClick={() => router.push('/contact')}
                             >
                               Leave Product Feedback
                             </Button>
@@ -1082,7 +1082,7 @@ export default function OrderDetail() {
                     <Button
                       className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
                       onClick={() => {
-                        console.log('Leave review');
+                        router.push('/contact');
                         setShowBillDialog(false);
                       }}
                     >
