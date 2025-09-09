@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Package, Calendar, MapPin, CreditCard, FileText, Box, Truck, Handshake, Check } from "lucide-react";
+
+import { ArrowLeft, Package, Calendar, MapPin, CreditCard, FileText, Box, Truck, Handshake, Check, X, Download } from "lucide-react";
 import Image from "next/image";
 import ProfileSidebar from "@/components/ProfileSidebar";
 
@@ -21,22 +22,31 @@ interface OrderItem {
     id: number;
     name: string;
     image: string[];
-    category?: string;
-    subcategory?: string; // Changed from subCategory to subcategory
+    description?: string;
+    categoryId?: number;
+    subcategoryId?: number;
   };
+}
+
+interface Address {
+  zip: string;
+  city: string;
+  name: string;
+  phone: string;
+  state: string;
+  street: string;
 }
 
 interface Order {
   id: number;
-  status: string;
+  userId: number;
   amount: number;
+  address: Address;
+  status: string;
+  paymentMethod: string;
+  payment: boolean;
+  paymentId?: string;
   date: string | number;
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    phoneNumber?: string;
-  };
   items: OrderItem[];
 }
 
@@ -48,6 +58,8 @@ export default function OrderDetail() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBillDialog, setShowBillDialog] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<OrderItem | null>(null);
 
   // Authentication check
   const checkAuth = useCallback(() => {
@@ -132,19 +144,6 @@ export default function OrderDetail() {
     }
   }, [orderId, fetchOrderDetail]);
 
-  // Format date from timestamp
-  const formatDate = useCallback((timestamp: string | number) => {
-    const date = new Date(typeof timestamp === 'string' ? parseInt(timestamp) : timestamp);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }, []);
-
   // Format order placed date for display
   const formatOrderDate = useCallback((timestamp: string | number) => {
     const date = new Date(typeof timestamp === 'string' ? parseInt(timestamp) : timestamp);
@@ -157,11 +156,6 @@ export default function OrderDetail() {
       minute: '2-digit',
       hour12: true
     });
-  }, []);
-
-  // Format status for display
-  const formatStatus = useCallback((status: string) => {
-    return status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   }, []);
 
   // Get status progress
@@ -180,24 +174,6 @@ export default function OrderDetail() {
     }
   }, []);
 
-  // Get status color
-  const getStatusColor = useCallback((status: string) => {
-    switch (status.toLowerCase()) {
-      case 'order_placed':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'confirmed':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'delivered':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  }, []);
-
   // Calculate estimated delivery date (7 days from order placed)
   const getEstimatedDelivery = useCallback((orderDate: string | number) => {
     const date = new Date(typeof orderDate === 'string' ? parseInt(orderDate) : orderDate);
@@ -208,6 +184,38 @@ export default function OrderDetail() {
       year: 'numeric'
     });
   }, []);
+
+  // Handle View Bill click
+  const handleViewBill = useCallback((item: OrderItem) => {
+    setSelectedItem(item);
+    setShowBillDialog(true);
+  }, []);
+
+  // Calculate order totals
+  const calculateOrderTotals = useCallback(() => {
+    if (!order) return { subtotal: 0, total: 0 };
+
+    const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const total = order.amount; // Use the actual total from API
+
+    // Calculate potential savings, tax, delivery charges if the total differs from subtotal
+    const difference = subtotal - total;
+    let savings = 0;
+    let tax = 0;
+    let deliveryCharges = 0;
+    let couponDiscount = 0;
+
+    // If there's a difference, we can assume there might be discounts or additional charges
+    if (difference > 0) {
+      // If total is less than subtotal, there might be savings/discounts
+      savings = difference;
+    } else if (difference < 0) {
+      // If total is more than subtotal, there might be tax or delivery charges
+      tax = Math.abs(difference);
+    }
+
+    return { subtotal, total, savings, tax, deliveryCharges, couponDiscount };
+  }, [order]);
 
   // Loading state
   if (loading) {
@@ -361,26 +369,25 @@ export default function OrderDetail() {
                   </div>
                   <div className="w-10"></div> {/* Half of node container width */}
                 </div>
-                
+
                 {/* Nodes */}
                 <div className="relative flex justify-between">
                   {/* Order Placed */}
                   <div className="w-20 flex flex-col items-center text-center">
                     {/* Node Circle */}
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                      statusStep > 1
-                        ? 'bg-orange-600 border-orange-600'
-                        : statusStep === 1
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 1
+                      ? 'bg-orange-600 border-orange-600'
+                      : statusStep === 1
                         ? 'bg-white border-orange-600'
                         : 'bg-white border-gray-300'
-                    }`}>
+                      }`}>
                       {statusStep > 1 ? (
                         <Check className="w-5 h-5 text-white" />
                       ) : statusStep === 1 ? (
                         <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
                       ) : null}
                     </div>
-                    
+
                     {/* Icon and Label */}
                     <div className="mt-4 flex flex-col items-center">
                       <FileText className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 1 ? 'text-orange-600' : 'text-gray-400'}`} />
@@ -391,20 +398,19 @@ export default function OrderDetail() {
                   {/* Packaging */}
                   <div className="w-20 flex flex-col items-center text-center">
                     {/* Node Circle */}
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                      statusStep > 2
-                        ? 'bg-orange-600 border-orange-600'
-                        : statusStep === 2
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 2
+                      ? 'bg-orange-600 border-orange-600'
+                      : statusStep === 2
                         ? 'bg-white border-orange-600'
                         : 'bg-white border-gray-300'
-                    }`}>
+                      }`}>
                       {statusStep > 2 ? (
                         <Check className="w-5 h-5 text-white" />
                       ) : statusStep === 2 ? (
                         <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
                       ) : null}
                     </div>
-                    
+
                     {/* Icon and Label */}
                     <div className="mt-4 flex flex-col items-center">
                       <Box className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 2 ? 'text-orange-600' : 'text-gray-400'}`} />
@@ -415,20 +421,19 @@ export default function OrderDetail() {
                   {/* On The Road */}
                   <div className="w-20 flex flex-col items-center text-center">
                     {/* Node Circle */}
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                      statusStep > 3
-                        ? 'bg-orange-600 border-orange-600'
-                        : statusStep === 3
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 3
+                      ? 'bg-orange-600 border-orange-600'
+                      : statusStep === 3
                         ? 'bg-white border-orange-600'
                         : 'bg-white border-gray-300'
-                    }`}>
+                      }`}>
                       {statusStep > 3 ? (
                         <Check className="w-5 h-5 text-white" />
                       ) : statusStep === 3 ? (
                         <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
                       ) : null}
                     </div>
-                    
+
                     {/* Icon and Label */}
                     <div className="mt-4 flex flex-col items-center">
                       <Truck className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 3 ? 'text-orange-600' : 'text-gray-400'}`} />
@@ -439,20 +444,19 @@ export default function OrderDetail() {
                   {/* Delivered */}
                   <div className="w-20 flex flex-col items-center text-center">
                     {/* Node Circle */}
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                      statusStep > 4
-                        ? 'bg-orange-600 border-orange-600'
-                        : statusStep === 4
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 4
+                      ? 'bg-orange-600 border-orange-600'
+                      : statusStep === 4
                         ? 'bg-white border-orange-600'
                         : 'bg-white border-gray-300'
-                    }`}>
+                      }`}>
                       {statusStep > 4 ? (
                         <Check className="w-5 h-5 text-white" />
                       ) : statusStep === 4 ? (
                         <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
                       ) : null}
                     </div>
-                    
+
                     {/* Icon and Label */}
                     <div className="mt-4 flex flex-col items-center">
                       <Handshake className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 4 ? 'text-orange-600' : 'text-gray-400'}`} />
@@ -464,116 +468,208 @@ export default function OrderDetail() {
             </div>
           </div>
 
-          {/* Product List Section */}
-          <Card className="mt-6">
-            <CardContent className="p-6">
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Order Items ({order.items.length})
-                </h2>
-
-                <div className="space-y-4">
-                  {order.items.map((item, index) => (
-                    <div
-                      key={`${item.id}-${index}`}
-                      className="flex gap-4 p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
-                    >
-                      <div className="relative w-20 h-20 flex-shrink-0">
-                        <Image
-                          src={item.product.image[0] || '/placeholder.png'}
-                          alt={item.product.name}
-                          fill
-                          className="object-contain rounded border"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-2">
-                          {item.product.name}
-                        </h3>
-                        <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
-                          <div>
-                            <span className="font-medium">Size:</span> {item.size}
-                          </div>
-                          <div>
-                            <span className="font-medium">Quantity:</span> {item.quantity}
-                          </div>
-                          <div>
-                            <span className="font-medium">Unit Price:</span> IDR {item.price.toLocaleString()}
-                          </div>
-                          <div>
-                            <span className="font-medium">Subtotal:</span>
-                            <span className="font-bold text-gray-900"> IDR {(item.price * item.quantity).toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          {/* Products Table */}
+          <div className="mt-8 mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              {/* Table Header */}
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <div className="grid grid-cols-6 gap-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <div className="col-span-2">PRODUCT ({order.items.length})</div>
+                  <div className="text-center">PRICE</div>
+                  <div className="text-center">QUANTITY</div>
+                  <div className="text-center">SUB-TOTAL</div>
+                  <div className="text-center">VIEW</div>
                 </div>
               </div>
 
-              {/* Order Summary */}
-              <div className="border-t pt-6">
-                <div className="flex justify-end">
-                  <div className="w-80">
-                    <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span>Subtotal:</span>
-                        <span>IDR {order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Shipping:</span>
-                        <span>Free</span>
-                      </div>
-                      <div className="border-t pt-3">
-                        <div className="flex justify-between font-bold text-lg">
-                          <span>Total:</span>
-                          <span className="text-green-700">IDR {order.amount.toLocaleString()}</span>
+              {/* Table Body */}
+              <div className="divide-y divide-gray-200">
+                {order.items.map((item, index) => (
+                  <div key={`${item.id}-${index}`} className="px-6 py-6">
+                    <div className="grid grid-cols-6 gap-4 items-center">
+                      {/* Product Info */}
+                      <div className="col-span-2 flex items-center gap-4">
+                        <div className="relative w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                          <Image
+                            src={item.product.image[0] || '/placeholder.png'}
+                            alt={item.product.name}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs text-gray-500 uppercase font-medium mb-1">
+                            PRODUCT
+                          </div>
+                          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+                            {item.product.name}
+                          </h3>
+                          {item.size && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Size: {item.size}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Customer Information */}
-          {order.user && (
-            <Card className="mt-6">
-              <CardContent className="p-6">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Customer Information
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-800 mb-2">Delivery Details</h3>
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium text-gray-900">{order.user.name}</p>
-                      <p className="text-gray-600">{order.user.email}</p>
-                      {order.user.phoneNumber && (
-                        <p className="text-gray-600">Phone: {order.user.phoneNumber}</p>
-                      )}
+                      {/* Price */}
+                      <div className="text-center">
+                        <span className="text-sm font-semibold text-gray-900">
+                          ₹{item.price.toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Quantity */}
+                      <div className="text-center">
+                        <span className="text-sm text-gray-900">
+                          x{item.quantity}
+                        </span>
+                      </div>
+
+                      {/* Sub-total */}
+                      <div className="text-center">
+                        <span className="text-sm font-semibold text-gray-900">
+                          ₹{(item.price * item.quantity).toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* View Button */}
+                      <div className="text-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs px-3 py-1 h-8 border-gray-300 text-gray-600 hover:bg-gray-50"
+                          onClick={() => handleViewBill(item)}
+                        >
+                          View Bill
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" />
-                      Payment Method
-                    </h3>
-                    <div className="text-sm">
-                      <p className="text-gray-600">Cash on Delivery (COD)</p>
-                      <p className="text-xs text-gray-500 mt-1">Pay when your order arrives</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Custom Order Bill Dialog */}
+      {showBillDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ display: 'flex' }}>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 transition-opacity"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }}
+            onClick={() => setShowBillDialog(false)}
+          />
+
+          {/* Dialog Content */}
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="p-6 pb-4 border-b">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">Order Bill</h2>
+                <button
+                  onClick={() => setShowBillDialog(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {selectedItem && order && (
+                <div className="space-y-4">
+                  {/* Bill Details */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Subtotal ({order.items.length} items):</span>
+                      <span className="font-semibold">₹ {calculateOrderTotals().subtotal.toLocaleString()}</span>
+                    </div>
+
+                    {/* Show savings only if there's a positive difference */}
+                    {calculateOrderTotals().savings > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Saving:</span>
+                        <span className="font-semibold text-green-600">-₹{calculateOrderTotals().savings.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {/* Show tax only if calculated */}
+                    {calculateOrderTotals().tax > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Tax collected:</span>
+                        <span className="font-semibold">₹ {calculateOrderTotals().tax.toFixed(2)}</span>
+                      </div>
+                    )}
+
+                    {/* Always show delivery charges - assume free if not specified */}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Delivery Charges:</span>
+                      <span className="font-semibold text-green-600">
+                        {calculateOrderTotals().deliveryCharges > 0
+                          ? `₹ ${calculateOrderTotals().deliveryCharges.toFixed(2)}`
+                          : 'Free Delivery'
+                        }
+                      </span>
+                    </div>
+
+                    {/* Show coupons section only if there are discounts applied */}
+                    {calculateOrderTotals().couponDiscount > 0 && (
+                      <div className="border-t pt-3">
+                        <div className="text-sm font-medium text-gray-700 mb-2">Coupons</div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Discount Applied:</span>
+                          <span className="font-semibold text-green-600">-₹ {calculateOrderTotals().couponDiscount}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Check className="w-4 h-4 text-green-600" />
+                          <span className="text-xs text-green-600">Coupon applied (₹ {calculateOrderTotals().couponDiscount} OFF)</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="border-t pt-3">
+                      <div className="flex justify-between text-sm mb-3">
+                        <span className="text-gray-600">Payment Method</span>
+                        <span className="font-semibold">{order.paymentMethod}</span>
+                      </div>
+
+                      <div className="flex justify-between text-lg font-bold border-t pt-3">
+                        <span>Estimated total:</span>
+                        <span>₹ {calculateOrderTotals().total.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-orange-600 text-orange-600 hover:bg-orange-50"
+                      onClick={() => console.log('Download bill')}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+                    <Button
+                      className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                      onClick={() => {
+                        console.log('Leave review');
+                        setShowBillDialog(false);
+                      }}
+                    >
+                      Leave Review
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
