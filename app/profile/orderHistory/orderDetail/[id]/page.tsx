@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import jsPDF from 'jspdf';
 
 import { ArrowLeft, Package, Calendar, MapPin, CreditCard, FileText, Box, Truck, Handshake, Check, X, Download } from "lucide-react";
 import Image from "next/image";
@@ -215,6 +216,224 @@ export default function OrderDetail() {
 
     return { subtotal, total, savings, tax, deliveryCharges, couponDiscount };
   }, [order]);
+
+  // Generate and download PDF bill
+  const generatePDF = useCallback(async () => {
+    if (!order) return;
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+
+      // Helper function to add text with word wrap
+      const addText = (text: string, x: number, y: number, options: any = {}) => {
+        const fontSize = options.fontSize || 10;
+        const maxWidth = options.maxWidth || pageWidth - 40;
+        pdf.setFontSize(fontSize);
+        if (options.fontStyle) pdf.setFont(undefined, options.fontStyle);
+        const splitText = pdf.splitTextToSize(text, maxWidth);
+        pdf.text(splitText, x, y);
+        return y + (splitText.length * fontSize * 0.4);
+      };
+
+      // Header with logo and website name
+      pdf.setFontSize(24);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('DOLCHICO', 20, yPosition);
+      
+      // Add Dolchico logo (simplified path representation)
+      pdf.setFillColor(243, 97, 42); // Orange color #F3612A
+      // Draw a simplified version of the Dolchico logo
+      // Main cart/shopping bag shape
+      pdf.setLineWidth(0.5);
+      pdf.setDrawColor(243, 97, 42);
+      
+      // Cart body
+      pdf.roundedRect(pageWidth - 45, yPosition - 8, 20, 6, 1, 1, 'D');
+      
+      // Cart handle
+      pdf.line(pageWidth - 40, yPosition - 8, pageWidth - 35, yPosition - 8);
+      
+      // Cart wheels
+      pdf.setFillColor(36, 45, 53); // Dark color #242D35
+      pdf.circle(pageWidth - 40, yPosition - 1, 1, 'F');
+      pdf.circle(pageWidth - 30, yPosition - 1, 1, 'F');
+      
+      // Add "DOLCHI" text in smaller font
+      pdf.setFillColor(243, 97, 42);
+      pdf.setFontSize(8);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('DOLCHI', pageWidth - 43, yPosition - 3);
+      
+      yPosition += 15;
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'normal');
+      pdf.text('Premium Fashion & Lifestyle', 20, yPosition);
+      
+      yPosition += 20;
+
+      // Order Information
+      pdf.setFontSize(16);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('ORDER BILL', 20, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'normal');
+      pdf.text(`Order ID: #${order.id}`, 20, yPosition);
+      pdf.text(`Date: ${formatOrderDate(order.date)}`, pageWidth - 80, yPosition);
+      yPosition += 15;
+
+      // Products Table
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('PRODUCTS', 20, yPosition);
+      yPosition += 10;
+
+      // Table headers
+      pdf.setFontSize(9);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Product', 20, yPosition);
+      pdf.text('Price', 100, yPosition);
+      pdf.text('Qty', 125, yPosition);
+      pdf.text('Subtotal', 145, yPosition);
+      yPosition += 5;
+
+      // Draw line under headers
+      pdf.line(20, yPosition, pageWidth - 20, yPosition);
+      yPosition += 5;
+
+      // Table content
+      pdf.setFont(undefined, 'normal');
+      order.items.forEach((item) => {
+        if (yPosition > pageHeight - 40) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+
+        const productName = item.product.name.length > 40 
+          ? item.product.name.substring(0, 40) + '...' 
+          : item.product.name;
+        
+        pdf.text(productName, 20, yPosition);
+        pdf.text(`Rs.${item.price.toLocaleString()}`, 100, yPosition);
+        pdf.text(`x${item.quantity}`, 125, yPosition);
+        pdf.text(`Rs.${(item.price * item.quantity).toLocaleString()}`, 145, yPosition);
+        yPosition += 8;
+      });
+
+      yPosition += 10;
+
+      // Order Summary
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('ORDER SUMMARY', 20, yPosition);
+      yPosition += 10;
+
+      const totals = calculateOrderTotals();
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'normal');
+
+      pdf.text('Total Price:', 20, yPosition);
+      pdf.text(`Rs.${totals.subtotal.toLocaleString()}`, 145, yPosition);
+      yPosition += 6;
+
+      if (totals.savings > 0) {
+        pdf.text('Savings:', 20, yPosition);
+        pdf.text(`-Rs.${totals.savings.toLocaleString()}`, 145, yPosition);
+        yPosition += 6;
+      }
+
+      if (totals.tax > 0) {
+        pdf.text('Tax collected:', 20, yPosition);
+        pdf.text(`Rs.${totals.tax.toLocaleString()}`, 145, yPosition);
+        yPosition += 6;
+      }
+
+      pdf.text('Delivery Charges:', 20, yPosition);
+      pdf.text(totals.deliveryCharges > 0 ? `Rs.${totals.deliveryCharges.toFixed(2)}` : 'Free Delivery', 145, yPosition);
+      yPosition += 6;
+
+      if (totals.couponDiscount > 0) {
+        pdf.text('Coupon Discount:', 20, yPosition);
+        pdf.text(`-Rs.${totals.couponDiscount}`, 145, yPosition);
+        yPosition += 6;
+      }
+
+      // Draw line above total
+      pdf.line(20, yPosition, 170, yPosition);
+      yPosition += 5;
+
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Estimated Total:', 20, yPosition);
+      pdf.text(`Rs.${order.amount.toLocaleString()}`, 145, yPosition);
+      yPosition += 15;
+
+      // Billing Information
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('BILLING INFORMATION', 20, yPosition);
+      yPosition += 10;
+
+      pdf.setFontSize(10);
+      pdf.setFont(undefined, 'normal');
+      
+      // Billing Address
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Billing Address:', 20, yPosition);
+      yPosition += 6;
+      pdf.setFont(undefined, 'normal');
+      yPosition = addText(order.address.name, 20, yPosition);
+      yPosition = addText(order.address.street, 20, yPosition);
+      yPosition = addText(`${order.address.city}, ${order.address.state} ${order.address.zip}`, 20, yPosition);
+      if (order.address.phone) {
+        yPosition = addText(`Phone: ${order.address.phone}`, 20, yPosition);
+      }
+      yPosition += 10;
+
+      // Payment Method
+      pdf.setFont(undefined, 'bold');
+      pdf.text('Payment Method:', 20, yPosition);
+      yPosition += 6;
+      pdf.setFont(undefined, 'normal');
+      pdf.text(order.paymentMethod, 20, yPosition);
+      if (order.paymentId) {
+        yPosition += 6;
+        pdf.text(`Payment ID: #${order.paymentId}`, 20, yPosition);
+      }
+      yPosition += 15;
+
+      // Footer
+      if (yPosition > pageHeight - 30) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+
+      pdf.setFontSize(8);
+      pdf.setFont(undefined, 'normal');
+      pdf.text('Thank you for shopping with Dolchico!', 20, yPosition);
+      yPosition += 4;
+      pdf.text('For any queries, please contact our customer support.', 20, yPosition);
+      yPosition += 4;
+      pdf.text('Website: www.dolchico.com | Email: support@dolchico.com', 20, yPosition);
+
+      // Add page numbers
+      const pageCount = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.text(`Page ${i} of ${pageCount}`, pageWidth - 30, pageHeight - 10);
+      }
+
+      // Save the PDF
+      pdf.save(`Dolchico_Order_${order.id}_Bill.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // You can add a toast notification here to inform the user about the error
+    }
+  }, [order, formatOrderDate, calculateOrderTotals]);
 
   // Loading state
   if (loading) {
@@ -855,7 +1074,7 @@ export default function OrderDetail() {
                     <Button
                       variant="outline"
                       className="flex-1 border-orange-600 text-orange-600 hover:bg-orange-50"
-                      onClick={() => console.log('Download bill')}
+                      onClick={generatePDF}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Download
