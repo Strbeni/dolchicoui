@@ -468,86 +468,141 @@ export default function OrderDetail() {
             </div>
           </div>
 
-          {/* Products Table */}
+          {/* Products Table and Order Summary */}
           <div className="mt-8 mb-6">
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {/* Table Header */}
-              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                <div className="grid grid-cols-6 gap-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  <div className="col-span-2">PRODUCT ({order.items.length})</div>
-                  <div className="text-center">PRICE</div>
-                  <div className="text-center">QUANTITY</div>
-                  <div className="text-center">SUB-TOTAL</div>
-                  <div className="text-center">VIEW</div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Products Table - Left Side */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  {/* Table Header */}
+                  <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                    <div className="grid grid-cols-5 gap-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      <div className="col-span-2">PRODUCT ({order.items.length})</div>
+                      <div className="text-center">PRICE</div>
+                      <div className="text-center">QUANTITY</div>
+                      <div className="text-center">SUB-TOTAL</div>
+                    </div>
+                  </div>
+
+                  {/* Table Body */}
+                  <div className="divide-y divide-gray-200">
+                    {order.items.map((item, index) => (
+                      <div key={`${item.id}-${index}`} className="px-6 py-6">
+                        <div className="grid grid-cols-5 gap-4 items-center">
+                          {/* Product Info */}
+                          <div className="col-span-2 flex items-center gap-4">
+                            <div className="relative w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                              <Image
+                                src={item.product.image[0] || '/placeholder.png'}
+                                alt={item.product.name}
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs text-gray-500 uppercase font-medium mb-1">
+                                PRODUCT
+                              </div>
+                              <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+                                {item.product.name}
+                              </h3>
+                              {item.size && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Size: {item.size}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Price */}
+                          <div className="text-center">
+                            <span className="text-sm font-semibold text-gray-900">
+                              ₹{item.price.toLocaleString()}
+                            </span>
+                          </div>
+
+                          {/* Quantity */}
+                          <div className="text-center">
+                            <span className="text-sm text-gray-900">
+                              x{item.quantity}
+                            </span>
+                          </div>
+
+                          {/* Sub-total */}
+                          <div className="text-center">
+                            <span className="text-sm font-semibold text-gray-900">
+                              ₹{(item.price * item.quantity).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>  
                 </div>
               </div>
 
-              {/* Table Body */}
-              <div className="divide-y divide-gray-200">
-                {order.items.map((item, index) => (
-                  <div key={`${item.id}-${index}`} className="px-6 py-6">
-                    <div className="grid grid-cols-6 gap-4 items-center">
-                      {/* Product Info */}
-                      <div className="col-span-2 flex items-center gap-4">
-                        <div className="relative w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
-                          <Image
-                            src={item.product.image[0] || '/placeholder.png'}
-                            alt={item.product.name}
-                            fill
-                            className="object-contain"
-                          />
+              {/* Order Summary - Right Side */}
+              <div className="lg:col-span-1">
+                <div className="bg-gray-100 rounded-2xl p-6 sticky top-6">
+                  <div className="space-y-6">
+                    {/* Header */}
+                    <div>
+                      <h3 className="text-2xl font-bold text-black mb-3">Product ({order.items.length < 10 ? '0' + order.items.length : order.items.length})</h3>
+                      <h4 className="text-xl font-semibold text-black">Order Summary</h4>
+                    </div>
+
+                    {/* Order Details */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 text-base">Total Price</span>
+                        <span className="font-semibold text-black text-base">₹ {calculateOrderTotals().subtotal.toLocaleString()}</span>
+                      </div>
+
+                      {/* Show savings only if there's a positive difference */}
+                      {calculateOrderTotals().savings > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 text-base">Saving:</span>
+                          <span className="font-semibold text-green-600 text-base">-${calculateOrderTotals().savings.toLocaleString()}</span>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs text-gray-500 uppercase font-medium mb-1">
-                            PRODUCT
-                          </div>
-                          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
-                            {item.product.name}
-                          </h3>
-                          {item.size && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              Size: {item.size}
-                            </div>
-                          )}
+                      )}
+
+                      {/* Show tax only if calculated */}
+                      {calculateOrderTotals().tax > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 text-base">Tax collected:</span>
+                          <span className="font-semibold text-black text-base">₹ {calculateOrderTotals().tax.toLocaleString()}</span>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Price */}
-                      <div className="text-center">
-                        <span className="text-sm font-semibold text-gray-900">
-                          ₹{item.price.toLocaleString()}
+                      {/* Always show delivery charges - assume free if not specified */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 text-base">Delivery Charges:</span>
+                        <span className="font-semibold text-black text-base">
+                          {calculateOrderTotals().deliveryCharges > 0
+                            ? `₹ ${calculateOrderTotals().deliveryCharges.toFixed(2)}`
+                            : 'Free Delivery'
+                          }
                         </span>
                       </div>
 
-                      {/* Quantity */}
-                      <div className="text-center">
-                        <span className="text-sm text-gray-900">
-                          x{item.quantity}
-                        </span>
-                      </div>
+                      {/* Show coupons section only if there are discounts applied */}
+                      {calculateOrderTotals().couponDiscount > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 text-base">SALE coupon(300 OFF):</span>
+                          <span className="font-semibold text-green-600 text-base">-₹ 300</span>
+                        </div>
+                      )}
 
-                      {/* Sub-total */}
-                      <div className="text-center">
-                        <span className="text-sm font-semibold text-gray-900">
-                          ₹{(item.price * item.quantity).toLocaleString()}
-                        </span>
-                      </div>
-
-                      {/* View Button */}
-                      <div className="text-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs px-3 py-1 h-8 border-gray-300 text-gray-600 hover:bg-gray-50"
-                          onClick={() => handleViewBill(item)}
-                        >
-                          View Bill
-                        </Button>
+                      <div className="border-t border-gray-300 pt-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-black text-base font-semibold">Estimated total:</span>
+                          <span className="text-black text-base font-semibold">₹ {order.amount.toLocaleString()}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>  
+                </div>
+              </div>
             </div>
           </div>
 
