@@ -345,105 +345,119 @@ export default function OrderDetail() {
 
           {/* Progress Bar */}
           <div className="mb-8">
-            <div className="relative px-3">
-              {/* Background Line */}
-              <div className="absolute top-3 left-3 right-3 h-1 bg-gray-300 rounded-full"></div>
-
-              {/* Orange Progress Line - only filled portions */}
-              <div
-                className="absolute top-3 left-3 h-1 bg-orange-600 rounded-full transition-all duration-500"
-                style={{
-                  width: `${((statusStep - 1) / 3) * (100 - (24 / 16))}%`
-                }}
-              ></div>
-
-              {/* Progress Nodes */}
-              <div className="flex justify-between relative z-10">
-                {/* Order Placed */}
-                <div className="flex flex-col items-center">
-                  {/* Node */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${statusStep > 1
-                    ? 'bg-orange-600 border-orange-600'
-                    : statusStep === 1
-                      ? 'bg-white border-orange-600'
-                      : 'bg-white border-gray-300'
-                    }`}>
-                    {statusStep > 1 ? (
-                      <Check className="w-4 h-4 text-white" />
-                    ) : statusStep === 1 ? (
-                      <div className="w-4 h-4 bg-orange-600 rounded-full animate-pulse"></div>
-                    ) : null}
+            <div className="w-full">
+              <div className="relative mb-20">
+                {/* Lines Container */}
+                <div className="absolute top-4 left-0 w-full flex items-center">
+                  {/* We add a small invisible div at the start and end to make the flex container span the full width
+                      and allow the line to be sized correctly without absolute positioning math on width */}
+                  <div className="w-10"></div> {/* Half of node container width */}
+                  <div className="flex-grow relative h-1 bg-gray-200 rounded-full">
+                    {/* Progress Line */}
+                    <div
+                      className="absolute top-0 left-0 h-1 bg-orange-600 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${((statusStep - 1) / 3) * 100}%` }}
+                    ></div>
                   </div>
-                  {/* Icon and label below node */}
-                  <div className="mt-3 flex flex-col items-center">
-                    <FileText className="w-7 h-7 text-orange-600 mb-2" />
-                    <div className="text-md font-medium text-gray-800">Order Placed</div>
-                  </div>
+                  <div className="w-10"></div> {/* Half of node container width */}
                 </div>
-
-                {/* Packaging */}
-                <div className="flex flex-col items-center">
-                  {/* Node */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${statusStep > 2
-                    ? 'bg-orange-600 border-orange-600'
-                    : statusStep === 2
-                      ? 'bg-white border-orange-600'
-                      : 'bg-white border-gray-300'
+                
+                {/* Nodes */}
+                <div className="relative flex justify-between">
+                  {/* Order Placed */}
+                  <div className="w-20 flex flex-col items-center text-center">
+                    {/* Node Circle */}
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                      statusStep > 1
+                        ? 'bg-orange-600 border-orange-600'
+                        : statusStep === 1
+                        ? 'bg-white border-orange-600'
+                        : 'bg-white border-gray-300'
                     }`}>
-                    {statusStep > 2 ? (
-                      <Check className="w-4 h-4 text-white" />
-                    ) : statusStep === 2 ? (
-                      <div className="w-4 h-4 bg-orange-600 rounded-full animate-pulse"></div>
-                    ) : null}
+                      {statusStep > 1 ? (
+                        <Check className="w-5 h-5 text-white" />
+                      ) : statusStep === 1 ? (
+                        <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
+                      ) : null}
+                    </div>
+                    
+                    {/* Icon and Label */}
+                    <div className="mt-4 flex flex-col items-center">
+                      <FileText className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 1 ? 'text-orange-600' : 'text-gray-400'}`} />
+                      <div className={`text-sm font-medium transition-colors duration-300 ${statusStep >= 1 ? 'text-gray-800' : 'text-gray-500'}`}>Order Placed</div>
+                    </div>
                   </div>
-                  {/* Icon and label below node */}
-                  <div className="mt-3 flex flex-col items-center">
-                    <Box className="w-7 h-7 text-orange-600 mb-2" />
-                    <div className="text-md font-medium text-gray-800">Packaging</div>
-                  </div>
-                </div>
 
-                {/* On The Road */}
-                <div className="flex flex-col items-center">
-                  {/* Node */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${statusStep > 3
-                    ? 'bg-orange-600 border-orange-600'
-                    : statusStep === 3
-                      ? 'bg-white border-orange-600'
-                      : 'bg-white border-gray-300'
+                  {/* Packaging */}
+                  <div className="w-20 flex flex-col items-center text-center">
+                    {/* Node Circle */}
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                      statusStep > 2
+                        ? 'bg-orange-600 border-orange-600'
+                        : statusStep === 2
+                        ? 'bg-white border-orange-600'
+                        : 'bg-white border-gray-300'
                     }`}>
-                    {statusStep > 3 ? (
-                      <Check className="w-4 h-4 text-white" />
-                    ) : statusStep === 3 ? (
-                      <div className="w-4 h-4 bg-orange-600 rounded-full animate-pulse"></div>
-                    ) : null}
+                      {statusStep > 2 ? (
+                        <Check className="w-5 h-5 text-white" />
+                      ) : statusStep === 2 ? (
+                        <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
+                      ) : null}
+                    </div>
+                    
+                    {/* Icon and Label */}
+                    <div className="mt-4 flex flex-col items-center">
+                      <Box className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 2 ? 'text-orange-600' : 'text-gray-400'}`} />
+                      <div className={`text-sm font-medium transition-colors duration-300 ${statusStep >= 2 ? 'text-gray-800' : 'text-gray-500'}`}>Packaging</div>
+                    </div>
                   </div>
-                  {/* Icon and label below node */}
-                  <div className="mt-3 flex flex-col items-center">
-                    <Truck className="w-7 h-7 text-orange-600 mb-2" />
-                    <div className="text-md font-medium text-gray-800">On The Road</div>
-                  </div>
-                </div>
 
-                {/* Delivered */}
-                <div className="flex flex-col items-center">
-                  {/* Node */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${statusStep > 4
-                    ? 'bg-orange-600 border-orange-600'
-                    : statusStep === 4
-                      ? 'bg-white border-orange-600'
-                      : 'bg-white border-gray-300'
+                  {/* On The Road */}
+                  <div className="w-20 flex flex-col items-center text-center">
+                    {/* Node Circle */}
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                      statusStep > 3
+                        ? 'bg-orange-600 border-orange-600'
+                        : statusStep === 3
+                        ? 'bg-white border-orange-600'
+                        : 'bg-white border-gray-300'
                     }`}>
-                    {statusStep > 4 ? (
-                      <Check className="w-4 h-4 text-white" />
-                    ) : statusStep === 4 ? (
-                      <div className="w-4 h-4 bg-orange-600 rounded-full animate-pulse"></div>
-                    ) : null}
+                      {statusStep > 3 ? (
+                        <Check className="w-5 h-5 text-white" />
+                      ) : statusStep === 3 ? (
+                        <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
+                      ) : null}
+                    </div>
+                    
+                    {/* Icon and Label */}
+                    <div className="mt-4 flex flex-col items-center">
+                      <Truck className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 3 ? 'text-orange-600' : 'text-gray-400'}`} />
+                      <div className={`text-sm font-medium transition-colors duration-300 ${statusStep >= 3 ? 'text-gray-800' : 'text-gray-500'}`}>On The Road</div>
+                    </div>
                   </div>
-                  {/* Icon and label below node */}
-                  <div className="mt-3 flex flex-col items-center">
-                    <Handshake className="w-7 h-7 text-orange-600 mb-2" />
-                    <div className="text-md font-medium text-gray-800">Delivered</div>
+
+                  {/* Delivered */}
+                  <div className="w-20 flex flex-col items-center text-center">
+                    {/* Node Circle */}
+                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                      statusStep > 4
+                        ? 'bg-orange-600 border-orange-600'
+                        : statusStep === 4
+                        ? 'bg-white border-orange-600'
+                        : 'bg-white border-gray-300'
+                    }`}>
+                      {statusStep > 4 ? (
+                        <Check className="w-5 h-5 text-white" />
+                      ) : statusStep === 4 ? (
+                        <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
+                      ) : null}
+                    </div>
+                    
+                    {/* Icon and Label */}
+                    <div className="mt-4 flex flex-col items-center">
+                      <Handshake className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 4 ? 'text-orange-600' : 'text-gray-400'}`} />
+                      <div className={`text-sm font-medium transition-colors duration-300 ${statusStep >= 4 ? 'text-gray-800' : 'text-gray-500'}`}>Delivered</div>
+                    </div>
                   </div>
                 </div>
               </div>
