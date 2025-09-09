@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 
 import { ArrowLeft, Package, Calendar, MapPin, CreditCard, FileText, Box, Truck, Handshake, Check, X, Download } from "lucide-react";
 import Image from "next/image";
@@ -220,7 +219,7 @@ export default function OrderDetail() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gray-100 p-3 md:p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -234,7 +233,7 @@ export default function OrderDetail() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gray-100 p-3 md:p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center max-w-md mx-auto">
             <div className="text-red-500 mb-4">
@@ -261,7 +260,7 @@ export default function OrderDetail() {
   // Order not found state
   if (!order) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gray-100 p-3 md:p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center max-w-md mx-auto">
             <div className="text-gray-400 mb-6">
@@ -283,26 +282,41 @@ export default function OrderDetail() {
   }
 
   const statusStep = getStatusStep(order.status);
-  // const statusStep = 1;
+  // const statusStep = 3;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-3 md:p-6">
       <div className="max-w-7xl mx-auto flex gap-8">
-        {/* Sidebar */}
-        <div className="w-1/4 flex-shrink-0">
+        {/* Sidebar - Hidden on mobile */}
+        <div className="hidden md:block w-1/4 flex-shrink-0">
           <div className="sticky top-6">
             <ProfileSidebar activeSection="order-history" />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0 bg-white p-6 rounded-lg shadow">
+        <div className="flex-1 min-w-0 bg-white p-3 md:p-6 rounded-lg shadow">
           {/* Header */}
           <div className="mb-6">
-            <div className="flex items-center justify-between">
+            {/* Mobile Back Button */}
+            <div className="md:hidden mb-4">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2 p-2 text-gray-600 hover:text-gray-900"
+                onClick={() => router.push('/profile/orderHistory')}
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span>Order History</span>
+              </Button>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Details</h1>
-                <div className="text-sm text-gray-500">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                  <span className="md:hidden">Order Details</span>
+                  <span className="hidden md:block">Order Details</span>
+                </h1>
+                <div className="text-sm text-gray-500 hidden md:block">
                   <span
                     className="cursor-pointer hover:underline"
                     onClick={() => router.push('/profile/orderHistory')}
@@ -310,11 +324,11 @@ export default function OrderDetail() {
                     Order History
                   </span>
                   <span className="mx-2">{'>'}</span>
-                  <span>Order Details</span>
+                  <span>Delivery status</span>
                 </div>
               </div>
               <Button
-                className="bg-orange-600 hover:bg-orange-700 rounded-3xl text-white px-6 py-2"
+                className="bg-orange-600 hover:bg-orange-700 rounded-3xl text-white px-4 md:px-6 py-2 text-sm md:text-base hidden md:block"
                 onClick={() => console.log('Leave feedback')}
               >
                 Leave Delivery Feedback
@@ -323,18 +337,18 @@ export default function OrderDetail() {
           </div>
 
           {/* Order Info Container */}
-          <div className="mb-6 bg-gray-100 rounded-lg p-6">
-            <div className="flex items-center justify-between">
+          <div className="mb-6 bg-gray-100 rounded-lg p-4 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <div className="text-2xl font-bold text-gray-900 mb-1">
+                <div className="text-xl md:text-2xl font-bold text-gray-900 mb-1">
                   #{order.id}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-xs md:text-sm text-gray-600">
                   {order.items.length} Product{order.items.length > 1 ? "s" : ""} • Order Placed on {formatOrderDate(order.date)}
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-gray-900">
+              <div className="text-left md:text-right">
+                <div className="text-2xl md:text-3xl font-bold text-gray-900">
                   ₹ {order.amount.toLocaleString()}
                 </div>
               </div>
@@ -343,7 +357,7 @@ export default function OrderDetail() {
 
           {/* Expected Delivery Date */}
           <div className="mb-6">
-            <div className="text-left flex items-center gap-2">
+            <div className="text-left flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
               <span className="text-sm text-gray-600">Order expected arrival</span>
               <span className="text-lg font-semibold text-gray-800">
                 {getEstimatedDelivery(order.date)}
@@ -354,12 +368,12 @@ export default function OrderDetail() {
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="w-full">
-              <div className="relative mb-20">
+              <div className="relative mb-16 md:mb-20">
                 {/* Lines Container */}
-                <div className="absolute top-4 left-0 w-full flex items-center">
+                <div className="absolute top-3 md:top-4 left-0 w-full flex items-center">
                   {/* We add a small invisible div at the start and end to make the flex container span the full width
                       and allow the line to be sized correctly without absolute positioning math on width */}
-                  <div className="w-10"></div> {/* Half of node container width */}
+                  <div className="w-8 md:w-10"></div> {/* Half of node container width */}
                   <div className="flex-grow relative h-1 bg-gray-200 rounded-full">
                     {/* Progress Line */}
                     <div
@@ -367,100 +381,100 @@ export default function OrderDetail() {
                       style={{ width: `${((statusStep - 1) / 3) * 100}%` }}
                     ></div>
                   </div>
-                  <div className="w-10"></div> {/* Half of node container width */}
+                  <div className="w-8 md:w-10"></div> {/* Half of node container width */}
                 </div>
 
                 {/* Nodes */}
                 <div className="relative flex justify-between">
                   {/* Order Placed */}
-                  <div className="w-20 flex flex-col items-center text-center">
+                  <div className="w-16 md:w-20 flex flex-col items-center text-center">
                     {/* Node Circle */}
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 1
+                    <div className={`relative z-10 w-6 md:w-8 h-6 md:h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 1
                       ? 'bg-orange-600 border-orange-600'
                       : statusStep === 1
                         ? 'bg-white border-orange-600'
                         : 'bg-white border-gray-300'
                       }`}>
                       {statusStep > 1 ? (
-                        <Check className="w-5 h-5 text-white" />
+                        <Check className="w-3 md:w-5 h-3 md:h-5 text-white" />
                       ) : statusStep === 1 ? (
-                        <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
+                        <div className="w-3 md:w-5 h-3 md:h-5 bg-orange-600 rounded-full animate-pulse"></div>
                       ) : null}
                     </div>
 
                     {/* Icon and Label */}
-                    <div className="mt-4 flex flex-col items-center">
-                      <FileText className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 1 ? 'text-orange-600' : 'text-gray-400'}`} />
-                      <div className={`text-sm font-medium transition-colors duration-300 ${statusStep >= 1 ? 'text-gray-800' : 'text-gray-500'}`}>Order Placed</div>
+                    <div className="mt-3 md:mt-4 flex flex-col items-center">
+                      <FileText className={`w-6 md:w-8 h-6 md:h-8 mb-1 md:mb-2 transition-colors duration-300 ${statusStep >= 1 ? 'text-orange-600' : 'text-gray-400'}`} />
+                      <div className={`text-xs md:text-sm font-medium transition-colors duration-300 ${statusStep >= 1 ? 'text-gray-800' : 'text-gray-500'}`}>Order Placed</div>
                     </div>
                   </div>
 
                   {/* Packaging */}
-                  <div className="w-20 flex flex-col items-center text-center">
+                  <div className="w-16 md:w-20 flex flex-col items-center text-center">
                     {/* Node Circle */}
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 2
+                    <div className={`relative z-10 w-6 md:w-8 h-6 md:h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 2
                       ? 'bg-orange-600 border-orange-600'
                       : statusStep === 2
                         ? 'bg-white border-orange-600'
                         : 'bg-white border-gray-300'
                       }`}>
                       {statusStep > 2 ? (
-                        <Check className="w-5 h-5 text-white" />
+                        <Check className="w-3 md:w-5 h-3 md:h-5 text-white" />
                       ) : statusStep === 2 ? (
-                        <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
+                        <div className="w-3 md:w-5 h-3 md:h-5 bg-orange-600 rounded-full animate-pulse"></div>
                       ) : null}
                     </div>
 
                     {/* Icon and Label */}
-                    <div className="mt-4 flex flex-col items-center">
-                      <Box className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 2 ? 'text-orange-600' : 'text-gray-400'}`} />
-                      <div className={`text-sm font-medium transition-colors duration-300 ${statusStep >= 2 ? 'text-gray-800' : 'text-gray-500'}`}>Packaging</div>
+                    <div className="mt-3 md:mt-4 flex flex-col items-center">
+                      <Box className={`w-6 md:w-8 h-6 md:h-8 mb-1 md:mb-2 transition-colors duration-300 ${statusStep >= 2 ? 'text-orange-600' : 'text-gray-400'}`} />
+                      <div className={`text-xs md:text-sm font-medium transition-colors duration-300 ${statusStep >= 2 ? 'text-gray-800' : 'text-gray-500'}`}>Packaging</div>
                     </div>
                   </div>
 
                   {/* On The Road */}
-                  <div className="w-20 flex flex-col items-center text-center">
+                  <div className="w-16 md:w-20 flex flex-col items-center text-center">
                     {/* Node Circle */}
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 3
+                    <div className={`relative z-10 w-6 md:w-8 h-6 md:h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 3
                       ? 'bg-orange-600 border-orange-600'
                       : statusStep === 3
                         ? 'bg-white border-orange-600'
                         : 'bg-white border-gray-300'
                       }`}>
                       {statusStep > 3 ? (
-                        <Check className="w-5 h-5 text-white" />
+                        <Check className="w-3 md:w-5 h-3 md:h-5 text-white" />
                       ) : statusStep === 3 ? (
-                        <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
+                        <div className="w-3 md:w-5 h-3 md:h-5 bg-orange-600 rounded-full animate-pulse"></div>
                       ) : null}
                     </div>
 
                     {/* Icon and Label */}
-                    <div className="mt-4 flex flex-col items-center">
-                      <Truck className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 3 ? 'text-orange-600' : 'text-gray-400'}`} />
-                      <div className={`text-sm font-medium transition-colors duration-300 ${statusStep >= 3 ? 'text-gray-800' : 'text-gray-500'}`}>On The Road</div>
+                    <div className="mt-3 md:mt-4 flex flex-col items-center">
+                      <Truck className={`w-6 md:w-8 h-6 md:h-8 mb-1 md:mb-2 transition-colors duration-300 ${statusStep >= 3 ? 'text-orange-600' : 'text-gray-400'}`} />
+                      <div className={`text-xs md:text-sm font-medium transition-colors duration-300 ${statusStep >= 3 ? 'text-gray-800' : 'text-gray-500'}`}>On The Road</div>
                     </div>
                   </div>
 
                   {/* Delivered */}
-                  <div className="w-20 flex flex-col items-center text-center">
+                  <div className="w-16 md:w-20 flex flex-col items-center text-center">
                     {/* Node Circle */}
-                    <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 4
+                    <div className={`relative z-10 w-6 md:w-8 h-6 md:h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${statusStep > 4
                       ? 'bg-orange-600 border-orange-600'
                       : statusStep === 4
                         ? 'bg-white border-orange-600'
                         : 'bg-white border-gray-300'
                       }`}>
                       {statusStep > 4 ? (
-                        <Check className="w-5 h-5 text-white" />
+                        <Check className="w-3 md:w-5 h-3 md:h-5 text-white" />
                       ) : statusStep === 4 ? (
-                        <div className="w-5 h-5 bg-orange-600 rounded-full animate-pulse"></div>
+                        <div className="w-3 md:w-5 h-3 md:h-5 bg-orange-600 rounded-full animate-pulse"></div>
                       ) : null}
                     </div>
 
                     {/* Icon and Label */}
-                    <div className="mt-4 flex flex-col items-center">
-                      <Handshake className={`w-8 h-8 mb-2 transition-colors duration-300 ${statusStep >= 4 ? 'text-orange-600' : 'text-gray-400'}`} />
-                      <div className={`text-sm font-medium transition-colors duration-300 ${statusStep >= 4 ? 'text-gray-800' : 'text-gray-500'}`}>Delivered</div>
+                    <div className="mt-3 md:mt-4 flex flex-col items-center">
+                      <Handshake className={`w-6 md:w-8 h-6 md:h-8 mb-1 md:mb-2 transition-colors duration-300 ${statusStep >= 4 ? 'text-orange-600' : 'text-gray-400'}`} />
+                      <div className={`text-xs md:text-sm font-medium transition-colors duration-300 ${statusStep >= 4 ? 'text-gray-800' : 'text-gray-500'}`}>Delivered</div>
                     </div>
                   </div>
                 </div>
@@ -470,17 +484,82 @@ export default function OrderDetail() {
 
           {/* Products Table and Order Summary */}
           <div className="mt-8 mb-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Products Table - Left Side */}
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Products Table - Mobile and Desktop */}
+              <div className="flex-1">
+                {/* Mobile View - Card Layout */}
+                <div className="block md:hidden space-y-4">
+                  <div className="bg-gray-50 px-4 py-3 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-700 uppercase tracking-wide">
+                      PRODUCTS
+                    </h3>
+                  </div>
+                  
+                  {order.items.map((item, index) => (
+                    <div key={`${item.id}-${index}`} className="bg-white border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="relative w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                          <Image
+                            src={item.product.image[0] || '/placeholder.png'}
+                            alt={item.product.name}
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-gray-500 uppercase font-medium mb-1">
+                            SMARTPHONE
+                          </div>
+                          <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">
+                            {item.product.name}
+                          </h3>
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-4">
+                              <div>
+                                <span className="text-gray-500">PRICE</span>
+                                <div className="font-semibold text-gray-900">₹{item.price.toLocaleString()}</div>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">QUANTITY</span>
+                                <div className="font-semibold text-gray-900">x{item.quantity}</div>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">SUB-TOTAL</span>
+                                <div className="font-semibold text-gray-900">₹{(item.price * item.quantity).toLocaleString()}</div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            <Button 
+                              variant="outline"
+                              className="w-full border-orange-600 text-orange-600 hover:bg-orange-50 rounded-full text-sm py-2"
+                              onClick={() => handleViewBill(item)}
+                            >
+                              View Bill
+                            </Button>
+                            <Button 
+                              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-full text-sm py-2"
+                              onClick={() => console.log('Leave feedback for item:', item.id)}
+                            >
+                              Leave Product Feedback
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop View - Table Layout */}
+                <div className="hidden md:block bg-white rounded-lg border border-gray-200 overflow-hidden">
                   {/* Table Header */}
                   <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                    <div className="grid grid-cols-5 gap-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                    <div className="grid grid-cols-6 gap-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
                       <div className="col-span-2">PRODUCT ({order.items.length})</div>
                       <div className="text-center">PRICE</div>
                       <div className="text-center">QUANTITY</div>
                       <div className="text-center">SUB-TOTAL</div>
+                      <div className="text-center">VIEW</div>
                     </div>
                   </div>
 
@@ -488,7 +567,7 @@ export default function OrderDetail() {
                   <div className="divide-y divide-gray-200">
                     {order.items.map((item, index) => (
                       <div key={`${item.id}-${index}`} className="px-6 py-6">
-                        <div className="grid grid-cols-5 gap-4 items-center">
+                        <div className="grid grid-cols-6 gap-4 items-center">
                           {/* Product Info */}
                           <div className="col-span-2 flex items-center gap-4">
                             <div className="relative w-16 h-16 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
@@ -501,7 +580,7 @@ export default function OrderDetail() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="text-xs text-gray-500 uppercase font-medium mb-1">
-                                PRODUCT
+                                SMARTPHONE
                               </div>
                               <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
                                 {item.product.name}
@@ -534,6 +613,17 @@ export default function OrderDetail() {
                               ₹{(item.price * item.quantity).toLocaleString()}
                             </span>
                           </div>
+
+                          {/* View Bill Button */}
+                          <div className="text-center">
+                            <Button 
+                              variant="ghost"
+                              className="text-gray-600 hover:text-gray-700 hover:bg-blue-50 text-sm px-3 py-1"
+                              onClick={() => handleViewBill(item)}
+                            >
+                              View Bill
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -541,43 +631,45 @@ export default function OrderDetail() {
                 </div>
               </div>
 
-              {/* Order Summary - Right Side */}
-              <div className="lg:col-span-1">
-                <div className="bg-gray-100 rounded-2xl p-6 sticky top-6">
-                  <div className="space-y-6">
+              {/* Order Summary - Right side on desktop, below on mobile */}
+              <div className="w-full lg:w-80 lg:flex-shrink-0">
+                <div className="bg-gray-100 rounded-2xl p-4 md:p-6 lg:sticky lg:top-6">
+                  <div className="space-y-4 md:space-y-6">
                     {/* Header */}
                     <div>
-                      <h3 className="text-2xl font-bold text-black mb-3">Product ({order.items.length < 10 ? '0' + order.items.length : order.items.length})</h3>
-                      <h4 className="text-xl font-semibold text-black">Order Summary</h4>
+                      <h3 className="text-xl md:text-2xl font-bold text-black mb-2 md:mb-3">
+                        Product ({order.items.length < 10 ? '0' + order.items.length : order.items.length})
+                      </h3>
+                      <h4 className="text-lg md:text-xl font-semibold text-black">Order Summary</h4>
                     </div>
 
                     {/* Order Details */}
-                    <div className="space-y-4">
+                    <div className="space-y-3 md:space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 text-base">Total Price</span>
-                        <span className="font-semibold text-black text-base">₹ {calculateOrderTotals().subtotal.toLocaleString()}</span>
+                        <span className="text-gray-600 text-sm md:text-base">Total Price</span>
+                        <span className="font-semibold text-black text-sm md:text-base">₹ {calculateOrderTotals().subtotal.toLocaleString()}</span>
                       </div>
 
                       {/* Show savings only if there's a positive difference */}
                       {calculateOrderTotals().savings > 0 && (
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600 text-base">Saving:</span>
-                          <span className="font-semibold text-green-600 text-base">-${calculateOrderTotals().savings.toLocaleString()}</span>
+                          <span className="text-gray-600 text-sm md:text-base">Saving:</span>
+                          <span className="font-semibold text-green-600 text-sm md:text-base">-₹{calculateOrderTotals().savings.toLocaleString()}</span>
                         </div>
                       )}
 
                       {/* Show tax only if calculated */}
                       {calculateOrderTotals().tax > 0 && (
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600 text-base">Tax collected:</span>
-                          <span className="font-semibold text-black text-base">₹ {calculateOrderTotals().tax.toLocaleString()}</span>
+                          <span className="text-gray-600 text-sm md:text-base">Tax collected:</span>
+                          <span className="font-semibold text-black text-sm md:text-base">₹ {calculateOrderTotals().tax.toLocaleString()}</span>
                         </div>
                       )}
 
                       {/* Always show delivery charges - assume free if not specified */}
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600 text-base">Delivery Charges:</span>
-                        <span className="font-semibold text-black text-base">
+                        <span className="text-gray-600 text-sm md:text-base">Delivery Charges:</span>
+                        <span className="font-semibold text-black text-sm md:text-base">
                           {calculateOrderTotals().deliveryCharges > 0
                             ? `₹ ${calculateOrderTotals().deliveryCharges.toFixed(2)}`
                             : 'Free Delivery'
@@ -588,15 +680,15 @@ export default function OrderDetail() {
                       {/* Show coupons section only if there are discounts applied */}
                       {calculateOrderTotals().couponDiscount > 0 && (
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600 text-base">SALE coupon(300 OFF):</span>
-                          <span className="font-semibold text-green-600 text-base">-₹ 300</span>
+                          <span className="text-gray-600 text-sm md:text-base">SALE coupon(300 OFF):</span>
+                          <span className="font-semibold text-green-600 text-sm md:text-base">-₹ 300</span>
                         </div>
                       )}
 
-                      <div className="border-t border-gray-300 pt-4">
+                      <div className="border-t border-gray-300 pt-3 md:pt-4">
                         <div className="flex justify-between items-center">
-                          <span className="text-black text-base font-semibold">Estimated total:</span>
-                          <span className="text-black text-base font-semibold">₹ {order.amount.toLocaleString()}</span>
+                          <span className="text-black text-sm md:text-base font-semibold">Estimated total:</span>
+                          <span className="text-black text-sm md:text-base font-semibold">₹ {order.amount.toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
@@ -611,7 +703,7 @@ export default function OrderDetail() {
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
                 {/* Billing Address */}
-                <div className="p-6 border-r border-gray-200">
+                <div className="p-4 md:p-6 border-b md:border-b-0 md:border-r border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing Address</h3>
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="font-medium text-gray-900">{order.address.name}</div>
@@ -631,7 +723,7 @@ export default function OrderDetail() {
                 </div>
 
                 {/* Order Notes */}
-                <div className="p-6 border-r border-gray-200">
+                <div className="p-4 md:p-6 border-b md:border-b-0 md:border-r border-gray-200">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Notes</h3>
                   <div className="text-sm text-gray-600">
                     <p>
@@ -642,7 +734,7 @@ export default function OrderDetail() {
                 </div>
 
                 {/* Payment Method */}
-                <div className="p-6">
+                <div className="p-4 md:p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="font-medium text-gray-900">{order.paymentMethod}</div>
@@ -678,11 +770,11 @@ export default function OrderDetail() {
           />
 
           {/* Dialog Content */}
-          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-3 md:mx-4 max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="p-6 pb-4 border-b">
+            <div className="p-4 md:p-6 pb-3 md:pb-4 border-b">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Order Bill</h2>
+                <h2 className="text-lg md:text-xl font-semibold text-gray-900">Order Bill</h2>
                 <button
                   onClick={() => setShowBillDialog(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -693,7 +785,7 @@ export default function OrderDetail() {
             </div>
 
             {/* Content */}
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               {selectedItem && order && (
                 <div className="space-y-4">
                   {/* Bill Details */}
@@ -751,7 +843,7 @@ export default function OrderDetail() {
                         <span className="font-semibold">{order.paymentMethod}</span>
                       </div>
 
-                      <div className="flex justify-between text-lg font-bold border-t pt-3">
+                      <div className="flex justify-between text-base md:text-lg font-bold border-t pt-3">
                         <span>Estimated total:</span>
                         <span>₹ {calculateOrderTotals().total.toLocaleString()}</span>
                       </div>
@@ -759,7 +851,7 @@ export default function OrderDetail() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4">
+                  <div className="flex flex-col md:flex-row gap-3 pt-4">
                     <Button
                       variant="outline"
                       className="flex-1 border-orange-600 text-orange-600 hover:bg-orange-50"
