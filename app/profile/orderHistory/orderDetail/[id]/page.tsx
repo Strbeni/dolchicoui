@@ -4,8 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Package, Calendar, MapPin, CreditCard } from "lucide-react";
+import { ArrowLeft, Package, Calendar, MapPin, CreditCard, FileText, Box, Truck, Handshake, Check } from "lucide-react";
 import Image from "next/image";
+import ProfileSidebar from "@/components/ProfileSidebar";
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
@@ -29,7 +30,7 @@ interface Order {
   id: number;
   status: string;
   amount: number;
-  date: number;
+  date: string | number;
   user: {
     id: number;
     name: string;
@@ -76,7 +77,7 @@ export default function OrderDetail() {
       if (!checkAuth()) return;
 
       console.log(`Fetching order details for ID: ${orderId}`);
-      
+
       // Try to get all user orders first (since we know this endpoint works)
       // and then filter for the specific order
       console.log(`API URL: ${API_BASE_URL}/api/order/user`);
@@ -91,7 +92,7 @@ export default function OrderDetail() {
       if (!response.ok) {
         const responseText = await response.text();
         console.log(`Error response body:`, responseText);
-        
+
         if (response.status === 404) {
           throw new Error('Orders not found');
         } else if (response.status === 401) {
@@ -103,11 +104,11 @@ export default function OrderDetail() {
 
       const result = await response.json();
       console.log(`API response:`, result);
-      
+
       if (result.success && result.orders) {
         // Find the specific order by ID
         const specificOrder = result.orders.find((order: any) => order.id.toString() === orderId);
-        
+
         if (specificOrder) {
           setOrder(specificOrder);
         } else {
@@ -132,14 +133,29 @@ export default function OrderDetail() {
   }, [orderId, fetchOrderDetail]);
 
   // Format date from timestamp
-  const formatDate = useCallback((timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
+  const formatDate = useCallback((timestamp: string | number) => {
+    const date = new Date(typeof timestamp === 'string' ? parseInt(timestamp) : timestamp);
+    return date.toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
+    });
+  }, []);
+
+  // Format order placed date for display
+  const formatOrderDate = useCallback((timestamp: string | number) => {
+    const date = new Date(typeof timestamp === 'string' ? parseInt(timestamp) : timestamp);
+    return date.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }) + ' at ' + date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
     });
   }, []);
 
@@ -182,23 +198,14 @@ export default function OrderDetail() {
     }
   }, []);
 
-  // Calculate estimated delivery
-  const getEstimatedDelivery = useCallback((orderDate: number, status: string) => {
-    const date = new Date(orderDate);
-    let deliveryDays = 3; // Default 3 days
-
-    if (status.toLowerCase() === 'shipped') {
-      deliveryDays = 1; // 1 day if already shipped
-    } else if (status.toLowerCase() === 'confirmed') {
-      deliveryDays = 2; // 2 days if confirmed
-    }
-
-    const estimatedDate = new Date(date.getTime() + (deliveryDays * 24 * 60 * 60 * 1000));
+  // Calculate estimated delivery date (7 days from order placed)
+  const getEstimatedDelivery = useCallback((orderDate: string | number) => {
+    const date = new Date(typeof orderDate === 'string' ? parseInt(orderDate) : orderDate);
+    const estimatedDate = new Date(date.getTime() + (7 * 24 * 60 * 60 * 1000));
     return estimatedDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
     });
   }, []);
 
@@ -268,133 +275,147 @@ export default function OrderDetail() {
   }
 
   const statusStep = getStatusStep(order.status);
-  const steps = [
-    { label: "Order Placed", icon: "📦" },
-    { label: "Confirmed", icon: "✅" },
-    { label: "Shipped", icon: "🚚" },
-    { label: "Delivered", icon: "📬" },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="flex">
+      <div className="max-w-7xl mx-auto flex gap-8">
         {/* Sidebar */}
-        <div className="w-1/4 pr-6">
-          <div className="flex flex-col w-full gap-2 bg-white p-4 shadow rounded-xl">
-            <button
-              type="button"
-              onClick={() => router.push("/profile")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Account
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile/orderHistory")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full bg-gray-100"
-            >
-              Order History
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile/paymentMethod")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Saved Payment Method
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/profile/addressBook")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Address Book
-            </button>
+        <div className="w-1/4 flex-shrink-0">
+          <div className="sticky top-6">
+            <ProfileSidebar activeSection="order-history" />
           </div>
         </div>
 
-        {/* Order Detail Content */}
-        <div className="w-3/4">
-          <Card>
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div
-                  className="flex items-center text-sm text-gray-500 cursor-pointer hover:underline"
-                  onClick={() => router.back()}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Back to Order History
+        {/* Main Content */}
+        <div className="flex-1 min-w-0 bg-white p-6 rounded-lg shadow">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Details</h1>
+                <div className="text-sm text-gray-500">
+                  <span
+                    className="cursor-pointer hover:underline"
+                    onClick={() => router.push('/profile/orderHistory')}
+                  >
+                    Order History
+                  </span>
+                  <span className="mx-2">{'>'}</span>
+                  <span>Order Details</span>
                 </div>
               </div>
+              <Button
+                className="bg-orange-600 hover:bg-orange-700 rounded-3xl text-white px-6 py-2"
+                onClick={() => console.log('Leave feedback')}
+              >
+                Leave Delivery Feedback
+              </Button>
+            </div>
+          </div>
 
-              {/* Order Info Card */}
-              <Card className="mb-6 shadow-md bg-gradient-to-r from-blue-50 to-purple-50">
-                <CardContent className="p-6 flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl font-bold text-gray-800 mb-2">Order #{order.id}</div>
-                    <div className="text-sm text-gray-600 mb-2">
-                      {order.items.length} Product{order.items.length > 1 ? "s" : ""} • 
-                      Placed on {formatDate(order.date)}
-                    </div>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(order.status)}`}>
-                      {formatStatus(order.status)}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-green-700">
-                      IDR {order.amount.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Amount</div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Estimated Delivery */}
-              {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
-                <div className="text-center bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <div className="text-sm text-blue-600 mb-1">📅 Estimated Delivery</div>
-                  <div className="text-lg font-semibold text-blue-800">
-                    {getEstimatedDelivery(order.date, order.status)}
-                  </div>
+          {/* Order Info Container */}
+          <div className="mb-6 bg-gray-100 rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  #{order.id}
                 </div>
-              )}
-
-              {/* Order Progress */}
-              <div className="flex items-center justify-between mb-8 bg-gray-50 rounded-lg p-6">
-                {steps.map((step, index) => {
-                  const isCompleted = index < statusStep;
-                  const isCurrent = index + 1 === statusStep;
-
-                  return (
-                    <div
-                      key={index}
-                      className="flex flex-col items-center flex-1 relative"
-                    >
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center z-10 text-lg ${
-                          isCompleted || isCurrent
-                            ? "bg-orange-600 text-white shadow-lg"
-                            : "bg-gray-200 text-gray-500"
-                        }`}
-                      >
-                        {step.icon}
-                      </div>
-                      <div className="text-xs mt-2 text-center font-medium">
-                        {step.label}
-                      </div>
-                      {index < steps.length - 1 && (
-                        <div
-                          className={`absolute top-5 left-1/2 right-[-50%] h-1 ${
-                            isCompleted ? "bg-orange-600" : "bg-gray-200"
-                          }`}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+                <div className="text-sm text-gray-600">
+                  {order.items.length} Product{order.items.length > 1 ? "s" : ""} • Order Placed on {formatOrderDate(order.date)}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-gray-900">
+                  ₹ {order.amount.toLocaleString()}
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
+
+          {/* Expected Delivery Date */}
+          <div className="mb-6">
+            <div className="text-left flex items-center gap-2">
+              <span className="text-sm text-gray-600">Order expected arrival</span>
+              <span className="text-lg font-semibold text-gray-800">
+                {getEstimatedDelivery(order.date)}
+              </span>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="relative">
+              {/* Orange Progress Line */}
+              <div className="absolute top-3 left-0 right-0 h-1 bg-orange-600 rounded-full"></div>
+
+              {/* Progress Nodes */}
+              <div className="flex justify-between relative z-10">
+                {/* Order Placed */}
+                <div className="flex flex-col items-center">
+                  {/* Node */}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusStep >= 1 ? 'bg-orange-600' : 'bg-gray-300'
+                    }`}>
+                    {statusStep >= 1 && (
+                      <Check className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                  {/* Icon and label below node */}
+                  <div className="mt-3 flex flex-col items-center">
+                    <FileText className="w-7 h-7 text-orange-600 mb-2" />
+                    <div className="text-md font-medium text-gray-800">Order Placed</div>
+                  </div>
+                </div>
+
+                {/* Packaging */}
+                <div className="flex flex-col items-center">
+                  {/* Node */}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusStep >= 2 ? 'bg-orange-600' : 'bg-gray-300'
+                    }`}>
+                    {statusStep >= 2 && (
+                      <Check className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                  {/* Icon and label below node */}
+                  <div className="mt-3 flex flex-col items-center">
+                    <Box className="w-7 h-7 text-orange-600 mb-2" />
+                    <div className="text-md font-medium text-gray-800">Packaging</div>
+                  </div>
+                </div>
+
+                {/* On The Road */}
+                <div className="flex flex-col items-center">
+                  {/* Node */}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusStep >= 3 ? 'bg-orange-600' : 'bg-gray-300'
+                    }`}>
+                    {statusStep >= 3 && (
+                      <Check className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                  {/* Icon and label below node */}
+                  <div className="mt-3 flex flex-col items-center">
+                    <Truck className="w-7 h-7 text-orange-600 mb-2" />
+                    <div className="text-md font-medium text-gray-800">On The Road</div>
+                  </div>
+                </div>
+
+                {/* Delivered */}
+                <div className="flex flex-col items-center">
+                  {/* Node */}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusStep >= 4 ? 'bg-orange-600' : 'bg-gray-300'
+                    }`}>
+                    {statusStep >= 4 && (
+                      <Check className="w-4 h-4 text-white" />
+                    )}
+                  </div>
+                  {/* Icon and label below node */}
+                  <div className="mt-3 flex flex-col items-center">
+                    <Handshake className="w-7 h-7 text-orange-600 mb-2" />
+                    <div className="text-md font-medium text-gray-800">Delivered</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Product List Section */}
           <Card className="mt-6">
@@ -404,7 +425,7 @@ export default function OrderDetail() {
                   <Package className="w-5 h-5" />
                   Order Items ({order.items.length})
                 </h2>
-                
+
                 <div className="space-y-4">
                   {order.items.map((item, index) => (
                     <div
@@ -434,7 +455,7 @@ export default function OrderDetail() {
                             <span className="font-medium">Unit Price:</span> IDR {item.price.toLocaleString()}
                           </div>
                           <div>
-                            <span className="font-medium">Subtotal:</span> 
+                            <span className="font-medium">Subtotal:</span>
                             <span className="font-bold text-gray-900"> IDR {(item.price * item.quantity).toLocaleString()}</span>
                           </div>
                         </div>
