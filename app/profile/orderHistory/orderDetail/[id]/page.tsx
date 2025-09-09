@@ -202,8 +202,8 @@ export default function OrderDetail() {
     const difference = subtotal - total;
     let savings = 0;
     let tax = 0;
-    let deliveryCharges = 0;
-    let couponDiscount = 0;
+    const deliveryCharges = 0;
+    const couponDiscount = 0;
 
     // If there's a difference, we can assume there might be discounts or additional charges
     if (difference > 0) {
