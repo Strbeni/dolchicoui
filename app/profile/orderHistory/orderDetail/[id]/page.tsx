@@ -275,6 +275,7 @@ export default function OrderDetail() {
   }
 
   const statusStep = getStatusStep(order.status);
+  // const statusStep = 1;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -344,20 +345,34 @@ export default function OrderDetail() {
 
           {/* Progress Bar */}
           <div className="mb-8">
-            <div className="relative">
-              {/* Orange Progress Line */}
-              <div className="absolute top-3 left-0 right-0 h-1 bg-orange-600 rounded-full"></div>
+            <div className="relative px-3">
+              {/* Background Line */}
+              <div className="absolute top-3 left-3 right-3 h-1 bg-gray-300 rounded-full"></div>
+
+              {/* Orange Progress Line - only filled portions */}
+              <div
+                className="absolute top-3 left-3 h-1 bg-orange-600 rounded-full transition-all duration-500"
+                style={{
+                  width: `${((statusStep - 1) / 3) * (100 - (24 / 16))}%`
+                }}
+              ></div>
 
               {/* Progress Nodes */}
               <div className="flex justify-between relative z-10">
                 {/* Order Placed */}
                 <div className="flex flex-col items-center">
                   {/* Node */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusStep >= 1 ? 'bg-orange-600' : 'bg-gray-300'
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${statusStep > 1
+                    ? 'bg-orange-600 border-orange-600'
+                    : statusStep === 1
+                      ? 'bg-white border-orange-600'
+                      : 'bg-white border-gray-300'
                     }`}>
-                    {statusStep >= 1 && (
+                    {statusStep > 1 ? (
                       <Check className="w-4 h-4 text-white" />
-                    )}
+                    ) : statusStep === 1 ? (
+                      <div className="w-4 h-4 bg-orange-600 rounded-full animate-pulse"></div>
+                    ) : null}
                   </div>
                   {/* Icon and label below node */}
                   <div className="mt-3 flex flex-col items-center">
@@ -369,11 +384,17 @@ export default function OrderDetail() {
                 {/* Packaging */}
                 <div className="flex flex-col items-center">
                   {/* Node */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusStep >= 2 ? 'bg-orange-600' : 'bg-gray-300'
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${statusStep > 2
+                    ? 'bg-orange-600 border-orange-600'
+                    : statusStep === 2
+                      ? 'bg-white border-orange-600'
+                      : 'bg-white border-gray-300'
                     }`}>
-                    {statusStep >= 2 && (
+                    {statusStep > 2 ? (
                       <Check className="w-4 h-4 text-white" />
-                    )}
+                    ) : statusStep === 2 ? (
+                      <div className="w-4 h-4 bg-orange-600 rounded-full animate-pulse"></div>
+                    ) : null}
                   </div>
                   {/* Icon and label below node */}
                   <div className="mt-3 flex flex-col items-center">
@@ -385,11 +406,17 @@ export default function OrderDetail() {
                 {/* On The Road */}
                 <div className="flex flex-col items-center">
                   {/* Node */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusStep >= 3 ? 'bg-orange-600' : 'bg-gray-300'
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${statusStep > 3
+                    ? 'bg-orange-600 border-orange-600'
+                    : statusStep === 3
+                      ? 'bg-white border-orange-600'
+                      : 'bg-white border-gray-300'
                     }`}>
-                    {statusStep >= 3 && (
+                    {statusStep > 3 ? (
                       <Check className="w-4 h-4 text-white" />
-                    )}
+                    ) : statusStep === 3 ? (
+                      <div className="w-4 h-4 bg-orange-600 rounded-full animate-pulse"></div>
+                    ) : null}
                   </div>
                   {/* Icon and label below node */}
                   <div className="mt-3 flex flex-col items-center">
@@ -401,11 +428,17 @@ export default function OrderDetail() {
                 {/* Delivered */}
                 <div className="flex flex-col items-center">
                   {/* Node */}
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${statusStep >= 4 ? 'bg-orange-600' : 'bg-gray-300'
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${statusStep > 4
+                    ? 'bg-orange-600 border-orange-600'
+                    : statusStep === 4
+                      ? 'bg-white border-orange-600'
+                      : 'bg-white border-gray-300'
                     }`}>
-                    {statusStep >= 4 && (
+                    {statusStep > 4 ? (
                       <Check className="w-4 h-4 text-white" />
-                    )}
+                    ) : statusStep === 4 ? (
+                      <div className="w-4 h-4 bg-orange-600 rounded-full animate-pulse"></div>
+                    ) : null}
                   </div>
                   {/* Icon and label below node */}
                   <div className="mt-3 flex flex-col items-center">
