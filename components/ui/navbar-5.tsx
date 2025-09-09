@@ -8,7 +8,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -938,6 +938,7 @@ export const Navbar5 = () => {
                   </button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                   <div className="py-4">
                     {mobileNavData.map(({ id, label, data }) => (
                       <Accordion key={id} type="single" collapsible className="mb-4">

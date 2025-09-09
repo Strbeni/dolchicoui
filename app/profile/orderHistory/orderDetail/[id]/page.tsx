@@ -8,7 +8,7 @@ import { ArrowLeft, Package, Calendar, MapPin, CreditCard } from "lucide-react";
 import Image from "next/image";
 
 // API Configuration
-const API_BASE_URL = 'https://valyris-i.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
 // Types
 interface OrderItem {
@@ -21,7 +21,7 @@ interface OrderItem {
     name: string;
     image: string[];
     category?: string;
-    subCategory?: string;
+    subcategory?: string; // Changed from subCategory to subcategory
   };
 }
 
@@ -75,25 +75,44 @@ export default function OrderDetail() {
 
       if (!checkAuth()) return;
 
-      const response = await fetch(`${API_BASE_URL}/order/${orderId}`, {
+      console.log(`Fetching order details for ID: ${orderId}`);
+      
+      // Try to get all user orders first (since we know this endpoint works)
+      // and then filter for the specific order
+      console.log(`API URL: ${API_BASE_URL}/api/order/user`);
+
+      const response = await fetch(`${API_BASE_URL}/api/order/user`, {
         method: 'GET',
         headers: getAuthHeaders()
       });
 
+      console.log(`Response status: ${response.status}`);
+
       if (!response.ok) {
+        const responseText = await response.text();
+        console.log(`Error response body:`, responseText);
+        
         if (response.status === 404) {
-          throw new Error('Order not found');
+          throw new Error('Orders not found');
         } else if (response.status === 401) {
           throw new Error('Authentication required');
         } else {
-          throw new Error(`Failed to fetch order: ${response.statusText}`);
+          throw new Error(`Failed to fetch orders: ${response.status} ${response.statusText} - ${responseText}`);
         }
       }
 
       const result = await response.json();
+      console.log(`API response:`, result);
       
-      if (result.success && result.order) {
-        setOrder(result.order);
+      if (result.success && result.orders) {
+        // Find the specific order by ID
+        const specificOrder = result.orders.find((order: any) => order.id.toString() === orderId);
+        
+        if (specificOrder) {
+          setOrder(specificOrder);
+        } else {
+          throw new Error(`Order with ID ${orderId} not found`);
+        }
       } else {
         throw new Error(result.message || 'Failed to load order details');
       }

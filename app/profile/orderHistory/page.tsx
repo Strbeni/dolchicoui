@@ -93,8 +93,8 @@ interface Product {
   description: string;
   price: number;
   image: string[];
-  category: string;
-  subCategory: string;
+  category?: string; // Made optional
+  subCategory?: string; // Made optional
   sizes: string[];
   bestseller: boolean;
   isActive: boolean;
@@ -580,9 +580,11 @@ export default function OrderHistoryPage() {
                                   <p className="text-gray-600 text-sm">
                                     Size: <span className="font-medium">{item.size}</span>
                                   </p>
-                                  <p className="text-gray-600 text-sm">
-                                    Category: <span className="font-medium">{item.product.category} - {item.product.subCategory}</span>
-                                  </p>
+                                  {item.product.category && item.product.subCategory && (
+                                    <p className="text-gray-600 text-sm">
+                                      Category: <span className="font-medium">{item.product.category} - {item.product.subCategory}</span>
+                                    </p>
+                                  )}
                                   <p className="text-gray-600 text-sm">
                                     Price: <span className="font-medium">₹{item.price.toLocaleString()}</span>
                                   </p>
@@ -596,7 +598,7 @@ export default function OrderHistoryPage() {
                                   <Button
                                     size="sm"
                                     className="bg-orange-600 hover:bg-orange-700 text-white rounded-full flex items-center gap-2 text-sm h-8 cursor-pointer"
-                                    style={{ paddingLeft: '16px', paddingRight: '16px' }}
+                                    style={{ paddingLeft: '24px', paddingRight: '24px' }}
                                     onClick={() => router.push(`/productdetail/${item.product.id}`)}
                                   >
                                     <ShoppingBag className="w-4 h-4" />
@@ -641,28 +643,20 @@ export default function OrderHistoryPage() {
                                   <div className="text-base font-medium text-gray-600">
                                     +{order.items.length - 2} more product{order.items.length - 2 > 1 ? 's' : ''}
                                   </div>
-                                  <button
-                                    className="mt-1 text-sm text-orange-600 hover:text-orange-700 hover:underline font-medium cursor-pointer"
-                                    onClick={() => handleViewDetails(order.id)}
-                                  >
-                                    View all products
-                                  </button>
                                 </div>
                               </div>
                             </div>
                           )}
 
-                          {/* View order details button - show when there are multiple products */}
-                          {order.items.length > 1 && (
-                            <div className="pt-4 flex justify-center">
-                              <button
-                                className="text-sm text-orange-600 hover:text-orange-700 hover:underline font-medium cursor-pointer"
-                                onClick={() => handleViewDetails(order.id)}
-                              >
-                                View order details
-                              </button>
-                            </div>
-                          )}
+                          {/* View order details button - always visible */}
+                          <div className="pt-4 flex justify-center">
+                            <button
+                              className="text-sm text-orange-600 hover:text-orange-700 hover:underline font-medium cursor-pointer"
+                              onClick={() => handleViewDetails(order.id)}
+                            >
+                              View order details
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>

@@ -45,13 +45,14 @@ const SearchBar = ({ placeholder = "Search...", onSearch, mobile = false }: Sear
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [isClicked, setIsClicked] = useState(false)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [isUnsupportedBrowser, setIsUnsupportedBrowser] = useState(false)
 
-  const isUnsupportedBrowser = useMemo(() => {
-    if (typeof window === "undefined") return false
+  // Check for unsupported browser after hydration to prevent SSR mismatch
+  useEffect(() => {
     const ua = navigator.userAgent.toLowerCase()
     const isSafari = ua.includes("safari") && !ua.includes("chrome") && !ua.includes("chromium")
     const isChromeOniOS = ua.includes("crios")
-    return isSafari || isChromeOniOS
+    setIsUnsupportedBrowser(isSafari || isChromeOniOS)
   }, [])
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
