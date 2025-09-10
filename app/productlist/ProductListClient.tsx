@@ -25,6 +25,27 @@ interface Product {
   badge?: string
 }
 
+interface Category {
+  id: number
+  name: string
+  description?: string
+  isActive: boolean
+  subcategories: Subcategory[]
+}
+
+interface Subcategory {
+  id: number
+  name: string
+  grouping: string
+  categoryId: number
+}
+
+interface FilterOptions {
+  colors: { name: string; hex: string }[]
+  brands: { name: string; count: number }[]
+  subCategories: { name: string; count: number }[]
+}
+
 interface WishlistEntry {
   productId: number
 }
@@ -75,8 +96,15 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   const [showMobileFilters, setShowMobileFilters] = useState(false)
   const [expandedFilterSection, setExpandedFilterSection] = useState<string | null>(null)
 
-    // Cart count state - used for fetching cart items count
-    const [cartCount, setCartCount] = useState<number>(0)
+  // Add state for dynamic filters
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    colors: [],
+    brands: [],
+    subCategories: []
+  })
+
+  // Cart count state - used for fetching cart items count
+  const [cartCount, setCartCount] = useState<number>(0)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(12) // 12 items per page for better mobile experience
@@ -87,61 +115,138 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   const router = useRouter()
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       setLoading(true)
       setError("")
-
+      
       try {
-        console.log("[v0] Fetching products from:", `${API_BASE}/api/product/list`)
-        const response = await fetch(`${API_BASE}/api/product/list`, {
-          headers: { "Content-Type": "application/json" },
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        const token = localStorage.getItem("authToken") || sessionStorage.getItem("authToken")
+        const headers: HeadersInit = {
+          "Content-Type": "application/json",
+        }
+        
+        if (token) {
+          headers.Authorization = `Bearer ${token}`
         }
 
-        const data = await response.json()
-        console.log("[v0] API Response:", data)
+        let response: Response
+        let result: any
+        
+        if (category === "All") {
+          // For "All" category, get products from all categories
+          response = await fetch(`${API_BASE}/api/product/list`, { headers })
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch data: ${response.status}`)
+          }
+          
+          result = await response.json()
+          
+          if (result.success && Array.isArray(result.products)) {
+            // Transform products to handle nested category/subcategory structure
+            const transformedProducts = result.products.map((product: any) => ({
+              ...product,
+              category: product.category?.name || "Unknown",
+              subCategory: product.subcategory?.name || "Uncategorized",
+              color: product.color || [],
+              sizes: product.sizes || ["M", "L", "XL"],
+              rating: product.rating || 4.5,
+              reviews: product.reviews || 10,
+            }))
+            
+            setProducts(transformedProducts)
+            
+            // Generate dynamic filter options from all products
+            const uniqueColors = new Map()
+            const uniqueBrands = new Set<string>()
+            const uniqueSubCategories = new Set<string>()
+            const colorHexMap = { 
+              'Red': '#ef4444', 'Blue': '#3b82f6', 'Green': '#22c55e', 'Black': '#000000', 
+              'White': '#ffffff', 'Gray': '#6b7280', 'Orange': '#f97316', 'Purple': '#a855f7',
+              'Pink': '#ec4899', 'Yellow': '#eab308', 'Cyan': '#06b6d4', 'Teal': '#14b8a6'
+            }
 
-        if (data.success && Array.isArray(data.products)) {
-          const transformedProducts = data.products.map((product: Product, index: number) => ({
-            id: product.id || index + 1,
-            name: product.name || "Product",
-            description: product.description || "",
-            price: product.price || 600,
-            originalPrice: product.originalPrice || product.price * 2,
-            discount: product.discount || 55,
-            image: Array.isArray(product.image) ? product.image : [product.image || "/images/hoodie-placeholder.png"],
-            category: product.category || "Men",
-            subCategory: product.subCategory || "T-Shirt",
-            sizes: Array.isArray(product.sizes) ? product.sizes : ["S", "M", "L", "XL"],
-            color: Array.isArray(product.color) ? product.color : ["Gray"],
-            stock: product.stock || 10,
-            rating: product.rating || 5.0,
-            reviews: product.reviews || 10,
-            isNew: index % 4 === 2,
-            badge: index % 4 === 2 ? "New" : undefined,
-          }))
+            transformedProducts.forEach((p: any) => {
+              if (p.color) p.color.forEach((c: string) => uniqueColors.set(c, colorHexMap[c] || '#000000'))
+              uniqueBrands.add(p.name.split(' ')[0]) // Simple way to get a "brand"
+              uniqueSubCategories.add(p.subCategory)
+            })
 
-          setProducts(transformedProducts)
+            setFilterOptions({
+              colors: Array.from(uniqueColors.entries()).map(([name, hex]) => ({ name, hex })),
+              brands: Array.from(uniqueBrands).map((name: string) => ({ name, count: 0 })),
+              subCategories: Array.from(uniqueSubCategories).map((name: string) => ({ name, count: 0 }))
+            })
+          }
         } else {
-          throw new Error("Invalid API response format")
+          // For specific category, use category-specific endpoint
+          response = await fetch(`${API_BASE}/api/categories/${category}`, { headers })
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch data: ${response.status}`)
+          }
+          
+          result = await response.json()
+          
+          if (result.success && result.data?.products) {
+            // Transform products from category endpoint
+            const transformedProducts = result.data.products.map((product: any) => ({
+              ...product,
+              category: product.category?.name || category,
+              subCategory: product.subcategory?.name || "Uncategorized",
+              color: product.color || [],
+              sizes: product.sizes || ["M", "L", "XL"],
+              rating: product.rating || 4.5,
+              reviews: product.reviews || 10,
+            }))
+            
+            setProducts(transformedProducts)
+            
+            // Generate dynamic filter options from category data
+            const uniqueColors = new Map()
+            const uniqueBrands = new Set<string>()
+            const uniqueSubCategories = new Set<string>()
+            const colorHexMap = { 
+              'Red': '#ef4444', 'Blue': '#3b82f6', 'Green': '#22c55e', 'Black': '#000000', 
+              'White': '#ffffff', 'Gray': '#6b7280', 'Orange': '#f97316', 'Purple': '#a855f7',
+              'Pink': '#ec4899', 'Yellow': '#eab308', 'Cyan': '#06b6d4', 'Teal': '#14b8a6'
+            }
+
+            transformedProducts.forEach((p: any) => {
+              if (p.color) p.color.forEach((c: string) => uniqueColors.set(c, colorHexMap[c] || '#000000'))
+              uniqueBrands.add(p.name.split(' ')[0])
+              uniqueSubCategories.add(p.subCategory)
+            })
+
+            // Include subcategories from API response
+            if (result.data.subcategories) {
+              result.data.subcategories.forEach((subCat: any) => {
+                uniqueSubCategories.add(subCat.name)
+              })
+            }
+
+            setFilterOptions({
+              colors: Array.from(uniqueColors.entries()).map(([name, hex]) => ({ name, hex })),
+              brands: Array.from(uniqueBrands).map(name => ({ name, count: 0 })),
+              subCategories: Array.from(uniqueSubCategories).map(name => ({ name, count: 0 }))
+            })
+          }
         }
       } catch (err) {
-        console.error("[v0] Error fetching products:", err)
-        setError(err instanceof Error ? err.message : "Failed to load products")
-
+        console.error("Error fetching data:", err)
+        setError(err instanceof Error ? err.message : "Failed to fetch data")
+        
+        // Fallback to mock data on error
         const mockProducts: Product[] = Array.from({ length: 12 }, (_, i) => ({
           id: i + 1,
-          name: "SSneakers",
-          description: "Premium quality sneakers",
+          name: "Sample Product",
+          description: "Sample product description",
           price: 600,
           originalPrice: 1200,
           discount: 55,
           image: ["/images/hoodie-placeholder.png"],
-          category: "Men",
-          subCategory: "T-Shirt",
+          category: category,
+          subCategory: "Sample",
           sizes: ["S", "M", "L", "XL"],
           color: ["Gray"],
           stock: 10,
@@ -151,13 +256,20 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
           badge: i === 2 || i === 8 ? "New" : undefined,
         }))
         setProducts(mockProducts)
+        
+        // Set fallback filter options
+        setFilterOptions({
+          colors: [{ name: "Gray", hex: "#6b7280" }],
+          brands: [{ name: "Sample", count: 12 }],
+          subCategories: [{ name: "Sample", count: 12 }]
+        })
       } finally {
         setLoading(false)
       }
     }
 
-    fetchProducts()
-  }, [cartCount])
+    fetchData()
+  }, [category])
 
   useEffect(() => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token")
@@ -200,34 +312,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
     fetchCartCount()
   }, [])
 
-  const colorOptions = [
-    { name: "Red", hex: "#ef4444" },
-    { name: "Orange", hex: "#f97316" },
-    { name: "Green", hex: "#22c55e" },
-    { name: "Cyan", hex: "#06b6d4" },
-    { name: "Blue", hex: "#3b82f6" },
-    { name: "Pink", hex: "#ec4899" },
-    { name: "Purple", hex: "#a855f7" },
-    { name: "Teal", hex: "#14b8a6" },
-    { name: "Magenta", hex: "#d946ef" },
-    { name: "Black", hex: "#000000" },
-  ]
-
-  const categoryOptions = [
-    { name: "New", count: 5 },
-    { name: "Trending", count: 8 },
-    { name: "Hot Deals", count: 3 },
-  ]
-
   const priceRangeOptions = ["₹0 - ₹15", "₹16 - ₹30", "₹31 - ₹45", "₹46 - ₹60"]
-
-  const brandOptions = [
-    { name: "Antise", count: 12 },
-    { name: "Apple", count: 8 },
-    { name: "Boat", count: 15 },
-    { name: "Bergamot", count: 6 },
-    { name: "Lemon", count: 4 },
-  ]
 
   const handleSizeFilter = (size: string) => {
     setSelectedSizes((prev) => (prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]))
@@ -370,7 +455,9 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
     }
   }
 
-  const filteredBrands = brandOptions.filter((brand) => brand.name.toLowerCase().includes(brandSearch.toLowerCase()))
+  const filteredBrands = filterOptions.brands.filter((brand) => 
+    brand.name.toLowerCase().includes(brandSearch.toLowerCase())
+  )
 
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...products]
@@ -577,7 +664,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
               <ChevronDown className="w-4 h-4" />
             </h3>
             <div className="grid grid-cols-5 gap-2">
-              {colorOptions.map((color) => (
+              {filterOptions.colors.map((color) => (
                 <button
                   key={color.name}
                   onClick={() => handleColorFilter(color.name)}
@@ -600,7 +687,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
               <ChevronDown className="w-4 h-4" />
             </h3>
             <div className="space-y-2">
-              {categoryOptions.map((category) => (
+              {filterOptions.subCategories.map((category) => (
                 <label key={category.name} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -791,7 +878,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   {expandedFilterSection === "color" && (
                     <div className="px-4 pb-4">
                       <div className="grid grid-cols-5 gap-3">
-                        {colorOptions.map((color) => (
+                        {filterOptions.colors.map((color) => (
                           <button
                             key={color.name}
                             onClick={() => handleColorFilter(color.name)}
@@ -819,7 +906,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   </button>
                   {expandedFilterSection === "category" && (
                     <div className="px-4 pb-4 space-y-3">
-                      {categoryOptions.map((category) => (
+                      {filterOptions.subCategories.map((category) => (
                         <label key={category.name} className="flex items-center space-x-3 cursor-pointer">
                           <input
                             type="checkbox"

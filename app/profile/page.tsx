@@ -25,8 +25,8 @@ export default function AccountSettings() {
   const [phone, setPhone] = useState(""); // Read-only
   const [displayName, setDisplayName] = useState("");
   const [fullName, setFullName] = useState("");
-  const [country, setCountry] = useState("USA");
-  const [state, setState] = useState("California");
+  const [country, setCountry] = useState("India");
+  const [state, setState] = useState("Maharashtra");
   const [zip, setZip] = useState("");
 
   // Email change states
@@ -85,8 +85,8 @@ export default function AccountSettings() {
         setPhone(user.phoneNumber || "");
         setDisplayName(user.name || "");
         setFullName(user.fullName || "");
-        setCountry(user.country || "USA");
-        setState(user.state || "California");
+        setCountry(user.country || "India");
+        setState(user.state || "Maharashtra");
         setZip(user.zip || "");
       } else if (response.status === 401 || response.status === 403) {
         setError('Session expired. Please login again.');
@@ -405,13 +405,6 @@ export default function AccountSettings() {
             </button>
             <button
               type="button"
-              onClick={() => router.push("/profile/paymentMethod")}
-              className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
-            >
-              Saved Payment Method
-            </button>
-            <button
-              type="button"
               onClick={() => router.push("/profile/addressBook")}
               className="text-left px-3 py-2 rounded hover:bg-gray-100 transition font-medium w-full"
             >
@@ -526,9 +519,7 @@ export default function AccountSettings() {
                         className="border rounded px-2 py-1 w-full"
                         disabled={!isEditing}
                       >
-                        <option>Bangladesh</option>
                         <option>India</option>
-                        <option>USA</option>
                       </select>
                     </div>
                     <div>
@@ -540,9 +531,42 @@ export default function AccountSettings() {
                         className="border rounded px-2 py-1 w-full"
                         disabled={!isEditing}
                       >
-                        <option>Dhaka</option>
+                        <option>Andhra Pradesh</option>
+                        <option>Arunachal Pradesh</option>
+                        <option>Assam</option>
+                        <option>Bihar</option>
+                        <option>Chhattisgarh</option>
+                        <option>Goa</option>
+                        <option>Gujarat</option>
+                        <option>Haryana</option>
+                        <option>Himachal Pradesh</option>
+                        <option>Jharkhand</option>
+                        <option>Karnataka</option>
+                        <option>Kerala</option>
+                        <option>Madhya Pradesh</option>
+                        <option>Maharashtra</option>
+                        <option>Manipur</option>
+                        <option>Meghalaya</option>
+                        <option>Mizoram</option>
+                        <option>Nagaland</option>
+                        <option>Odisha</option>
+                        <option>Punjab</option>
+                        <option>Rajasthan</option>
+                        <option>Sikkim</option>
+                        <option>Tamil Nadu</option>
+                        <option>Telangana</option>
+                        <option>Tripura</option>
+                        <option>Uttar Pradesh</option>
+                        <option>Uttarakhand</option>
+                        <option>West Bengal</option>
+                        <option>Andaman and Nicobar Islands</option>
+                        <option>Chandigarh</option>
+                        <option>Dadra and Nagar Haveli and Daman and Diu</option>
+                        <option>Lakshadweep</option>
                         <option>Delhi</option>
-                        <option>California</option>
+                        <option>Puducherry</option>
+                        <option>Ladakh</option>
+                        <option>Jammu and Kashmir</option>
                       </select>
                     </div>
                     <div>

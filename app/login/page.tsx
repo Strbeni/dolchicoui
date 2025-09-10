@@ -99,59 +99,12 @@ export default function UnifiedAuthComponent() {
   const router = useRouter()
 
   // Handle Google OAuth redirect: extract token/user from URL or cookies
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search)
-      const token = urlParams.get("token")
-      const userStr = urlParams.get("user")
-      const authSuccess = urlParams.get("auth") === "success"
-
-      console.log("[OAuth] Checking URL params - token:", !!token, "user:", !!userStr, "authSuccess:", authSuccess)
-
-      // Priority: Handle Google OAuth redirect first
-      if (authSuccess || token) {
-        console.log("[OAuth] OAuth success detected, processing...")
-        
-        if (token) {
-          // Store tokens with multiple persistence layers
-          localStorage.setItem("token", token)
-          sessionStorage.setItem("token", token)
-          document.cookie = `auth-token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
-          
-          if (userStr) {
-            try {
-              const decodedUser = decodeURIComponent(userStr)
-              localStorage.setItem("user", decodedUser)
-              sessionStorage.setItem("user", decodedUser)
-              console.log("[OAuth] User data stored")
-            } catch (error) {
-              console.error("[OAuth] Error decoding user data:", error)
-            }
-          }
-        }
-
-        // Check for token in cookies if not in URL
-        if (!token) {
-          const cookieToken = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('auth-token='))   
-            ?.split('=')[1]
-          
-          if (cookieToken) {
-            console.log("[OAuth] Token found in cookies, storing...")
-            localStorage.setItem("token", cookieToken)
-            sessionStorage.setItem("token", cookieToken)
-          }
-        }
-
-        // Verify user authentication status with backend
-// In UnifiedAuthComponent - update the verifyAuthStatus function
-// After OAuth redirect, immediately check profile
+// Move verifyAuthStatus outside of useEffect
 const verifyAuthStatus = async () => {
   try {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
     const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-      credentials: 'include',  // Add this line
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' }
     })
 
@@ -166,11 +119,55 @@ const verifyAuthStatus = async () => {
   }
 }
 
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get("token")
+    const userStr = urlParams.get("user")
+    const authSuccess = urlParams.get("auth") === "success"
 
+    console.log("[OAuth] Checking URL params - token:", !!token, "user:", !!userStr, "authSuccess:", authSuccess)
 
-        verifyAuthStatus()
-        return
+    // Priority: Handle Google OAuth redirect first
+    if (authSuccess || token) {
+      console.log("[OAuth] OAuth success detected, processing...")
+      
+      if (token) {
+        // Store tokens with multiple persistence layers
+        localStorage.setItem("token", token)
+        sessionStorage.setItem("token", token)
+        document.cookie = `auth-token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`
+        
+        if (userStr) {
+          try {
+            const decodedUser = decodeURIComponent(userStr)
+            localStorage.setItem("user", decodedUser)
+            sessionStorage.setItem("user", decodedUser)
+            console.log("[OAuth] User data stored")
+          } catch (error) {
+            console.error("[OAuth] Error decoding user data:", error)
+          }
+        }
       }
+
+      // Check for token in cookies if not in URL
+      if (!token) {
+        const cookieToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('auth-token='))   
+          ?.split('=')[1]
+        
+        if (cookieToken) {
+          console.log("[OAuth] Token found in cookies, storing...")
+          localStorage.setItem("token", cookieToken)
+          sessionStorage.setItem("token", cookieToken)
+        }
+      }
+
+      // Verify user authentication status with backend
+      verifyAuthStatus()
+      return
+    }
 
       // Fallback: Check for token in cookies for existing sessions
       const cookieToken = document.cookie
@@ -185,6 +182,31 @@ const verifyAuthStatus = async () => {
       }
     }
   }, [router])
+
+  // Handle email verification redirect
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search)
+      const stepParam = urlParams.get("step")
+      const flowParam = urlParams.get("flow")
+      
+      if (stepParam === "3" && flowParam === "email-verification") {
+        setStep(3)
+        
+        // Get user data from localStorage
+        const userData = localStorage.getItem('dolchi_user_data')
+        if (userData) {
+          try {
+            const user = JSON.parse(userData)
+            setUserId(user.id)
+            setFullName(user.name || '')
+          } catch (error) {
+            console.error('[Auth] Error parsing user data:', error)
+          }
+        }
+      }
+    }
+  }, [])
 
   // Step and form state
   const [step, setStep] = useState(1) // 1: Contact Check, 2: Auth Flow, 3: Profile Setup
@@ -1289,8 +1311,8 @@ const verifyAuthStatus = async () => {
               {step === 3 && (
                 <>
                   <div className="text-center space-y-2">
-                    <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Create your profile</h2>
-                    <p className="text-sm text-gray-600">Please provide your full name and create a password</p>
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-800">Complete your profile</h2>
+                    <p className="text-sm text-gray-600">Your email is verified! Please complete your profile to continue</p>
                   </div>
 
                   {error && (
