@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ProfileSidebar from "@/components/ProfileSidebar";
-import { Package, Truck, MapPin, Calendar, DollarSign, Hash, ChevronDown, ShoppingBag } from "lucide-react";
+import { Package, Truck, MapPin, Calendar, DollarSign, Hash, ChevronDown, ShoppingBag, X } from "lucide-react";
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
@@ -86,6 +86,68 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   );
 };
 
+// Refund/Replacement Dialog Component
+interface RefundReplacementDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onContact: () => void;
+  onCancel: () => void;
+}
+
+const RefundReplacementDialog: React.FC<RefundReplacementDialogProps> = ({
+  isOpen,
+  onClose,
+  onContact,
+  onCancel
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+    >
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 relative">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        {/* Dialog content */}
+        <div className="p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Want a refund/replacement?
+          </h2>
+
+          <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+            To claim the refund or replacement, please contact us via WhatsApp for further refund/replacement process
+          </p>
+
+          {/* Action buttons */}
+          <div className="flex gap-3">
+            <Button
+              onClick={onContact}
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white rounded-md py-2 cursor-pointer"
+            >
+              Contact
+            </Button>
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              className="flex-1 border-orange-600 text-orange-600 hover:bg-orange-50 rounded-md py-2 cursor-pointer"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Types
 interface Product {
   id: number;
@@ -146,6 +208,8 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
+  const [selectedOrderForRefund, setSelectedOrderForRefund] = useState<Order | null>(null);
 
   const router = useRouter();
 
@@ -343,6 +407,25 @@ export default function OrderHistoryPage() {
 
   const handleViewDetails = (orderId: number) => {
     router.push(`/profile/orderHistory/orderDetail/${orderId}`);
+  };
+
+  const handleRefundClick = (order: Order) => {
+    setSelectedOrderForRefund(order);
+    setIsRefundDialogOpen(true);
+  };
+
+  const handleContactClick = () => {
+    setIsRefundDialogOpen(false);
+    // Navigate to contact page with order information
+    if (selectedOrderForRefund) {
+      // Store the order info in sessionStorage for the contact page
+      sessionStorage.setItem('refundOrderInfo', JSON.stringify(selectedOrderForRefund));
+    }
+    router.push('/contact');
+  };
+
+  const handleCancelClick = () => {
+    setIsRefundDialogOpen(false);
   };
 
   const getStatusIcon = (status: string) => {
@@ -627,6 +710,7 @@ export default function OrderHistoryPage() {
                                     size="sm"
                                     variant="outline"
                                     className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-3 text-sm h-8 cursor-pointer"
+                                    onClick={() => handleRefundClick(order)}
                                   >
                                     Refund/replacement
                                   </Button>
@@ -667,6 +751,14 @@ export default function OrderHistoryPage() {
           )}
         </div>
       </div>
+
+      {/* Refund/Replacement Dialog */}
+      <RefundReplacementDialog
+        isOpen={isRefundDialogOpen}
+        onClose={() => setIsRefundDialogOpen(false)}
+        onContact={handleContactClick}
+        onCancel={handleCancelClick}
+      />
     </div>
   );
 }
