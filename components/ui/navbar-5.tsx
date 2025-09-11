@@ -496,7 +496,7 @@ export const Navbar5 = () => {
     window.addEventListener('storage', handleAuthChange);
     // Listen for custom auth events
     window.addEventListener('authStateChange', handleAuthStateChange as EventListener);
-    
+
     return () => {
       window.removeEventListener('storage', handleAuthChange);
       window.removeEventListener('authStateChange', handleAuthStateChange as EventListener);
@@ -584,7 +584,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/men">MEN</Link>
+                  <Link href="/productlist?cat=Men">MEN</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -597,7 +597,7 @@ export const Navbar5 = () => {
                             {rowSections.map((section) => (
                               <div key={section.title} className="w-1/5 pr-12 last:pr-0">
                                 <Link
-                                  href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
+                                  href={`/productlist?cat=Men&category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
@@ -608,7 +608,7 @@ export const Navbar5 = () => {
                                   {section.items.map((item) => (
                                     <li key={item}>
                                       <Link
-                                        href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
+                                        href={`/productlist?cat=Men&category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
                                       >
                                         {item}
@@ -632,7 +632,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/women">WOMEN</Link>
+                  <Link href="/productlist?cat=Women">WOMEN</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -645,7 +645,7 @@ export const Navbar5 = () => {
                             {rowSections.map((section) => (
                               <div key={section.title} className="w-1/5 pr-12 last:pr-0">
                                 <Link
-                                  href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
+                                  href={`/productlist?cat=Women&category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
@@ -656,7 +656,7 @@ export const Navbar5 = () => {
                                   {section.items.map((item) => (
                                     <li key={item}>
                                       <Link
-                                        href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
+                                        href={`/productlist?cat=Women&category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
                                       >
                                         {item}
@@ -680,7 +680,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/kids">KIDS</Link>
+                  <Link href="/productlist?cat=Kids">KIDS</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -693,7 +693,7 @@ export const Navbar5 = () => {
                             {rowSections.map((section) => (
                               <div key={section.title} className="w-1/5 pr-12 last:pr-0">
                                 <Link
-                                  href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
+                                  href={`/productlist?cat=Kids&category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
@@ -704,7 +704,7 @@ export const Navbar5 = () => {
                                   {section.items.map((item) => (
                                     <li key={item}>
                                       <Link
-                                        href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
+                                        href={`/productlist?cat=Kids&category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
                                       >
                                         {item}
@@ -728,7 +728,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/accessories">ACCESSORIES</Link>
+                  <Link href="/productlist?cat=Accessories">ACCESSORIES</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -741,7 +741,7 @@ export const Navbar5 = () => {
                             {rowSections.map((section) => (
                               <div key={section.title} className="w-1/5 pr-12 last:pr-0">
                                 <Link
-                                  href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
+                                  href={`/productlist?cat=Accessories&category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
@@ -752,7 +752,7 @@ export const Navbar5 = () => {
                                   {section.items.map((item) => (
                                     <li key={item}>
                                       <Link
-                                        href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
+                                        href={`/productlist?cat=Accessories&category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
                                       >
                                         {item}
@@ -776,7 +776,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/home">HOME LIVING</Link>
+                  <Link href="/productlist?cat=Home">HOME LIVING</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -789,7 +789,7 @@ export const Navbar5 = () => {
                             {rowSections.map((section) => (
                               <div key={section.title} className="w-1/5 pr-12 last:pr-0">
                                 <Link
-                                  href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
+                                  href={`/productlist?cat=Home&category=${encodeURIComponent(section.title.toLowerCase())}`}
                                   className="block"
                                 >
                                   <p className="text-sm font-medium mb-1 text-[#F3612A] hover:text-[#1A1A1A] transition-colors duration-200">
@@ -800,7 +800,7 @@ export const Navbar5 = () => {
                                   {section.items.map((item) => (
                                     <li key={item}>
                                       <Link
-                                        href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
+                                        href={`/productlist?cat=Home&category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                         className="text-[#242D35] hover:text-[#1A1A1A] text-[13px] leading-5 block transition-colors duration-200"
                                       >
                                         {item}
@@ -951,7 +951,7 @@ export const Navbar5 = () => {
                               {data.map((section) => (
                                 <div key={section.title} className="px-2">
                                   <Link
-                                    href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}`}
+                                    href={`/productlist?cat=${label}&category=${encodeURIComponent(section.title.toLowerCase())}`}
                                     className="block text-[#F3612A] font-medium mb-2"
                                   >
                                     {section.title}
@@ -960,7 +960,7 @@ export const Navbar5 = () => {
                                     {section.items.map((item) => (
                                       <li key={item}>
                                         <Link
-                                          href={`/productlist?category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
+                                          href={`/productlist?cat=${label}&category=${encodeURIComponent(section.title.toLowerCase())}&subcategory=${encodeURIComponent(item.toLowerCase())}`}
                                           className="text-sm text-gray-600 hover:text-gray-900"
                                         >
                                           {item}
