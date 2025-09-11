@@ -41,6 +41,7 @@ interface WishlistEntry {
 
 interface ProductListClientProps {
   category?: "Men" | "Women" | "Kids" | "Home" | "Accessories" | "All";
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
@@ -64,9 +65,22 @@ const showToast = (msg: string, success = true) => {
   setTimeout(() => el.remove(), 3000)
 }
 
-export default function ProductListClient({ category = "Men" }: ProductListClientProps) {
+export default function ProductListClient({ category, searchParams }: ProductListClientProps) {
   const router = useRouter()
   const dispatch = useAppDispatch()
+
+  // Extract category and filters from search parameters or props
+  const activeCategory = (searchParams?.cat as string) || category || "All"
+  const initialOffer = searchParams?.offer as string
+  const initialPriceMin = searchParams?.priceMin as string
+  const initialPriceMax = searchParams?.priceMax as string
+  const initialSizes = searchParams?.sizes ?
+    (Array.isArray(searchParams.sizes) ? searchParams.sizes : [searchParams.sizes]) : []
+  const initialColors = searchParams?.colors ?
+    (Array.isArray(searchParams.colors) ? searchParams.colors : [searchParams.colors]) : []
+  const initialBrands = searchParams?.brands ?
+    (Array.isArray(searchParams.brands) ? searchParams.brands : [searchParams.brands]) : []
+  const initialSort = (searchParams?.sort as string) || "Newest"
 
   // Redux wishlist for unauthenticated users
   const reduxWishlistItems = useAppSelector(selectWishlistItems)
@@ -80,15 +94,15 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [selectedColors, setSelectedColors] = useState<string[]>([])
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<string[]>(initialColors)
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(initialSizes)
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([])
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(initialBrands)
   const [priceRanges, setPriceRanges] = useState<string[]>([])
-  const [minPrice, setMinPrice] = useState("")
-  const [maxPrice, setMaxPrice] = useState("")
+  const [minPrice, setMinPrice] = useState(initialPriceMin || "")
+  const [maxPrice, setMaxPrice] = useState(initialPriceMax || "")
   const [brandSearch, setBrandSearch] = useState("")
-  const [sortBy, setSortBy] = useState("Newest")
+  const [sortBy, setSortBy] = useState(initialSort)
   const [addingToCart, setAddingToCart] = useState<number | null>(null)
   const [addedToCart, setAddedToCart] = useState<number | null>(null)
   const [apiWishlistItems, setApiWishlistItems] = useState<Set<number>>(new Set()) // For authenticated users
@@ -113,14 +127,118 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
     ? apiWishlistItems
     : new Set(reduxWishlistItems.map(item => item.id))
 
+  // Function to update URL with current filters
+  const updateURLParams = (newParams: Record<string, string | string[] | null>) => {
+    if (typeof window === 'undefined') return
+
+    const url = new URL(window.location.href)
+    const searchParams = new URLSearchParams(url.search)
+
+    // Remove existing parameters
+    Object.keys(newParams).forEach(key => {
+      searchParams.delete(key)
+    })
+
+    // Add new parameters
+    Object.entries(newParams).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== "") {
+        if (Array.isArray(value)) {
+          if (value.length > 0) {
+            value.forEach(v => searchParams.append(key, v))
+          }
+        } else {
+          searchParams.set(key, value)
+        }
+      }
+    })
+
+    const newUrl = `${url.pathname}?${searchParams.toString()}`
+    router.replace(newUrl, { scroll: false })
+  }
+
+  // Function to build API query parameters
+  const buildAPIQueryString = () => {
+    const params = new URLSearchParams()
+
+    // Category filtering
+    if (activeCategory && activeCategory !== "All") {
+      params.set('category', activeCategory)
+    }
+
+    // Price filtering
+    if (minPrice) params.set('priceMin', minPrice)
+    if (maxPrice) params.set('priceMax', maxPrice)
+
+    // Size filtering
+    if (selectedSizes.length > 0) {
+      selectedSizes.forEach(size => params.append('sizes', size))
+    }
+
+    // Brand filtering (if we have a way to map brands to API)
+    if (selectedBrands.length > 0) {
+      selectedBrands.forEach(brand => params.append('brands', brand))
+    }
+
+    // Special offers
+    if (initialOffer) {
+      params.set('offer', initialOffer)
+    }
+
+    // Bestseller filter
+    if (selectedCategories.includes('Hot Deals')) {
+      params.set('bestseller', 'true')
+    }
+
+    // Search query
+    const searchQuery = searchParams?.q as string
+    if (searchQuery) {
+      params.set('search', searchQuery)
+    }
+
+    // Sorting
+    let apiSortBy = 'createdAt'
+    let apiSortOrder = 'desc'
+
+    switch (sortBy) {
+      case "Sort: Price Low to High":
+        apiSortBy = 'price'
+        apiSortOrder = 'asc'
+        break
+      case "Sort: Price High to Low":
+        apiSortBy = 'price'
+        apiSortOrder = 'desc'
+        break
+      case "Sort: Most Popular":
+        apiSortBy = 'rating'
+        apiSortOrder = 'desc'
+        break
+      case "Sort: Newest":
+      default:
+        apiSortBy = 'createdAt'
+        apiSortOrder = 'desc'
+        break
+    }
+
+    params.set('sortBy', apiSortBy)
+    params.set('sortOrder', apiSortOrder)
+
+    // Pagination (we can add this later)
+    params.set('page', currentPage.toString())
+    params.set('limit', itemsPerPage.toString())
+
+    return params.toString()
+  }
+
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true)
       setError("")
 
       try {
-        console.log("[v0] Fetching products from:", `${API_BASE}/api/product/list`)
-        const response = await fetch(`${API_BASE}/api/product/list`, {
+        const queryString = buildAPIQueryString()
+        const apiUrl = `${API_BASE}/api/product/list${queryString ? `?${queryString}` : ''}`
+
+        const response = await fetch(apiUrl, {
           headers: { "Content-Type": "application/json" },
         })
 
@@ -129,8 +247,6 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
         }
 
         const data = await response.json()
-        console.log("[v0] API Response:", data)
-
         if (data.success && Array.isArray(data.products)) {
           const transformedProducts = data.products.map((product: any, index: number) => {
             const discount = product.discount || 0
@@ -192,7 +308,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
     }
 
     fetchProducts()
-  }, [cartCount])
+  }, [activeCategory, minPrice, maxPrice, selectedSizes, selectedBrands, selectedCategories, sortBy, currentPage, initialOffer, searchParams?.q])
 
   useEffect(() => {
     if (!isAuthenticated()) return // Only fetch wishlist for authenticated users
@@ -264,25 +380,58 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   ]
 
   const handleSizeFilter = (size: string) => {
-    setSelectedSizes((prev) => (prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]))
+    const newSizes = selectedSizes.includes(size)
+      ? selectedSizes.filter((s) => s !== size)
+      : [...selectedSizes, size]
+    setSelectedSizes(newSizes)
+    updateURLParams({ sizes: newSizes })
   }
 
   const handleColorFilter = (color: string) => {
-    setSelectedColors((prev) => (prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]))
+    const newColors = selectedColors.includes(color)
+      ? selectedColors.filter((c) => c !== color)
+      : [...selectedColors, color]
+    setSelectedColors(newColors)
+    updateURLParams({ colors: newColors })
   }
 
   const handleCategoryFilter = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
-    )
+    const newCategories = selectedCategories.includes(category)
+      ? selectedCategories.filter((c) => c !== category)
+      : [...selectedCategories, category]
+    setSelectedCategories(newCategories)
+    updateURLParams({ category: newCategories })
   }
 
   const handleBrandFilter = (brand: string) => {
-    setSelectedBrands((prev) => (prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]))
+    const newBrands = selectedBrands.includes(brand)
+      ? selectedBrands.filter((b) => b !== brand)
+      : [...selectedBrands, brand]
+    setSelectedBrands(newBrands)
+    updateURLParams({ brands: newBrands })
   }
 
   const handlePriceRangeFilter = (range: string) => {
-    setPriceRanges((prev) => (prev.includes(range) ? prev.filter((r) => r !== range) : [...prev, range]))
+    const newRanges = priceRanges.includes(range)
+      ? priceRanges.filter((r) => r !== range)
+      : [...priceRanges, range]
+    setPriceRanges(newRanges)
+    updateURLParams({ priceRanges: newRanges })
+  }
+
+  const handleMinPriceChange = (value: string) => {
+    setMinPrice(value)
+    updateURLParams({ priceMin: value || null })
+  }
+
+  const handleMaxPriceChange = (value: string) => {
+    setMaxPrice(value)
+    updateURLParams({ priceMax: value || null })
+  }
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value)
+    updateURLParams({ sort: value })
   }
 
   const handleAddToCart = async (product: Product) => {
@@ -309,9 +458,6 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
         size: product.sizes[0] || "M",
         quantity: 1,
       }
-      console.log("[v0] Cart request body:", requestBody)
-      console.log("[v0] Cart API URL:", `${API_BASE}/api/cart/items`)
-      console.log("[v0] Auth headers:", authHeaders())
 
       const response = await fetch(`${API_BASE}/api/cart/items`, {
         method: "POST",
@@ -323,7 +469,6 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
       console.log("[v0] Cart response headers:", Object.fromEntries(response.headers.entries()))
 
       const responseText = await response.text()
-      console.log("[v0] Cart response text:", responseText)
 
       let data
       try {
@@ -346,7 +491,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
       setAddedToCart(product.id)
       showToast("Added to cart successfully!")
       setTimeout(() => setAddedToCart(null), 2000)
-      
+
       // Refresh cart count in navbar
       refreshCartCount()
     } catch (error) {
@@ -436,11 +581,10 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...products]
 
-    if (category !== "All") {
-      filtered = filtered.filter((product) => product.category === category)
-    }
+    // NOTE: Category filtering is now handled server-side via API query parameters
+    // No need to filter by activeCategory here since API returns filtered results
 
-    // Size filter
+    // Size filter - temporarily keeping client-side until API supports it
     if (selectedSizes.length > 0) {
       filtered = filtered.filter((product) => product.sizes.some((size) => selectedSizes.includes(size)))
     }
@@ -489,6 +633,15 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
       filtered = filtered.filter((product) => product.price >= minPriceNum && product.price <= maxPriceNum)
     }
 
+    // Special filters from URL (like offers)
+    // Note: Offer filtering should ideally be handled server-side via API
+    // For now, we'll apply a generic discount filter for any offer type
+    if (initialOffer) {
+      // Apply a general discount filter for any offer
+      // The backend should handle specific offer logic based on the offer parameter
+      filtered = filtered.filter((product) => product.discount && product.discount > 0)
+    }
+
     // Sorting
     switch (sortBy) {
       case "Sort: Price Low to High":
@@ -517,7 +670,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
     minPrice,
     maxPrice,
     sortBy,
-    category,
+    activeCategory,
+    initialOffer,
   ])
 
   const paginatedProducts = useMemo(() => {
@@ -561,20 +715,20 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
           </Link>
           <span>›</span>
           <Link
-            href={`/${category.toLowerCase()}`}
+            href={`/productlist?cat=${activeCategory.toLowerCase()}`}
             className="hover:text-black truncate"
           >
-            {category}
+            {activeCategory}
           </Link>
           <span>›</span>
           <span className="text-black truncate">
-            {category === "Men" || category === "Women"
+            {activeCategory === "Men" || activeCategory === "Women"
               ? "T-Shirt"
-              : category === "Kids"
+              : activeCategory === "Kids"
                 ? "Kids Wear"
-                : category === "Home"
+                : activeCategory === "Home"
                   ? "Home Decor"
-                  : category === "Accessories"
+                  : activeCategory === "Accessories"
                     ? "All Accessories"
                     : "Products"}
           </span>
@@ -582,7 +736,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
       </div>
       <div className="md:hidden px-3 py-3 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-semibold">{category === "All" ? "All Products" : category}</h1>
+          <h1 className="text-xl font-semibold">{activeCategory === "All" ? "All Products" : activeCategory}</h1>
           <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
             {filteredAndSortedProducts.length} Items
           </span>
@@ -590,7 +744,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
         <div className="flex items-center space-x-2">
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => handleSortChange(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 text-sm flex-1 bg-white"
           >
             <option>Sort: Newest</option>
@@ -620,8 +774,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   key={size}
                   onClick={() => handleSizeFilter(size)}
                   className={`px-3 py-1 border text-sm transition-colors ${selectedSizes.includes(size)
-                      ? "bg-black text-white border-black"
-                      : "border-gray-300 hover:border-black"
+                    ? "bg-black text-white border-black"
+                    : "border-gray-300 hover:border-black"
                     }`}
                 >
                   {size}
@@ -642,8 +796,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   key={color.name}
                   onClick={() => handleColorFilter(color.name)}
                   className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColors.includes(color.name)
-                      ? "border-black scale-110"
-                      : "border-gray-300 hover:border-gray-400"
+                    ? "border-black scale-110"
+                    : "border-gray-300 hover:border-gray-400"
                     }`}
                   style={{ backgroundColor: color.hex }}
                   title={color.name}
@@ -686,14 +840,14 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                   type="text"
                   placeholder="Min"
                   value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
+                  onChange={(e) => handleMinPriceChange(e.target.value)}
                   className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
                 />
                 <input
                   type="text"
                   placeholder="Max"
                   value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
+                  onChange={(e) => handleMaxPriceChange(e.target.value)}
                   className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
                 />
               </div>
@@ -826,8 +980,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                             key={size}
                             onClick={() => handleSizeFilter(size)}
                             className={`px-4 py-2 border text-sm rounded transition-colors min-w-[48px] ${selectedSizes.includes(size)
-                                ? "bg-black text-white border-black"
-                                : "border-gray-300 hover:border-black"
+                              ? "bg-black text-white border-black"
+                              : "border-gray-300 hover:border-black"
                               }`}
                           >
                             {size}
@@ -854,8 +1008,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                             key={color.name}
                             onClick={() => handleColorFilter(color.name)}
                             className={`w-10 h-10 rounded-full border-2 transition-all ${selectedColors.includes(color.name)
-                                ? "border-black scale-110"
-                                : "border-gray-300 hover:border-gray-400"
+                              ? "border-black scale-110"
+                              : "border-gray-300 hover:border-gray-400"
                               }`}
                             style={{ backgroundColor: color.hex }}
                             title={color.name}
@@ -906,14 +1060,14 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                           type="text"
                           placeholder="Minimum"
                           value={minPrice}
-                          onChange={(e) => setMinPrice(e.target.value)}
+                          onChange={(e) => handleMinPriceChange(e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                         <input
                           type="text"
                           placeholder="Maximum"
                           value={maxPrice}
-                          onChange={(e) => setMaxPrice(e.target.value)}
+                          onChange={(e) => handleMaxPriceChange(e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                       </div>
@@ -957,7 +1111,7 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
             <div className="flex items-center space-x-4">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={(e) => handleSortChange(e.target.value)}
                 className="border border-gray-300 rounded px-3 py-1 text-sm bg-white"
               >
                 <option>Sort: Newest</option>
@@ -1056,8 +1210,8 @@ export default function ProductListClient({ category = "Men" }: ProductListClien
                     }}
                     disabled={addingToCart === product.id || product.stock <= 0}
                     className={`w-full py-2 md:py-2.5 text-sm font-medium rounded transition-colors flex items-center hover:cursor-pointer justify-center space-x-2 ${product.stock <= 0
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-gray-800 text-white hover:bg-black disabled:opacity-50"
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-800 text-white hover:bg-black disabled:opacity-50"
                       }`}
                   >
                     {addingToCart === product.id ? (
