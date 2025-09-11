@@ -76,52 +76,71 @@ export default function ContactPage() {
         setIsSubmitting(true);
 
         let ticketCreated = false;
+        let ticketId = '';
+
+        // Check if subject is related to replacement or refund
+        const isReplacementOrRefund = formData.subject.toLowerCase().includes('replacement') || 
+                                     formData.subject.toLowerCase().includes('refund') ||
+                                     formData.subject.toLowerCase().includes('return') ||
+                                     formData.subject.toLowerCase().includes('exchange');
 
         try {
-            // 1. Attempt to create ticket via API
-            const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
-            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (isReplacementOrRefund) {
+                // 1. Create ticket via API only for replacement/refund requests
+                const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
-            const response = await fetch(`${API_BASE_URL}/api/generateticket`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token && { 'Authorization': `Bearer ${token}` })
-                },
-                body: JSON.stringify({
-                    fullName: formData.fullName,
-                    email: formData.email,
-                    subject: formData.subject,
-                    message: formData.message,
-                    userId: user?.id
-                })
-            });
+                const response = await fetch(`${API_BASE_URL}/api/generateticket`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    },
+                    body: JSON.stringify({
+                        fullName: formData.fullName,
+                        email: formData.email,
+                        subject: formData.subject,
+                        message: formData.message,
+                        userId: user?.id
+                    })
+                });
 
-            if (response.ok) {
-                ticketCreated = true;
-                toast('Support ticket created successfully!');
-            } else {
-                throw new Error('Failed to generate ticket');
+                if (response.ok) {
+                    const data = await response.json();
+                    ticketId = data.ticketId || data.id || '';
+                    ticketCreated = true;
+                    toast('Support ticket created successfully!');
+                } else {
+                    throw new Error('Failed to generate ticket');
+                }
             }
         } catch (error) {
-            toast('Failed to create ticket, but you can still send the email directly', false);
+            if (isReplacementOrRefund) {
+                toast('Failed to create ticket, but you can still send the email directly', false);
+            }
         }
 
         try {
-            // 2. Always open Gmail with pre-filled email (regardless of ticket creation)
+            // 2. Open Gmail with pre-filled email
             const companyEmail = 'support@dolchico.com'; // Replace with your company email
             const emailSubject = encodeURIComponent(formData.subject);
 
-            const emailBody = encodeURIComponent(
-                `Dear Support Team,\n\n${formData.message}\n\n${ticketCreated ? 'Support ticket has been created for this request.\n\n' : ''}Best regards,\n${formData.fullName}\n${formData.email}`
-            );
+            let emailBodyContent = `Dear Support Team,\n\n${formData.message}\n\n`;
+            
+            if (ticketCreated && ticketId) {
+                emailBodyContent += `Support Ticket ID: ${ticketId}\n(This ticket has been automatically generated for your request)\n\n`;
+            }
+            
+            emailBodyContent += `Best regards,\n${formData.fullName}\n${formData.email}`;
+
+            const emailBody = encodeURIComponent(emailBodyContent);
 
             const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${companyEmail}&su=${emailSubject}&body=${emailBody}`;
             window.open(gmailUrl, '_blank');
 
             // Show appropriate success message
             if (ticketCreated) {
-                toast('Ticket created and email opened! Please send the email to complete your request.');
+                toast(`Ticket ${ticketId} created and email opened! Please send the email to complete your request.`);
             } else {
                 toast('Email opened in Gmail. Please send it to reach our support team.');
             }
