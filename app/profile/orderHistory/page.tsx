@@ -620,6 +620,7 @@ export default function OrderHistoryPage() {
                                     size="sm"
                                     variant="outline"
                                     className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-3 text-sm h-8 cursor-pointer"
+                                    onClick={() => router.push('/reviews')}
                                   >
                                     Leave Product Review
                                   </Button>
