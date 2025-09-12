@@ -1302,8 +1302,8 @@ export default function Home() {
                 key={tab}
                 onClick={() => handleTabClick(tab)}
                 className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === tab
-                    ? "text-[#f05a2b] border-[#f05a2b]"
-                    : "text-gray-600 border-transparent hover:text-gray-900"
+                  ? "text-[#f05a2b] border-[#f05a2b]"
+                  : "text-gray-600 border-transparent hover:text-gray-900"
                   }`}
               >
                 {tab}
