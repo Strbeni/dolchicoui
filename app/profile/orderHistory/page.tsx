@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import ProfileSidebar from "@/components/ProfileSidebar";
-import { Package, Truck, MapPin, Calendar, DollarSign, Hash, ChevronDown, ShoppingBag } from "lucide-react";
+import { Package, Truck, MapPin, Calendar, DollarSign, Hash, ChevronDown, ShoppingBag, X } from "lucide-react";
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
@@ -54,7 +54,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-48 h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+        className="w-full md:w-48 h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-left flex items-center justify-between hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
       >
         <span className="block truncate text-sm">
           {selectedOption ? selectedOption.label : placeholder}
@@ -63,7 +63,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-48 mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+        <div className="absolute z-50 w-full md:w-48 mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
           <div className="py-1 max-h-60 overflow-auto">
             {options.map((option) => (
               <button
@@ -82,6 +82,68 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Refund/Replacement Dialog Component
+interface RefundReplacementDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onContact: () => void;
+  onCancel: () => void;
+}
+
+const RefundReplacementDialog: React.FC<RefundReplacementDialogProps> = ({
+  isOpen,
+  onClose,
+  onContact,
+  onCancel
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+    >
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 relative">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        {/* Dialog content */}
+        <div className="p-4 md:p-6">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 pr-8">
+            Want a refund/replacement?
+          </h2>
+
+          <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+            To claim the refund or replacement, please contact us via WhatsApp for further refund/replacement process
+          </p>
+
+          {/* Action buttons */}
+          <div className="flex flex-col md:flex-row gap-3">
+            <Button
+              onClick={onContact}
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white rounded-md py-2 cursor-pointer"
+            >
+              Contact
+            </Button>
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              className="flex-1 border-orange-600 text-orange-600 hover:bg-orange-50 rounded-md py-2 cursor-pointer"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -146,6 +208,8 @@ export default function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
+  const [selectedOrderForRefund, setSelectedOrderForRefund] = useState<Order | null>(null);
 
   const router = useRouter();
 
@@ -345,6 +409,25 @@ export default function OrderHistoryPage() {
     router.push(`/profile/orderHistory/orderDetail/${orderId}`);
   };
 
+  const handleRefundClick = (order: Order) => {
+    setSelectedOrderForRefund(order);
+    setIsRefundDialogOpen(true);
+  };
+
+  const handleContactClick = () => {
+    setIsRefundDialogOpen(false);
+    // Navigate to contact page with order information
+    if (selectedOrderForRefund) {
+      // Store the order info in sessionStorage for the contact page
+      sessionStorage.setItem('refundOrderInfo', JSON.stringify(selectedOrderForRefund));
+    }
+    router.push('/contact');
+  };
+
+  const handleCancelClick = () => {
+    setIsRefundDialogOpen(false);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case 'order_placed':
@@ -364,7 +447,7 @@ export default function OrderHistoryPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gray-100 p-3 md:p-6 overflow-x-hidden">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
@@ -378,9 +461,9 @@ export default function OrderHistoryPage() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 p-6">
+      <div className="min-h-screen bg-gray-100 p-3 md:p-6 overflow-x-hidden">
         <div className="flex items-center justify-center h-64">
-          <div className="text-center max-w-md">
+          <div className="text-center max-w-md px-4">
             <div className="text-red-500 mb-4">
               <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -405,40 +488,50 @@ export default function OrderHistoryPage() {
   const displayedOrders = filteredOrders();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto flex gap-8">
+    <div className="min-h-screen bg-gray-50 p-3 md:p-6 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-4 lg:gap-8">
         {/* Sidebar */}
-        <div className="w-1/4 flex-shrink-0">
+        <div className="hidden lg:block lg:w-1/4 flex-shrink-0">
           <div className="sticky top-6">
             <ProfileSidebar activeSection="order-history" />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 w-full lg:w-3/4">
           {/* Header with Filters */}
-          <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-            <div className="flex items-center justify-between min-h-[2.5rem]">
-              <h1 className="text-2xl font-bold text-gray-900 flex-shrink-0">Orders history</h1>
+          <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-4 md:mb-6">
+            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => router.back()}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <ChevronDown className="w-5 h-5 text-gray-600 transform rotate-90" />
+                </button>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">Order history</h1>
+              </div>
 
-              <div className="flex items-center gap-4 flex-shrink-0">
+              <div className="flex gap-3 md:gap-4">
                 {/* Status Filter */}
-                <div>
+                <div className="flex-1 md:flex-none md:w-auto">
                   <CustomDropdown
                     value={statusFilter}
                     onValueChange={setStatusFilter}
                     options={statusOptions}
                     placeholder="Select status"
+                    className="w-full md:w-auto"
                   />
                 </div>
 
                 {/* Time Filter */}
-                <div>
+                <div className="flex-1 md:flex-none md:w-auto">
                   <CustomDropdown
                     value={timeFilter}
                     onValueChange={setTimeFilter}
                     options={timeOptions}
                     placeholder="For all time"
+                    className="w-full md:w-auto"
                   />
                 </div>
               </div>
@@ -457,7 +550,7 @@ export default function OrderHistoryPage() {
           {/* Error State */}
           {error && (
             <div className="flex items-center justify-center h-64">
-              <div className="text-center max-w-md">
+              <div className="text-center max-w-md px-4">
                 <div className="text-red-500 mb-4">
                   <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -493,7 +586,7 @@ export default function OrderHistoryPage() {
                     <Package className="w-16 h-16 mx-auto" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-700 mb-2">No orders found</h3>
-                  <p className="text-gray-500 mb-6">
+                  <p className="text-gray-500 mb-6 px-4">
                     You haven't placed any orders in this category yet.
                   </p>
                   <Button
@@ -507,8 +600,8 @@ export default function OrderHistoryPage() {
                 displayedOrders.map((order) => (
                   <div key={order.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow overflow-hidden">
                     {/* Order Header with Gray Background */}
-                    <div className="bg-gray-100 px-6 py-4 border-b">
-                      <div className="flex justify-between items-center text-sm">
+                    <div className="bg-gray-100 px-4 md:px-6 py-3 md:py-4 border-b">
+                      <div className="flex justify-between items-start text-sm">
                         <div className="flex gap-8">
                           <div>
                             <p className="text-gray-600">Order Placed</p>
@@ -531,10 +624,10 @@ export default function OrderHistoryPage() {
                     </div>
 
                     {/* Status Banner */}
-                    <div className="px-6 py-4 bg-white">
+                    <div className="px-4 md:px-6 py-4 bg-white">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-xl font-bold text-gray-900">
+                          <h3 className="text-lg md:text-xl font-bold text-gray-900">
                             {formatStatus(order.status)} {formatDate(order.date)}
                           </h3>
                           <p className="text-gray-600 font-semibold text-sm">
@@ -546,7 +639,7 @@ export default function OrderHistoryPage() {
                             <div className={getStatusColor(order.status) + ""}>
                               {getStatusIcon(order.status)}
                             </div>
-                            <span className="text-md font-medium text-black">
+                            <span className="text-sm font-medium text-black">
                               {getStatusLabel(order.status)}
                             </span>
                           </div>
@@ -555,84 +648,90 @@ export default function OrderHistoryPage() {
                     </div>
 
                     {/* Product Details */}
-                    <div className="px-6 pb-6">
+                    <div className="px-4 md:px-6 pb-4 md:pb-6">
                       {order.items && order.items.length > 0 && (
                         <div>
                           {/* Show up to 2 products, each in its own row */}
                           {order.items.slice(0, 2).map((item, index) => (
-                            <div key={item.id} className={`flex gap-4 ${index > 0 ? 'mt-4 pt-4 border-t border-gray-200' : ''}`}>
-                              {/* Product Image */}
-                              <div className="w-20 h-24 relative shrink-0">
-                                <Image
-                                  src={item.product.image[0] || '/placeholder.png'}
-                                  alt={item.product.name}
-                                  fill
-                                  className="object-cover rounded border"
-                                />
+                            <div key={item.id} className={`${index > 0 ? 'mt-4 pt-4 border-t border-gray-200' : ''}`}>
+                              {/* Product Image and Info Container */}
+                              <div className="flex flex-col md:flex-row gap-4">
+                                <div className="flex gap-4 flex-1">
+                                  {/* Product Image */}
+                                  <div className="w-16 h-20 md:w-20 md:h-24 relative shrink-0">
+                                    <Image
+                                      src={item.product.image[0] || '/placeholder.png'}
+                                      alt={item.product.name}
+                                      fill
+                                      className="object-cover rounded border"
+                                    />
+                                  </div>
+
+                                  {/* Product Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="space-y-1">
+                                      <h4 className="font-medium text-base md:text-lg text-gray-900 break-words">
+                                        {item.product.name}
+                                      </h4>
+                                      <p className="text-gray-600 text-sm">
+                                        Size: <span className="font-medium">{item.size}</span>
+                                      </p>
+                                      {item.product.category && item.product.subCategory && (
+                                        <p className="text-gray-600 text-sm break-words">
+                                          Category: <span className="font-medium">{item.product.category} - {item.product.subCategory}</span>
+                                        </p>
+                                      )}
+                                      <p className="text-gray-600 text-sm">
+                                        Price: <span className="font-medium">₹{item.price.toLocaleString()}</span>
+                                      </p>
+                                      <p className="text-gray-600 text-sm">
+                                        Quantity: <span className="font-medium">{item.quantity}</span>
+                                      </p>
+                                    </div>
+
+                                    {/* Buy Again Button for each product */}
+                                    <div className="mt-2">
+                                      <Button
+                                        size="sm"
+                                        className="bg-orange-600 hover:bg-orange-700 text-white rounded-full flex items-center gap-2 text-sm h-8 cursor-pointer w-fit"
+                                        style={{ paddingLeft: '16px', paddingRight: '16px' }}
+                                        onClick={() => router.push(`/productdetail/${item.product.id}`)}
+                                      >
+                                        <ShoppingBag className="w-4 h-4" />
+                                        Buy again
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons - Only show for first product to avoid duplication */}
+                                {index === 0 && (
+                                  <div className="flex flex-col gap-2 w-full md:w-auto md:shrink-0 mt-4 md:mt-0">
+                                    <Button
+                                      size="sm"
+                                      className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-3 text-xs md:text-sm h-8 cursor-pointer w-full md:w-auto whitespace-nowrap"
+                                    >
+                                      Leave Delivery Feedback
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-3 text-xs md:text-sm h-8 cursor-pointer w-full md:w-auto whitespace-nowrap"
+                                      onClick={() => router.push('/reviews')}
+                                  >
+                                      Leave Product Review
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-3 text-xs md:text-sm h-8 cursor-pointer w-full md:w-auto whitespace-nowrap"
+                                      onClick={() => handleRefundClick(order)}
+                                    >
+                                      Refund/replacement
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
-
-                              {/* Product Info */}
-                              <div className="flex-1 flex flex-col justify-between">
-                                <div className="space-y-1">
-                                  <h4 className="font-medium text-lg text-gray-900">
-                                    {item.product.name}
-                                  </h4>
-                                  <p className="text-gray-600 text-sm">
-                                    Size: <span className="font-medium">{item.size}</span>
-                                  </p>
-                                  {item.product.category && item.product.subCategory && (
-                                    <p className="text-gray-600 text-sm">
-                                      Category: <span className="font-medium">{item.product.category} - {item.product.subCategory}</span>
-                                    </p>
-                                  )}
-                                  <p className="text-gray-600 text-sm">
-                                    Price: <span className="font-medium">₹{item.price.toLocaleString()}</span>
-                                  </p>
-                                  <p className="text-gray-600 text-sm">
-                                    Quantity: <span className="font-medium">{item.quantity}</span>
-                                  </p>
-                                </div>
-
-                                {/* Buy Again Button for each product */}
-                                <div className="mt-2">
-                                  <Button
-                                    size="sm"
-                                    className="bg-orange-600 hover:bg-orange-700 text-white rounded-full flex items-center gap-2 text-sm h-8 cursor-pointer"
-                                    style={{ paddingLeft: '24px', paddingRight: '24px' }}
-                                    onClick={() => router.push(`/productdetail/${item.product.id}`)}
-                                  >
-                                    <ShoppingBag className="w-4 h-4" />
-                                    Buy again
-                                  </Button>
-                                </div>
-                              </div>
-
-                              {/* Action Buttons - Only show for first product to avoid duplication */}
-                              {index === 0 && (
-                                <div className="flex flex-col gap-2 shrink-0">
-                                  <Button
-                                    size="sm"
-                                    className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-3 text-sm h-8 cursor-pointer"
-                                  >
-                                    Leave Delivery Feedback
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-3 text-sm h-8 cursor-pointer"
-                                    onClick={() => router.push('/reviews')}
-                                  >
-                                    Leave Product Review
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-3 text-sm h-8 cursor-pointer"
-                                  >
-                                    Refund/replacement
-                                  </Button>
-                                </div>
-                              )}
                             </div>
                           ))}
 
@@ -668,6 +767,14 @@ export default function OrderHistoryPage() {
           )}
         </div>
       </div>
+
+      {/* Refund/Replacement Dialog */}
+      <RefundReplacementDialog
+        isOpen={isRefundDialogOpen}
+        onClose={() => setIsRefundDialogOpen(false)}
+        onContact={handleContactClick}
+        onCancel={handleCancelClick}
+      />
     </div>
   );
 }
