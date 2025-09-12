@@ -1114,37 +1114,39 @@ export default function Home() {
 
         <div className="space-y-6">
           {topDealsByCategory.slice(0, 3).map((categoryGroup) => { // Limit to first 3 categories
-            const displayedOffers = categoryGroup.offers.slice(0, 3) // Limit to 3 offers per category
+            const isExpanded = expandedCategories.has(categoryGroup.categoryName)
+            const displayedOffers = isExpanded ? categoryGroup.offers : categoryGroup.offers.slice(0, 3) // Show 3 initially, all when expanded
+            const hasMore = categoryGroup.offers.length > 3
 
             return (
               <div key={categoryGroup.categoryName}>
                 <h4 className="text-base sm:text-lg font-semibold mb-3 text-gray-800">{categoryGroup.categoryName}</h4>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                   {displayedOffers.map((item) => {
                     const accent = item.discount.includes("60")
                     return (
                       <Link key={item.id} href={`/productlist?category=${encodeURIComponent(categoryGroup.categoryName)}&subcategory=${encodeURIComponent(item.title)}`}>
                         <Card className="bg-transparent border-none shadow-none p-0 hover:shadow-lg transition-shadow duration-300">
-                          <div className="relative h-32 sm:h-36 rounded-lg overflow-hidden bg-white">
+                          <div className="relative h-32 sm:h-36 md:h-36 lg:h-40 xl:h-44 rounded-lg md:rounded-[18px] overflow-hidden bg-white">
                             <Image src={item.image || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
                             {item.badge && (
-                              <div className="absolute top-2 left-2 bg-[#ff7a2a] text-white text-xs font-semibold px-2 py-1 rounded-md">
+                              <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-2 md:px-3 py-1 rounded-md">
                                 {item.badge}
                               </div>
                             )}
                           </div>
-                          <CardContent className="px-2 pt-3 pb-2">
-                            <p className="text-xs text-gray-700 font-medium truncate">{item.title}</p>
+                          <CardContent className="px-2 pt-3 pb-2 md:px-2 md:pt-3 md:pb-2">
+                            <p className="text-xs md:text-sm text-gray-700 font-medium truncate">{item.title}</p>
                             <p className="text-xs text-gray-500 mt-1">Special Offer</p>
-                            <div className="mt-1 flex items-center gap-1">
-                              <p className={`text-sm leading-tight font-extrabold tracking-tight ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-900"}`}>
+                            <div className="mt-1 flex items-center gap-1 md:gap-2">
+                              <p className={`text-sm md:text-lg leading-tight font-extrabold tracking-tight ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-900"}`}>
                                 ₹{item.discountedPrice}
                               </p>
-                              <p className="text-xs text-gray-500 line-through">
+                              <p className="text-xs md:text-sm text-gray-500 line-through">
                                 ₹{item.originalPrice}
                               </p>
                             </div>
-                            <p className={`mt-1 text-xs font-semibold ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-700"}`}>
+                            <p className={`mt-1 text-xs md:text-sm font-semibold ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-700"}`}>
                               {item.discount}
                             </p>
                           </CardContent>
@@ -1153,6 +1155,27 @@ export default function Home() {
                     )
                   })}
                 </div>
+                {hasMore && (
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      variant="outline"
+                      className="rounded-full bg-transparent hover:bg-gray-50"
+                      onClick={() => {
+                        setExpandedCategories(prev => {
+                          const newSet = new Set(prev)
+                          if (newSet.has(categoryGroup.categoryName)) {
+                            newSet.delete(categoryGroup.categoryName)
+                          } else {
+                            newSet.add(categoryGroup.categoryName)
+                          }
+                          return newSet
+                        })
+                      }}
+                    >
+                      {isExpanded ? 'See Less' : 'See More'} →
+                    </Button>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -1166,24 +1189,31 @@ export default function Home() {
           <p className="text-sm text-gray-600">Style, inspired by the future of fashion</p>
         </div>
         <div className="space-y-6">
-          {categoriesByCategory.slice(0, 3).map((categoryGroup) => { // Limit to first 3 categories
-            const displayedSubCategories = categoryGroup.subCategories.slice(0, 4) // Limit to 4 subcategories per category
+          {categoriesByCategory.slice(0, 5).map((categoryGroup) => { // Show first 5 categories
+            const isExpanded = expandedCategories.has(categoryGroup.categoryName)
+            const displayedSubCategories = isExpanded ? categoryGroup.subCategories : categoryGroup.subCategories.slice(0, 6) // Show 6 initially, all when expanded
+            const hasMore = categoryGroup.subCategories.length > 6
 
             return (
               <div key={categoryGroup.categoryName}>
                 <h4 className="text-base sm:text-lg font-semibold mb-3 text-gray-800">{categoryGroup.categoryName}</h4>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                   {displayedSubCategories.map((item) => {
                     return (
                       <Link key={item.id} href={`/productlist?category=${encodeURIComponent(categoryGroup.categoryName)}&subcategory=${encodeURIComponent(item.title)}`}>
                         <Card className="bg-transparent border-none shadow-none p-0 hover:shadow-lg transition-shadow duration-300">
-                          <div className="relative h-24 sm:h-28 rounded-lg overflow-hidden bg-white">
+                          <div className="relative h-24 sm:h-28 md:h-36 lg:h-40 xl:h-44 rounded-lg md:rounded-[18px] overflow-hidden bg-white">
                             <Image src={item.image || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
+                            {item.badge && (
+                              <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
+                                {item.badge}
+                              </div>
+                            )}
                           </div>
-                          <CardContent className="px-1 pt-2 pb-1">
-                            <p className="text-xs text-gray-700 font-medium text-center truncate">{item.title}</p>
-                            <div className="mt-1 text-center">
-                              <p className="text-sm font-bold text-gray-900">
+                          <CardContent className="px-1 md:px-2 pt-2 pb-1 md:pt-3 md:pb-2">
+                            <p className="text-xs md:text-sm text-gray-700 font-medium text-center truncate">{item.title}</p>
+                            <div className="mt-1 md:mt-1">
+                              <p className="text-sm md:text-base font-bold text-gray-900 text-center">
                                 ₹{item.discountedPrice}
                               </p>
                             </div>
@@ -1193,6 +1223,27 @@ export default function Home() {
                     )
                   })}
                 </div>
+                {hasMore && (
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      variant="outline"
+                      className="rounded-full bg-transparent hover:bg-gray-50"
+                      onClick={() => {
+                        setExpandedCategories(prev => {
+                          const newSet = new Set(prev)
+                          if (newSet.has(categoryGroup.categoryName)) {
+                            newSet.delete(categoryGroup.categoryName)
+                          } else {
+                            newSet.add(categoryGroup.categoryName)
+                          }
+                          return newSet
+                        })
+                      }}
+                    >
+                      {isExpanded ? 'See Less' : 'See More'} →
+                    </Button>
+                  </div>
+                )}
               </div>
             )
           })}
