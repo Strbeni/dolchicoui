@@ -198,7 +198,7 @@ Best regards`;
             const companyEmail = 'support@dolchico.com'; // Replace with your company email
             const emailSubject = encodeURIComponent(formData.subject);
 
-            let emailBodyContent = `Dear Support Team,\n\n${formData.message}\n\n`;
+            let emailBodyContent = `${formData.message}\n\n`;
 
             if (ticketCreated && ticketId) {
                 emailBodyContent += `Support Ticket ID: ${ticketId}\n(This ticket has been automatically generated for your request)\n\n`;
