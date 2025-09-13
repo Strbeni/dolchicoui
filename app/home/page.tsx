@@ -905,8 +905,8 @@ export default function Home() {
 
   const renderAllContent = () => (
     <>
-      <div className="hidden sm:block">
-        {/* Hero */}
+      <div className="hidden md:block">
+        {/* Desktop Hero - keep as is */}
         <section className="px-6 lg:px-20 pt-10 pb-8">
           <div className="flex justify-center mb-4">
             <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-gray-600">
@@ -967,87 +967,119 @@ export default function Home() {
         </section>
       </div>
 
+      {/* Mobile-optimized content for ALL tab */}
+      <div className="block sm:hidden">
+        {/* Compact Mobile Hero Carousel */}
+        <div className="relative h-[280px] mx-4 mb-4 rounded-2xl overflow-hidden">
+          <Image
+            src={heroSlides[currentSlide].image || "/placeholder.svg"}
+            alt="Hero"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute bottom-4 left-4 right-4 text-white">
+            <h1 className="text-xl font-bold mb-1">{heroSlides[currentSlide].title}</h1>
+            <p className="text-sm mb-3 opacity-90">{heroSlides[currentSlide].subtitle}</p>
+            <Button className="bg-[#f05a2b] hover:bg-[#de491a] text-white rounded-full px-4 py-2 text-sm">
+              {heroSlides[currentSlide].buttonText} →
+            </Button>
+          </div>
+        </div>
+
+        {/* Compact Pagination Dots */}
+        <div className="flex justify-center space-x-2 py-2 mb-4">
+          {heroSlides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${currentSlide === index ? "bg-[#f05a2b]" : "bg-gray-300"
+                }`}
+            />
+          ))}
+        </div>
+      </div>
+
       {/* Promotional banner modal */}
       <PromotionalBanner isOpen={showPromoBanner} onClose={() => setShowPromoBanner(false)} />
 
-      {/* ₹300 OFF banner - overlay style like screenshot */}
-      <section className="px-4 md:px-6 lg:px-20 mb-6">
+      {/* ₹300 OFF banner - compact mobile version */}
+      <section className="px-4 md:px-6 lg:px-20 mb-4">
         <div
-          className="relative h-[260px] sm:h-[300px] md:h-[360px] rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300"
+          className="relative h-[180px] sm:h-[260px] md:h-[360px] rounded-2xl overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform duration-300"
           onClick={() => setShowPromoBanner(true)}
         >
           <Image src="/casual.jpg" alt="Flat 300 OFF" fill className="object-cover" />
           <div className="absolute inset-0 bg-black/45" />
           <div className="absolute inset-0 flex items-center">
-            <div className="px-5 sm:px-8 max-w-xl text-white">
-              <h2 className="text-3xl sm:text-4xl font-serif font-semibold leading-tight">
+            <div className="px-4 sm:px-8 max-w-xl text-white">
+              <h2 className="text-lg sm:text-2xl md:text-3xl font-serif font-semibold leading-tight">
                 Flat ₹300 OFF - on your first purchase
               </h2>
-              <p className="mt-2 text-xs sm:text-sm text-gray-200">
-                Discover fashion that reflects your value style. Sustainably sourced, thoughtfully designed, endlessly
-                stylish.
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-200">
+                Discover fashion that reflects your value style.
               </p>
-              <div className="mt-5">
-                <Button className="w-full sm:w-auto rounded-full bg-[#f05a2b] hover:bg-[#de491a] text-white px-8 py-5 text-base">
-                  Click for Offer Details →
+              <div className="mt-3 sm:mt-5">
+                <Button className="w-full sm:w-auto rounded-full bg-[#f05a2b] hover:bg-[#de491a] text-white px-4 sm:px-8 py-2 sm:py-3 text-sm sm:text-base">
+                  Click for Offer →
                 </Button>
               </div>
             </div>
           </div>
-          <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-white text-xs">
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-white/20 backdrop-blur-sm rounded-full px-2 sm:px-3 py-1 text-white text-xs">
             Click me!
           </div>
         </div>
       </section>
 
-      {/* Collections mosaic */}
-      <section className="px-6 lg:px-20 relative">
+      {/* Collections mosaic - simplified for mobile */}
+      <section className="px-4 sm:px-6 lg:px-20 relative mb-4">
         <div
-          className=" cursor-pointer hidden lg:block fixed right-0 top-1/2 -translate-y-1/2 bg-[#ff6a1a] text-white px-3 py-2 rounded-l-md font-semibold tracking-wider [writing-mode:vertical-rl]"
+          className="hidden lg:block fixed right-0 top-1/2 -translate-y-1/2 bg-[#ff6a1a] text-white px-3 py-2 rounded-l-md font-semibold tracking-wider [writing-mode:vertical-rl]"
           onClick={() => setShowPromoBanner(true)}
         >
           UPTO ₹300 OFF
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative h-[420px] rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="relative h-[160px] sm:h-[200px] rounded-2xl overflow-hidden">
             <Image src="/w1.svg" alt="Long Sleeve T-Shirt" fill className="object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-6 flex items-end">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-3 sm:p-6 flex items-end">
               <div>
                 <p className="text-white/80 text-xs mb-1">Women&apos;s Collections</p>
-                <h3 className="text-white text-xl md:text-2xl font-semibold">Long Sleeve T-Shirt</h3>
-                <Link href="/productlist" className="inline-block mt-3">
+                <h3 className="text-white text-lg sm:text-xl font-semibold">Long Sleeve T-Shirt</h3>
+                <Link href="/productlist" className="inline-block mt-2">
                   <span className="text-white text-xs underline">Explore Now →</span>
                 </Link>
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="relative h-[200px] rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="relative h-[120px] sm:h-[150px] rounded-2xl overflow-hidden">
               <Image src="/product.jpg" alt="Half Sleeve Shirt" fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex items-end">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-2 sm:p-4 flex items-end">
                 <div>
                   <p className="text-white/80 text-[10px]">Men&apos;s Collections</p>
-                  <h4 className="text-white text-base font-semibold">Half Sleeve Shirt</h4>
+                  <h4 className="text-white text-sm sm:text-base font-semibold">Half Sleeve Shirt</h4>
                   <span className="text-white text-[10px] underline">Explore Now →</span>
                 </div>
               </div>
             </div>
-            <div className="relative h-[200px] rounded-2xl overflow-hidden">
+            <div className="relative h-[120px] sm:h-[150px] rounded-2xl overflow-hidden">
               <Image src="/w4.svg" alt="Polo T-Shirt" fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex items-end">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-2 sm:p-4 flex items-end">
                 <div>
                   <p className="text-white/80 text-[10px]">T-shirt Collections</p>
-                  <h4 className="text-white text-base font-semibold">Polo T-Shirt</h4>
+                  <h4 className="text-white text-sm sm:text-base font-semibold">Polo T-Shirt</h4>
                   <span className="text-white text-[10px] underline">Explore Now →</span>
                 </div>
               </div>
             </div>
-            <div className="relative h-[200px] md:h-[200px] col-span-2 rounded-2xl overflow-hidden">
+            <div className="relative h-[120px] sm:h-[150px] col-span-2 rounded-2xl overflow-hidden">
               <Image src="/w3.svg" alt="Denim-Jacket" fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex items-end">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent p-2 sm:p-4 flex items-end">
                 <div>
                   <p className="text-white/80 text-[10px]">Denim Collections</p>
-                  <h4 className="text-white text-lg font-semibold">Denim-Jacket</h4>
+                  <h4 className="text-white text-base sm:text-lg font-semibold">Denim-Jacket</h4>
                   <span className="text-white text-[10px] underline">Explore Now →</span>
                 </div>
               </div>
@@ -1056,65 +1088,65 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Brand strip (logo grid on mobile) */}
-      <section className="px-6 lg:px-20 mt-8">
-        <div className="w-full rounded-xl bg-gray-100 px-4 py-3 grid grid-cols-3 gap-4 items-center justify-items-center sm:flex sm:justify-around">
-          {["/adidas.svg", "/puma.svg", "/n.svg", "/gucci.svg", "/boss.svg"].map((src, idx) => (
-            <div key={idx} className="h-6 opacity-70">
+      {/* Brand strip - compact mobile version */}
+      <section className="px-4 sm:px-6 lg:px-20 mt-4 mb-4">
+        <div className="w-full rounded-lg bg-gray-100 px-3 py-2 grid grid-cols-3 gap-2 items-center justify-items-center sm:flex sm:justify-around">
+          {["/adidas.svg", "/puma.svg", "/n.svg"].map((src, idx) => (
+            <div key={idx} className="h-5 opacity-70">
               <Image
                 src={src || "/placeholder.svg"}
                 alt={`brand-${idx}`}
-                width={90}
-                height={24}
-                className="object-contain w-auto h-6"
+                width={60}
+                height={20}
+                className="object-contain w-auto h-5"
               />
             </div>
           ))}
         </div>
       </section>
 
-      {/* Top Deals */}
-      <section className="px-6 lg:px-20 mt-16">
-        <div className="mb-6">
-          <h3 className="text-2xl font-semibold">Top Deals</h3>
+      {/* Top Deals - limited to 3 per category for mobile */}
+      <section className="px-4 sm:px-6 lg:px-20 mt-8 mb-4">
+        <div className="mb-4">
+          <h3 className="text-xl sm:text-2xl font-semibold">Top Deals</h3>
           <p className="text-sm text-gray-600">Effortless style, inspired by the future of fashion</p>
         </div>
 
-        <div className="space-y-8">
-          {topDealsByCategory.map((categoryGroup) => {
+        <div className="space-y-6">
+          {topDealsByCategory.slice(0, 3).map((categoryGroup) => { // Limit to first 3 categories
             const isExpanded = expandedCategories.has(categoryGroup.categoryName)
-            const displayedOffers = isExpanded ? categoryGroup.offers : categoryGroup.offers.slice(0, 6)
-            const hasMore = categoryGroup.offers.length > 6
+            const displayedOffers = isExpanded ? categoryGroup.offers : categoryGroup.offers.slice(0, 3) // Show 3 initially, all when expanded
+            const hasMore = categoryGroup.offers.length > 3
 
             return (
               <div key={categoryGroup.categoryName}>
-                <h4 className="text-lg font-semibold mb-4 text-gray-800">{categoryGroup.categoryName}</h4>
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <h4 className="text-base sm:text-lg font-semibold mb-3 text-gray-800">{categoryGroup.categoryName}</h4>
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                   {displayedOffers.map((item) => {
                     const accent = item.discount.includes("60")
                     return (
-                      <Link key={item.id} href={`/productdetail/${item.productId}`}>
+                      <Link key={item.id} href={`/productlist?category=${encodeURIComponent(categoryGroup.categoryName)}&subcategory=${encodeURIComponent(item.title)}`}>
                         <Card className="bg-transparent border-none shadow-none p-0 hover:shadow-lg transition-shadow duration-300">
-                          <div className="relative h-52 md:h-56 lg:h-60 rounded-[18px] overflow-hidden bg-white">
+                          <div className="relative h-32 sm:h-36 md:h-36 lg:h-40 xl:h-44 rounded-lg md:rounded-[18px] overflow-hidden bg-white">
                             <Image src={item.image || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
                             {item.badge && (
-                              <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
+                              <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-2 md:px-3 py-1 rounded-md">
                                 {item.badge}
                               </div>
                             )}
                           </div>
-                          <CardContent className="px-2 pt-4 pb-2">
-                            <p className="text-sm text-gray-700 font-medium">{item.title}</p>
+                          <CardContent className="px-2 pt-3 pb-2 md:px-2 md:pt-3 md:pb-2">
+                            <p className="text-xs md:text-sm text-gray-700 font-medium truncate">{item.title}</p>
                             <p className="text-xs text-gray-500 mt-1">Special Offer</p>
-                            <div className="mt-1 flex items-center gap-2">
-                              <p className={`text-xl leading-tight font-extrabold tracking-tight ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-900"}`}>
+                            <div className="mt-1 flex items-center gap-1 md:gap-2">
+                              <p className={`text-sm md:text-lg leading-tight font-extrabold tracking-tight ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-900"}`}>
                                 ₹{item.discountedPrice}
                               </p>
-                              <p className="text-sm text-gray-500 line-through">
+                              <p className="text-xs md:text-sm text-gray-500 line-through">
                                 ₹{item.originalPrice}
                               </p>
                             </div>
-                            <p className={`mt-1 text-sm font-semibold ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-700"}`}>
+                            <p className={`mt-1 text-xs md:text-sm font-semibold ${item.discount.includes("60") ? "text-[#ff5c39]" : "text-gray-700"}`}>
                               {item.discount}
                             </p>
                           </CardContent>
@@ -1150,28 +1182,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Shop by Category */}
-      <section className="px-6 lg:px-20 mt-16 mb-20">
-        <div className="mb-6">
-          <h3 className="text-2xl font-semibold">Shop by Category</h3>
+      {/* Shop by Category - limited for mobile */}
+      <section className="px-4 sm:px-6 lg:px-20 mt-8 mb-8">
+        <div className="mb-4">
+          <h3 className="text-xl sm:text-2xl font-semibold">Shop by Category</h3>
           <p className="text-sm text-gray-600">Style, inspired by the future of fashion</p>
         </div>
-        <div className="space-y-8">
-          {categoriesByCategory.map((categoryGroup) => {
+        <div className="space-y-6">
+          {categoriesByCategory.slice(0, 5).map((categoryGroup) => { // Show first 5 categories
             const isExpanded = expandedCategories.has(categoryGroup.categoryName)
-            const displayedSubCategories = isExpanded ? categoryGroup.subCategories : categoryGroup.subCategories.slice(0, 6)
+            const displayedSubCategories = isExpanded ? categoryGroup.subCategories : categoryGroup.subCategories.slice(0, 6) // Show 6 initially, all when expanded
             const hasMore = categoryGroup.subCategories.length > 6
 
             return (
               <div key={categoryGroup.categoryName}>
-                <h4 className="text-lg font-semibold mb-4 text-gray-800">{categoryGroup.categoryName}</h4>
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <h4 className="text-base sm:text-lg font-semibold mb-3 text-gray-800">{categoryGroup.categoryName}</h4>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                   {displayedSubCategories.map((item) => {
-                    const accent = item.discount.includes("60")
                     return (
-                      <Link key={item.id} href={`/productdetail/${item.productId}`}>
+                      <Link key={item.id} href={`/productlist?category=${encodeURIComponent(categoryGroup.categoryName)}&subcategory=${encodeURIComponent(item.title)}`}>
                         <Card className="bg-transparent border-none shadow-none p-0 hover:shadow-lg transition-shadow duration-300">
-                          <div className="relative h-52 md:h-56 lg:h-60 rounded-[18px] overflow-hidden bg-white">
+                          <div className="relative h-24 sm:h-28 md:h-36 lg:h-40 xl:h-44 rounded-lg md:rounded-[18px] overflow-hidden bg-white">
                             <Image src={item.image || "/placeholder.svg"} alt={item.title} fill className="object-cover" />
                             {item.badge && (
                               <div className="absolute top-3 left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-3 py-1 rounded-md">
@@ -1179,10 +1210,10 @@ export default function Home() {
                               </div>
                             )}
                           </div>
-                          <CardContent className="px-2 pt-4 pb-2">
-                            <p className="text-sm text-gray-700 font-medium">{item.title}</p>
-                            <div className="mt-2">
-                              <p className="text-lg font-bold text-gray-900">
+                          <CardContent className="px-1 md:px-2 pt-2 pb-1 md:pt-3 md:pb-2">
+                            <p className="text-xs md:text-sm text-gray-700 font-medium text-center truncate">{item.title}</p>
+                            <div className="mt-1 md:mt-1">
+                              <p className="text-sm md:text-base font-bold text-gray-900 text-center">
                                 ₹{item.discountedPrice}
                               </p>
                             </div>
@@ -1219,38 +1250,38 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="px-4 py-8 bg-[#101820] text-white rounded-t-2xl mt-8">
-        <h3 className="text-3xl font-serif mb-1">Why Choose Us</h3>
+      {/* Why Choose Us - compact mobile version */}
+      <section className="px-4 py-6 bg-[#101820] text-white rounded-t-2xl mt-4">
+        <h3 className="text-2xl font-serif mb-1">Why Choose Us</h3>
         <p className="text-xs text-gray-300 mb-4">Fashion You Can Feel Good About</p>
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
             {
               title: "Ethical Production",
-              desc: "Our garments are made in fair-trade certified facilities for all involved.",
+              desc: "Fair-trade certified facilities",
               icon: "/globe.svg",
             },
             {
-              title: "Innovations",
-              desc: "We're always seeking out new ways to improve our sustainability efforts.",
-              icon: "/window.svg",
-            },
-            {
               title: "Quality You Can Trust",
-              desc: "We take pride in producing high-quality, that stands the test of time.",
+              desc: "High-quality, long-lasting",
               icon: "/file.svg",
             },
             {
               title: "Sustainable Materials",
-              desc: "We source eco-friendly fabrics, such as organic cotton and recycled.",
+              desc: "Eco-friendly fabrics",
               icon: "/globe.svg",
             },
+            {
+              title: "Innovations",
+              desc: "Always improving sustainability",
+              icon: "/window.svg",
+            },
           ].map((f, i) => (
-            <div key={i} className="bg-white text-[#0f1520] rounded-xl p-4 flex gap-3 items-start">
-              <Image src={f.icon || "/placeholder.svg"} alt={f.title} width={28} height={28} className="mt-1" />
+            <div key={i} className="bg-white text-[#0f1520] rounded-lg p-3 flex gap-2 items-start">
+              <Image src={f.icon || "/placeholder.svg"} alt={f.title} width={20} height={20} className="mt-0.5" />
               <div>
-                <p className="font-semibold mb-1">{f.title}</p>
-                <p className="text-xs text-gray-600 leading-relaxed">{f.desc}</p>
+                <p className="font-semibold text-sm mb-0.5">{f.title}</p>
+                <p className="text-xs text-gray-600 leading-tight">{f.desc}</p>
               </div>
             </div>
           ))}
@@ -1271,8 +1302,8 @@ export default function Home() {
                 key={tab}
                 onClick={() => handleTabClick(tab)}
                 className={`text-sm font-medium pb-2 border-b-2 transition-colors ${activeTab === tab
-                    ? "text-[#f05a2b] border-[#f05a2b]"
-                    : "text-gray-600 border-transparent hover:text-gray-900"
+                  ? "text-[#f05a2b] border-[#f05a2b]"
+                  : "text-gray-600 border-transparent hover:text-gray-900"
                   }`}
               >
                 {tab}
@@ -1314,36 +1345,6 @@ export default function Home() {
                   className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#f05a2b] focus:bg-white"
                 />
               </div>
-            </div>
-
-            {/* Mobile Hero Section */}
-            <div className="relative h-[400px] mx-4 rounded-2xl overflow-hidden">
-              <Image
-                src={heroSlides[currentSlide].image || "/placeholder.svg"}
-                alt="Hero"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-black/20" />
-              <div className="absolute bottom-6 left-6 right-6 text-white">
-                <h1 className="text-3xl font-bold mb-2">{heroSlides[currentSlide].title}</h1>
-                <p className="text-sm mb-4 opacity-90">{heroSlides[currentSlide].subtitle}</p>
-                <Button className="bg-[#f05a2b] hover:bg-[#de491a] text-white rounded-full px-6 py-3">
-                  {heroSlides[currentSlide].buttonText} →
-                </Button>
-              </div>
-            </div>
-
-            {/* Pagination Dots */}
-            <div className="flex justify-center space-x-2 py-4">
-              {heroSlides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${currentSlide === index ? "bg-[#f05a2b]" : "bg-gray-300"
-                    }`}
-                />
-              ))}
             </div>
           </>
         )}

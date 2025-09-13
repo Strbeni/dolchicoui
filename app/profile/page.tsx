@@ -16,6 +16,7 @@ import {
   selectUserLoading,
   selectUserError
 } from "@/lib/store/userSlice";
+import { fetchUser } from "@/lib/store/userSlice";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useLogout } from "@/hooks/useLogout";
 
@@ -113,6 +114,14 @@ export default function AccountSettings() {
     }
   }, [user]);
 
+  // Fetch user from backend when auth is initialized
+  useEffect(() => {
+    if (authInitialized) {
+      // dispatch fetchUser to ensure we have latest server data
+      dispatch(fetchUser());
+    }
+  }, [authInitialized, dispatch]);
+
   const getAuthToken = () => {
     return typeof window !== 'undefined' ? localStorage.getItem('token') || sessionStorage.getItem('token') : null;
   };
@@ -192,6 +201,8 @@ export default function AccountSettings() {
       if (updateUser.fulfilled.match(result)) {
         setIsEditing(false);
         toast('Profile updated successfully!');
+        // Refresh user from server to reflect saved changes
+        dispatch(fetchUser());
       } else {
         toast(result.payload as string || 'Failed to update profile', false);
       }
@@ -251,6 +262,8 @@ export default function AccountSettings() {
         setTempEmail("");
         setIsEmailChanged(false);
         toast('Email updated successfully!');
+        // Refresh user from backend to pick up the verified email
+        dispatch(fetchUser());
       } else {
         const data = await response.json();
         toast(data.error || 'Invalid OTP', false);
@@ -272,18 +285,33 @@ export default function AccountSettings() {
   const handleRequestPasswordReset = async () => {
     setPasswordResetLoading(true);
     try {
+      // Prefer email, fallback to phone if email is not available
+      const targetEmail = email || (user && (user.email || '')) || '';
+      const targetPhone = phone || (user && (user.phoneNumber || '')) || '';
+      
+      // Use email first, then phone as fallback
+      const emailOrPhone = targetEmail || targetPhone;
+
+      if (!emailOrPhone) {
+        toast('Email or phone number is required to send password reset OTP', false);
+        setPasswordResetLoading(false);
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/user/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ emailOrPhone }),
       });
 
       const data = await response.json();
       if (response.ok) {
         setShowPasswordReset(true);
-        toast('Password reset OTP sent to your email');
+        // Show appropriate message based on what was used
+        const resetMethod = targetEmail ? 'email' : 'phone number';
+        toast(`Password reset OTP sent to your ${resetMethod}`);
       } else {
         toast(data.message || 'Failed to send password reset OTP', false);
       }
@@ -314,13 +342,18 @@ export default function AccountSettings() {
     }
 
     try {
+      // Use the same email/phone logic as in handleRequestPasswordReset
+      const targetEmail = email || (user && (user.email || '')) || '';
+      const targetPhone = phone || (user && (user.phoneNumber || '')) || '';
+      const emailOrPhone = targetEmail || targetPhone;
+
       const response = await fetch(`${API_BASE_URL}/api/user/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          emailOrPhone,
           otp: passwordResetOtp,
           newPassword
         }),
@@ -473,7 +506,7 @@ export default function AccountSettings() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ newPhone: tempPhone }),
+        body: JSON.stringify({ newPhoneNumber: tempPhone }),
       });
       if (response.ok) {
         setShowPhoneOtp(true);
@@ -515,6 +548,8 @@ export default function AccountSettings() {
           setIsEditingContact(false);
         }
         toast('Email updated successfully!');
+          // Refresh user from backend to pick up the verified email
+          dispatch(fetchUser());
       } else {
         const data = await response.json();
         toast(data.error || 'Invalid OTP', false);
@@ -547,6 +582,8 @@ export default function AccountSettings() {
         setTempPhone("");
         setIsEditingContact(false);
         toast('Phone updated successfully!');
+          // Refresh user from backend to pick up the verified phone
+          dispatch(fetchUser());
       } else {
         const data = await response.json();
         toast(data.error || 'Invalid OTP', false);
@@ -573,19 +610,31 @@ export default function AccountSettings() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100 p-6">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 p-6">
       <Tabs defaultValue="account" className="w-full flex">
-        {/* Sidebar */}
-        <div className="w-1/4 pr-6">
+        {/* Sidebar - hidden on small screens */}
+        <div className="hidden md:block md:w-1/4 md:pr-6">
           <ProfileSidebar activeSection="personal-info" />
         </div>
-        {/* Main Content */}
-        <div className="w-3/4">
+        {/* Main Content - full width on small screens */}
+        <div className="w-full md:w-3/4">
           <TabsContent value="account">
             <Card className="shadow-md">
               <CardContent className="p-6">
                 <div className="mb-8">
-                  <h1 className="text-3xl font-bold text-gray-900">Personal Info</h1>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => router.back()}
+                      className="md:hidden inline-flex items-center justify-center p-2 rounded-full bg-white border border-gray-200 shadow-sm"
+                      aria-label="Go back"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <h1 className="text-3xl font-bold text-gray-900">Personal Info</h1>
+                  </div>
                 </div>
                 {/* Basic Info */}
                 <div className="mb-8">
@@ -603,7 +652,7 @@ export default function AccountSettings() {
                     )}
                   </div>
 
-                  <form className="grid grid-cols-2 gap-6" onSubmit={handleSave}>
+                  <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSave}>
                     <div className="space-y-2">
                       <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                         First Name
@@ -614,7 +663,7 @@ export default function AccountSettings() {
                         onChange={(e) => setFirstName(e.target.value)}
                         disabled={!isEditing}
                         placeholder="Enter your first name"
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div className="space-y-2">
@@ -627,7 +676,7 @@ export default function AccountSettings() {
                         onChange={(e) => setLastName(e.target.value)}
                         disabled={!isEditing}
                         placeholder="Enter your last name"
-                        className="mt-1"
+                        className="mt-1 w-full"
                       />
                     </div>
                     <div className="space-y-2">
@@ -640,7 +689,7 @@ export default function AccountSettings() {
                           onDateChange={(date) => setDateOfBirth(date || undefined)}
                           placeholder="Select date of birth"
                           disabled={!isEditing}
-                          className="mt-1"
+                          className="mt-1 w-full"
                         />
                       ) : (
                         <Input
@@ -648,7 +697,7 @@ export default function AccountSettings() {
                           type="text"
                           value={dateOfBirth ? dateOfBirth.toLocaleDateString() : ''}
                           disabled={true}
-                          className="mt-1 h-10 bg-gray-100 cursor-not-allowed"
+                          className="mt-1 h-10 w-full bg-gray-100 cursor-not-allowed"
                           placeholder="Not set"
                         />
                       )}
@@ -687,7 +736,7 @@ export default function AccountSettings() {
                     </div>
 
                     {isEditing && (
-                      <div className="col-span-2 flex justify-start gap-4 mt-6">
+                      <div className="col-span-1 md:col-span-2 flex justify-start gap-4 mt-6">
                         <Button
                           type="submit"
                           disabled={loading || userLoading}
@@ -733,21 +782,22 @@ export default function AccountSettings() {
                   {isEditingContact ? (
                     <div className="space-y-6">
                       <div className="space-y-4">
-                        <div className="flex items-end gap-3">
-                          <div className="w-1/3 space-y-2">
+                        <div className="flex flex-col sm:flex-row items-end gap-3">
+                          <div className="w-full sm:w-1/3 space-y-2">
                             <Label htmlFor="contactEmail">Email</Label>
                             <Input
                               id="contactEmail"
                               value={tempEmailContact}
                               onChange={(e) => setTempEmailContact(e.target.value)}
                               placeholder="Enter email"
+                              className="w-full"
                             />
                           </div>
                           <Button
                             type="button"
                             onClick={handleEmailChangeRequestContact}
                             disabled={!tempEmailContact || tempEmailContact === email || emailOtpLoading}
-                            className="bg-[#F3612A] hover:bg-[#E55120] text-white px-4 py-2 h-10 disabled:bg-gray-300 disabled:hover:bg-gray-300"
+                            className="w-full sm:w-auto bg-[#F3612A] hover:bg-[#E55120] text-white px-4 py-2 h-10 disabled:bg-gray-300 disabled:hover:bg-gray-300"
                           >
                             {emailOtpLoading ? (
                               <>
@@ -821,21 +871,22 @@ export default function AccountSettings() {
                       </div>
 
                       <div className="space-y-4">
-                        <div className="flex items-end gap-3">
-                          <div className="w-1/3 space-y-2">
+                        <div className="flex flex-col sm:flex-row items-end gap-3">
+                          <div className="w-full sm:w-1/3 space-y-2">
                             <Label htmlFor="contactPhone">Phone Number</Label>
                             <Input
                               id="contactPhone"
                               value={tempPhone}
                               onChange={(e) => setTempPhone(e.target.value)}
                               placeholder="Enter phone"
+                              className="w-full"
                             />
                           </div>
                           <Button
                             type="button"
                             onClick={handlePhoneChangeRequest}
                             disabled={!tempPhone || tempPhone === phone || phoneOtpLoading}
-                            className="bg-[#F3612A] hover:bg-[#E55120] text-white px-4 py-2 h-10 disabled:bg-gray-300 disabled:hover:bg-gray-300"
+                            className="w-full sm:w-auto bg-[#F3612A] hover:bg-[#E55120] text-white px-4 py-2 h-10 disabled:bg-gray-300 disabled:hover:bg-gray-300"
                           >
                             {phoneOtpLoading ? (
                               <>
@@ -960,14 +1011,14 @@ export default function AccountSettings() {
                   </div>
 
                   {!showPasswordReset ? (
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Input
                           id="password"
                           type="password"
                           value="••••••••••••"
                           disabled={true}
-                          className="mt-1 bg-gray-100 cursor-not-allowed"
+                          className="mt-1 w-full bg-gray-100 cursor-not-allowed"
                         />
                       </div>
                     </div>
@@ -1157,8 +1208,8 @@ export default function AccountSettings() {
             )}
 
             {isDeleteModalOpen && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <Card className="bg-white rounded-lg p-6 min-w-[350px] shadow-lg">
+              <div className="fixed inset-0 bg-[rgb(0,0,0,0.5)] flex items-center justify-center z-50">
+                <Card className="bg-white rounded-lg p-4 min-w-[350px] shadow-lg max-w-[95vw]">
                   <CardContent>
                     <h2 className="text-xl font-semibold mb-4">Are you sure?</h2>
                     <p className="text-sm text-gray-600 mb-6">

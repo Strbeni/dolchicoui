@@ -42,12 +42,85 @@ export default function ContactPage() {
         if (refundOrderInfo && user) {
             try {
                 const orderInfo = JSON.parse(refundOrderInfo);
+
+                // Generate detailed message with product information
+                let detailedMessage = orderInfo.prefilledMessage || '';
+
+                // If we have selectedProducts, enhance the message
+                if (orderInfo.selectedProducts && orderInfo.selectedProducts.length > 0) {
+                    const refundProducts = orderInfo.selectedProducts.filter((p: any) => p.type === 'refund');
+                    const replacementProducts = orderInfo.selectedProducts.filter((p: any) => p.type === 'replacement');
+
+                    let enhancedMessage = `Dear Support Team,
+
+I would like to request a `;
+
+                    if (refundProducts.length > 0 && replacementProducts.length > 0) {
+                        enhancedMessage += 'refund and replacement';
+                    } else if (refundProducts.length > 0) {
+                        enhancedMessage += 'refund';
+                    } else {
+                        enhancedMessage += 'replacement';
+                    }
+
+                    enhancedMessage += ` for my order.
+
+Order Details:
+- Order ID: #${orderInfo.orderId}
+- Order Date: ${new Date(parseInt(orderInfo.orderDate)).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    })}
+- Order Amount: ₹${orderInfo.orderAmount}
+
+`;
+
+                    if (refundProducts.length > 0) {
+                        enhancedMessage += `Products for REFUND:
+`;
+                        refundProducts.forEach((product: any, index: number) => {
+                            enhancedMessage += `${index + 1}. ${product.productName} (Size: ${product.size})
+`;
+                        });
+                        enhancedMessage += `
+`;
+                    }
+
+                    if (replacementProducts.length > 0) {
+                        enhancedMessage += `Products for REPLACEMENT:
+`;
+                        replacementProducts.forEach((product: any, index: number) => {
+                            enhancedMessage += `${index + 1}. ${product.productName} (Size: ${product.size})
+`;
+                        });
+                        enhancedMessage += `
+`;
+                    }
+
+                    enhancedMessage += `Please assist me with the ${refundProducts.length > 0 && replacementProducts.length > 0 ? 'refund and replacement' : orderInfo.selectedProducts[0]?.type} process.`;
+
+                    // Add ticket ID if available
+                    if (orderInfo.ticketCreated && orderInfo.ticketId) {
+                        enhancedMessage += `
+
+Support Ticket ID: ${orderInfo.ticketId}`;
+                    }
+
+                    enhancedMessage += `
+
+Best regards`;
+
+                    detailedMessage = enhancedMessage;
+                }
+
                 setFormData({
                     fullName: user.name || user.fullName || '',
                     email: user.email || '',
-                    subject: 'Replacement',
-                    message: `I want replacement for the products which I have received in the order ${orderInfo.id}. The products which I want to replace are: `
+                    subject: orderInfo.subject || 'Refund/Replacement Request',
+                    message: detailedMessage
                 });
+
                 // Clear the session storage after using it
                 sessionStorage.removeItem('refundOrderInfo');
             } catch (error) {
@@ -79,10 +152,10 @@ export default function ContactPage() {
         let ticketId = '';
 
         // Check if subject is related to replacement or refund
-        const isReplacementOrRefund = formData.subject.toLowerCase().includes('replacement') || 
-                                     formData.subject.toLowerCase().includes('refund') ||
-                                     formData.subject.toLowerCase().includes('return') ||
-                                     formData.subject.toLowerCase().includes('exchange');
+        const isReplacementOrRefund = formData.subject.toLowerCase().includes('replacement') ||
+            formData.subject.toLowerCase().includes('refund') ||
+            formData.subject.toLowerCase().includes('return') ||
+            formData.subject.toLowerCase().includes('exchange');
 
         try {
             if (isReplacementOrRefund) {
@@ -125,12 +198,12 @@ export default function ContactPage() {
             const companyEmail = 'support@dolchico.com'; // Replace with your company email
             const emailSubject = encodeURIComponent(formData.subject);
 
-            let emailBodyContent = `Dear Support Team,\n\n${formData.message}\n\n`;
-            
+            let emailBodyContent = `${formData.message}\n\n`;
+
             if (ticketCreated && ticketId) {
                 emailBodyContent += `Support Ticket ID: ${ticketId}\n(This ticket has been automatically generated for your request)\n\n`;
             }
-            
+
             emailBodyContent += `Best regards,\n${formData.fullName}\n${formData.email}`;
 
             const emailBody = encodeURIComponent(emailBodyContent);

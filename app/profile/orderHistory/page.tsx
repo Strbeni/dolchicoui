@@ -90,24 +90,101 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 interface RefundReplacementDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onContact: () => void;
+  onEmailContact: (selectedProducts: SelectedProduct[]) => void;
+  onWhatsAppContact: (selectedProducts: SelectedProduct[]) => void;
   onCancel: () => void;
+  order: Order | null;
+}
+
+interface SelectedProduct {
+  productId: number;
+  productName: string;
+  size: string;
+  type: 'refund' | 'replacement';
 }
 
 const RefundReplacementDialog: React.FC<RefundReplacementDialogProps> = ({
   isOpen,
   onClose,
-  onContact,
-  onCancel
+  onEmailContact,
+  onWhatsAppContact,
+  onCancel,
+  order
 }) => {
-  if (!isOpen) return null;
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [availableProducts, setAvailableProducts] = useState<{ id: number; name: string; size: string }[]>([]);
+
+  useEffect(() => {
+    if (order && order.items) {
+      const products = order.items.map(item => ({
+        id: item.productId,
+        name: item.product.name,
+        size: item.size
+      }));
+      setAvailableProducts(products);
+      setSelectedProducts([]);
+    }
+  }, [order]);
+
+  const addProductSelection = () => {
+    setSelectedProducts([...selectedProducts, {
+      productId: 0,
+      productName: '',
+      size: '',
+      type: 'refund'
+    }]);
+  };
+
+  const removeProductSelection = (index: number) => {
+    setSelectedProducts(selectedProducts.filter((_, i) => i !== index));
+  };
+
+  const updateProductSelection = (index: number, field: keyof SelectedProduct, value: string | number) => {
+    const updated = [...selectedProducts];
+    if (field === 'productId') {
+      const product = availableProducts.find(p => p.id === value);
+      if (product) {
+        updated[index] = {
+          ...updated[index],
+          productId: product.id,
+          productName: product.name,
+          size: product.size
+        };
+      }
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
+    setSelectedProducts(updated);
+  };
+
+  const handleEmailContact = () => {
+    const validProducts = selectedProducts.filter(p => p.productId > 0);
+    if (validProducts.length === 0) {
+      alert('Please select at least one product');
+      return;
+    }
+    onEmailContact(validProducts);
+    onClose();
+  };
+
+  const handleWhatsAppContact = () => {
+    const validProducts = selectedProducts.filter(p => p.productId > 0);
+    if (validProducts.length === 0) {
+      alert('Please select at least one product');
+      return;
+    }
+    onWhatsAppContact(validProducts);
+    onClose();
+  };
+
+  if (!isOpen || !order) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
     >
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 relative">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 relative max-h-[90vh] overflow-y-auto">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -119,25 +196,96 @@ const RefundReplacementDialog: React.FC<RefundReplacementDialogProps> = ({
         {/* Dialog content */}
         <div className="p-4 md:p-6">
           <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 pr-8">
-            Want a refund/replacement?
+            Request Refund/Replacement
           </h2>
 
           <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-            To claim the refund or replacement, please contact us via WhatsApp for further refund/replacement process
+            Select the products you want to refund or replace from Order #{order.id}
           </p>
+
+          {/* Product Selection Section */}
+          <div className="mb-6">
+            <h3 className="text-md font-medium text-gray-800 mb-3">Select Products:</h3>
+
+            {selectedProducts.map((selectedProduct, index) => (
+              <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg">
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Product Dropdown */}
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Product
+                    </label>
+                    <select
+                      value={selectedProduct.productId}
+                      onChange={(e) => updateProductSelection(index, 'productId', parseInt(e.target.value))}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value={0}>Select a product</option>
+                      {availableProducts.map((product) => (
+                        <option key={`${product.id}-${product.size}`} value={product.id}>
+                          {product.name} (Size: {product.size})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Type Selection */}
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Request Type
+                    </label>
+                    <select
+                      value={selectedProduct.type}
+                      onChange={(e) => updateProductSelection(index, 'type', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value="refund">Refund</option>
+                      <option value="replacement">Replacement</option>
+                    </select>
+                  </div>
+
+                  {/* Remove Button */}
+                  <div className="flex items-end">
+                    <button
+                      onClick={() => removeProductSelection(index)}
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md"
+                      title="Remove product"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Add Product Button */}
+            <button
+              onClick={addProductSelection}
+              className="w-full p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-orange-300 hover:text-orange-600 transition-colors flex items-center justify-center gap-2"
+            >
+              <span className="text-xl">+</span>
+              Add Product
+            </button>
+          </div>
 
           {/* Action buttons */}
           <div className="flex flex-col md:flex-row gap-3">
             <Button
-              onClick={onContact}
+              onClick={handleEmailContact}
               className="flex-1 bg-orange-600 hover:bg-orange-700 text-white rounded-md py-2 cursor-pointer"
             >
-              Contact
+              Email Contact
+            </Button>
+            <Button
+              onClick={handleWhatsAppContact}
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white rounded-md py-2 cursor-pointer"
+            >
+              WhatsApp Contact
             </Button>
             <Button
               onClick={onCancel}
               variant="outline"
-              className="flex-1 border-orange-600 text-orange-600 hover:bg-orange-50 rounded-md py-2 cursor-pointer"
+              className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-md py-2 cursor-pointer"
             >
               Cancel
             </Button>
@@ -414,14 +562,231 @@ export default function OrderHistoryPage() {
     setIsRefundDialogOpen(true);
   };
 
-  const handleContactClick = () => {
-    setIsRefundDialogOpen(false);
-    // Navigate to contact page with order information
-    if (selectedOrderForRefund) {
-      // Store the order info in sessionStorage for the contact page
-      sessionStorage.setItem('refundOrderInfo', JSON.stringify(selectedOrderForRefund));
+  const handleEmailContact = async (selectedProducts: SelectedProduct[]) => {
+    if (!selectedOrderForRefund) return;
+
+    // Generate detailed message with selected products
+    const refundProducts = selectedProducts.filter(p => p.type === 'refund');
+    const replacementProducts = selectedProducts.filter(p => p.type === 'replacement');
+
+    // Generate subject
+    const subject = refundProducts.length > 0 && replacementProducts.length > 0
+      ? 'Refund and Replacement Request'
+      : refundProducts.length > 0
+        ? 'Refund Request'
+        : 'Replacement Request';
+
+    let messageContent = `Dear Support Team,
+
+I would like to request a `;
+
+    if (refundProducts.length > 0 && replacementProducts.length > 0) {
+      messageContent += `refund and replacement`;
+    } else if (refundProducts.length > 0) {
+      messageContent += `refund`;
+    } else {
+      messageContent += `replacement`;
     }
+
+    messageContent += ` for my order.
+
+Order Details:
+- Order ID: #${selectedOrderForRefund.id}
+- Order Date: ${formatDate(selectedOrderForRefund.date)}
+- Order Amount: ₹${selectedOrderForRefund.amount}
+
+`;
+
+    if (refundProducts.length > 0) {
+      messageContent += `Products for REFUND:
+`;
+      refundProducts.forEach((product, index) => {
+        messageContent += `${index + 1}. ${product.productName} (Size: ${product.size})
+`;
+      });
+      messageContent += `
+`;
+    }
+
+    if (replacementProducts.length > 0) {
+      messageContent += `Products for REPLACEMENT:
+`;
+      replacementProducts.forEach((product, index) => {
+        messageContent += `${index + 1}. ${product.productName} (Size: ${product.size})
+`;
+      });
+      messageContent += `
+`;
+    }
+
+    messageContent += `Please assist me with the ${refundProducts.length > 0 && replacementProducts.length > 0 ? 'refund and replacement' : selectedProducts[0]?.type} process.
+
+Best regards`;
+
+    // Try to generate ticket via API
+    let ticketId = '';
+    let ticketCreated = false;
+
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+
+      const response = await fetch(`${API_BASE_URL}/api/generateticket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          fullName: user?.name || user?.fullName || 'Customer',
+          email: user?.email || '',
+          subject: subject,
+          message: messageContent,
+          userId: user?.id,
+          orderId: selectedOrderForRefund.id,
+          selectedProducts: selectedProducts
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        ticketId = data.ticketId || data.id || '';
+        ticketCreated = true;
+      }
+    } catch (error) {
+      console.log('Failed to generate ticket, will proceed without it');
+    }
+
+    // If ticket was created, add it to the message
+    if (ticketCreated && ticketId) {
+      messageContent = messageContent.replace('Best regards', `Support Ticket ID: ${ticketId}
+
+Best regards`);
+    }
+
+    // Store the enhanced contact info in sessionStorage for the contact page
+    const orderInfo = {
+      orderId: selectedOrderForRefund.id,
+      orderDate: selectedOrderForRefund.date,
+      orderAmount: selectedOrderForRefund.amount,
+      selectedProducts: selectedProducts,
+      ticketId: ticketId,
+      ticketCreated: ticketCreated,
+      prefilledMessage: messageContent,
+      subject: subject
+    };
+
+    sessionStorage.setItem('refundOrderInfo', JSON.stringify(orderInfo));
     router.push('/contact');
+  };
+
+  const handleWhatsAppContact = async (selectedProducts: SelectedProduct[]) => {
+    if (!selectedOrderForRefund) return;
+
+    // Generate detailed message with selected products
+    const refundProducts = selectedProducts.filter(p => p.type === 'refund');
+    const replacementProducts = selectedProducts.filter(p => p.type === 'replacement');
+
+    // Generate subject for ticket
+    const subject = refundProducts.length > 0 && replacementProducts.length > 0
+      ? 'Refund and Replacement Request'
+      : refundProducts.length > 0
+        ? 'Refund Request'
+        : 'Replacement Request';
+
+    // Try to generate ticket via API
+    let ticketId = '';
+    let ticketCreated = false;
+
+    try {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+
+      // Create ticket message for API
+      let ticketMessage = `Refund/Replacement request for Order #${selectedOrderForRefund.id}`;
+      if (refundProducts.length > 0) {
+        ticketMessage += `\n\nRefund Products: ${refundProducts.map(p => `${p.productName} (${p.size})`).join(', ')}`;
+      }
+      if (replacementProducts.length > 0) {
+        ticketMessage += `\n\nReplacement Products: ${replacementProducts.map(p => `${p.productName} (${p.size})`).join(', ')}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/generateticket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          fullName: user?.name || user?.fullName || 'Customer',
+          email: user?.email || '',
+          subject: subject,
+          message: ticketMessage,
+          userId: user?.id,
+          orderId: selectedOrderForRefund.id,
+          selectedProducts: selectedProducts
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        ticketId = data.ticketId || data.id || '';
+        ticketCreated = true;
+      }
+    } catch (error) {
+      console.log('Failed to generate ticket, will proceed without it');
+    }
+
+    // Get user information for the message
+    const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+
+    // Format products list for WhatsApp message
+    let productsText = '';
+    if (refundProducts.length > 0) {
+      productsText += `*Products for REFUND:*\n`;
+      refundProducts.forEach((product, index) => {
+        productsText += `${index + 1}. ${product.productName} (Size: ${product.size})\n`;
+      });
+      productsText += '\n';
+    }
+
+    if (replacementProducts.length > 0) {
+      productsText += `*Products for REPLACEMENT:*\n`;
+      replacementProducts.forEach((product, index) => {
+        productsText += `${index + 1}. ${product.productName} (Size: ${product.size})\n`;
+      });
+      productsText += '\n';
+    }
+
+    // Create WhatsApp message
+    let message = `Hello! I would like to request a ${refundProducts.length > 0 && replacementProducts.length > 0 ? 'refund and replacement' : selectedProducts[0]?.type} for my order.
+
+*Order Details:*
+- Order ID: #${selectedOrderForRefund.id}
+- Order Date: ${formatDate(selectedOrderForRefund.date)}
+- Order Amount: ₹${selectedOrderForRefund.amount}`;
+
+    if (ticketCreated && ticketId) {
+      message += `
+- Support Ticket ID: ${ticketId}`;
+    }
+
+    message += `
+
+*Customer Details:*
+- Name: ${user?.name || user?.fullName || 'Not available'}
+- Email: ${user?.email || 'Not available'}
+
+${productsText}Please assist me with the ${refundProducts.length > 0 && replacementProducts.length > 0 ? 'refund and replacement' : selectedProducts[0]?.type} process.
+
+Thank you!`;
+
+    // WhatsApp customer care number - replace with actual number
+    const whatsappNumber = "+919874706143"; // Replace with actual customer care number
+    const whatsappUrl = `https://wa.me/${whatsappNumber.replace('+', '')}?text=${encodeURIComponent(message)}`;
+
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleCancelClick = () => {
@@ -503,7 +868,7 @@ export default function OrderHistoryPage() {
           <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-4 md:mb-6">
             <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
               <div className="flex items-center gap-3">
-                <button 
+                <button
                   onClick={() => router.back()}
                   className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 >
@@ -718,7 +1083,7 @@ export default function OrderHistoryPage() {
                                       variant="outline"
                                       className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-3 text-xs md:text-sm h-8 cursor-pointer w-full md:w-auto whitespace-nowrap"
                                       onClick={() => router.push('/reviews')}
-                                  >
+                                    >
                                       Leave Product Review
                                     </Button>
                                     <Button
@@ -772,8 +1137,10 @@ export default function OrderHistoryPage() {
       <RefundReplacementDialog
         isOpen={isRefundDialogOpen}
         onClose={() => setIsRefundDialogOpen(false)}
-        onContact={handleContactClick}
+        onEmailContact={handleEmailContact}
+        onWhatsAppContact={handleWhatsAppContact}
         onCancel={handleCancelClick}
+        order={selectedOrderForRefund}
       />
     </div>
   );

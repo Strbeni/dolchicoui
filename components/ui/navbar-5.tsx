@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Heart, Menu, ShoppingCart, User, ShoppingBag, MapPin, LogOut } from "lucide-react"
+import { Heart, Menu, ShoppingCart, User, ShoppingBag, MapPin, LogOut, Star, Ticket, RotateCcw, Phone } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   NavigationMenu,
@@ -1064,6 +1064,14 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Dashboard</span>
                           </Link>
                           <Link
+                            href="/reviews"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <Star className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">My Reviews</span>
+                          </Link>
+                          <Link
                             href="/profile/orderHistory"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
@@ -1080,6 +1088,14 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Wishlist</span>
                           </Link>
                           <Link
+                            href="/profile/coupons"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <Ticket className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Coupons</span>
+                          </Link>
+                          <Link
                             href="/profile"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
@@ -1094,6 +1110,22 @@ export const Navbar5 = () => {
                           >
                             <MapPin className="w-4 h-4 text-gray-600" />
                             <span className="text-gray-700">Addresses</span>
+                          </Link>
+                          <Link
+                            href="/return-policy"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <RotateCcw className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Return Policy</span>
+                          </Link>
+                          <Link
+                            href="/contact"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <Phone className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Contact Us</span>
                           </Link>
                           <button
                             onClick={handleLogout}
