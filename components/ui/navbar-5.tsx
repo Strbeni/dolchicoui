@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Heart, Menu, ShoppingCart, User, ShoppingBag, MapPin, LogOut, Star, Ticket, RotateCcw, Phone } from "lucide-react"
+import { Heart, Menu, ShoppingCart, User, ShoppingBag, MapPin, LogOut, Star, Ticket, RotateCcw, Phone, Truck } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   NavigationMenu,
@@ -538,9 +538,9 @@ export const Navbar5 = () => {
   }, [])
 
   return (
-    <section className="sticky md:border-b ">
+    <section className="sticky top-0 z-50 bg-white md:border-b">
       <div className="container px-4 lg:px-6">
-        <nav className="flex items-center justify-between h-16 md:h-20">
+        <nav className="flex items-center justify-between py-4 md:py-5">
           {/* Logo - Hidden on mobile, shown on desktop */}
           <Link href="/home" className="hidden lg:flex items-center gap-2 relative z-10">
             <span className="text-lg font-semibold tracking-tighter text-[#F3612A]">
@@ -850,7 +850,7 @@ export const Navbar5 = () => {
                       {/* Menu Items */}
                       <div className="p-2">
                         <Link
-                          href="/dashboard"
+                          href="/account/dashboard"
                           className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
                         >
@@ -858,7 +858,7 @@ export const Navbar5 = () => {
                           <span className="text-gray-700">Dashboard</span>
                         </Link>
                         <Link
-                          href="/profile/orderHistory"
+                          href="/account/order-history"
                           className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
                         >
@@ -866,7 +866,23 @@ export const Navbar5 = () => {
                           <span className="text-gray-700">Order history</span>
                         </Link>
                         <Link
-                          href="/wishlist"
+                          href="/account/reviews"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Star className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">My Reviews</span>
+                        </Link>
+                        <Link
+                          href="/account/delivery-reviews"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Truck className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">Delivery Reviews</span>
+                        </Link>
+                        <Link
+                          href="/account/wishlist"
                           className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
                         >
@@ -874,7 +890,7 @@ export const Navbar5 = () => {
                           <span className="text-gray-700">Wishlist</span>
                         </Link>
                         <Link
-                          href="/profile"
+                          href="/account/personal-info"
                           className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
                         >
@@ -882,7 +898,7 @@ export const Navbar5 = () => {
                           <span className="text-gray-700">Personal info</span>
                         </Link>
                         <Link
-                          href="/profile/addressBook"
+                          href="/account/addresses"
                           className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
                         >
@@ -910,7 +926,7 @@ export const Navbar5 = () => {
                 </div>
               )}
             </div>
-            <Link href="/wishlist" className="relative">
+            <Link href="/account/wishlist" className="relative">
               <Heart className="w-6 h-6" />
               {wishlistCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-1 min-w-[18px] h-[18px] flex items-center justify-center">
@@ -1012,7 +1028,7 @@ export const Navbar5 = () => {
             </div>
 
             <div className="flex items-center gap-1">
-              <button onClick={() => router.push("/wishlist")} className="flex flex-col items-center w-12 relative">
+              <button onClick={() => router.push("/account/wishlist")} className="flex flex-col items-center w-12 relative">
                 <Heart className="w-6 h-6 text-gray-700" />
                 {wishlistCount > 0 && (
                   <span className="absolute -top-1 right-1 bg-red-500 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
@@ -1056,7 +1072,7 @@ export const Navbar5 = () => {
                         {/* Menu Items */}
                         <div className="py-2">
                           <Link
-                            href="/dashboard"
+                            href="/account/dashboard"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
@@ -1064,7 +1080,7 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Dashboard</span>
                           </Link>
                           <Link
-                            href="/reviews"
+                            href="/account/reviews"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
@@ -1072,7 +1088,15 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">My Reviews</span>
                           </Link>
                           <Link
-                            href="/profile/orderHistory"
+                            href="/account/delivery-reviews"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <Truck className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Delivery Reviews</span>
+                          </Link>
+                          <Link
+                            href="/account/order-history"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
@@ -1080,7 +1104,7 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Order history</span>
                           </Link>
                           <Link
-                            href="/wishlist"
+                            href="/account/wishlist"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
@@ -1088,7 +1112,7 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Wishlist</span>
                           </Link>
                           <Link
-                            href="/profile/coupons"
+                            href="/account/coupons"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
@@ -1096,7 +1120,7 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Coupons</span>
                           </Link>
                           <Link
-                            href="/profile"
+                            href="/account/personal-info"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
@@ -1104,7 +1128,7 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Personal info</span>
                           </Link>
                           <Link
-                            href="/profile/addressBook"
+                            href="/account/addresses"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
@@ -1112,7 +1136,7 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Addresses</span>
                           </Link>
                           <Link
-                            href="/return-policy"
+                            href="/account/return-policy"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
@@ -1120,7 +1144,7 @@ export const Navbar5 = () => {
                             <span className="text-gray-700">Return Policy</span>
                           </Link>
                           <Link
-                            href="/contact"
+                            href="/account/contact"
                             className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                             onClick={() => setMobileUserMenuOpen(false)}
                           >
