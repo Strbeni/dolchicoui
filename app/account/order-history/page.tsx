@@ -852,48 +852,47 @@ Thank you!`;
     const displayedOrders = filteredOrders();
 
     return (
-        <div className="min-h-screen bg-gray-50 p-3 md:p-6 overflow-x-hidden">
+        <>
             <div className="max-w-7xl mx-auto">
-                {/* Page Header */}
-                <div className="flex items-center gap-3 mb-6 lg:mb-8">
+            {/* Page Header with Filters */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6 lg:mb-8">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.back()}
                         className="p-2 hover:bg-gray-100 rounded-md transition-colors lg:hidden"
                         aria-label="Go back"
                     >
-                        <ChevronDown className="w-5 h-5 text-gray-600 transform rotate-90" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
                     </button>
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Order History</h1>
                 </div>
+                
+                <div className="flex gap-3 md:gap-4">
+                    {/* Status Filter */}
+                    <div className="flex-1 md:flex-none md:w-auto">
+                        <CustomDropdown
+                            value={statusFilter}
+                            onValueChange={setStatusFilter}
+                            options={statusOptions}
+                            placeholder="Select status"
+                            className="w-full md:w-auto"
+                        />
+                    </div>
 
-                {/* Header with Filters */}
-                <div className="bg-white rounded-lg shadow-sm border p-4 md:p-6 mb-4 md:mb-6">
-                    <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-                        
-                        <div className="flex gap-3 md:gap-4">{/* Status Filter */}
-                            <div className="flex-1 md:flex-none md:w-auto">
-                                <CustomDropdown
-                                    value={statusFilter}
-                                    onValueChange={setStatusFilter}
-                                    options={statusOptions}
-                                    placeholder="Select status"
-                                    className="w-full md:w-auto"
-                                />
-                            </div>
-
-                            {/* Time Filter */}
-                            <div className="flex-1 md:flex-none md:w-auto">
-                                <CustomDropdown
-                                    value={timeFilter}
-                                    onValueChange={setTimeFilter}
-                                    options={timeOptions}
-                                    placeholder="For all time"
-                                    className="w-full md:w-auto"
-                                />
-                            </div>
-                        </div>
+                    {/* Time Filter */}
+                    <div className="flex-1 md:flex-none md:w-auto">
+                        <CustomDropdown
+                            value={timeFilter}
+                            onValueChange={setTimeFilter}
+                            options={timeOptions}
+                            placeholder="For all time"
+                            className="w-full md:w-auto"
+                        />
                     </div>
                 </div>
+            </div>
                 {/* Loading State */}
                 {loading && (
                     <div className="flex items-center justify-center h-64">
@@ -1133,6 +1132,6 @@ Thank you!`;
                 onCancel={handleCancelClick}
                 order={selectedOrderForRefund}
             />
-        </div>
+        </>
     );
 }

@@ -538,9 +538,9 @@ export const Navbar5 = () => {
   }, [])
 
   return (
-    <section className="sticky md:border-b ">
+    <section className="sticky top-0 z-50 bg-white md:border-b">
       <div className="container px-4 lg:px-6">
-        <nav className="flex items-center justify-between h-16 md:h-20">
+        <nav className="flex items-center justify-between py-4 md:py-5">
           {/* Logo - Hidden on mobile, shown on desktop */}
           <Link href="/home" className="hidden lg:flex items-center gap-2 relative z-10">
             <span className="text-lg font-semibold tracking-tighter text-[#F3612A]">

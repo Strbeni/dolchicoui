@@ -839,30 +839,26 @@ export default function ReviewsPage() {
             ) : (
                 /* Products List View */
                 <>
-                    {/* Page Header */}
-                    <div className="flex items-center gap-3 mb-6 lg:mb-8">
-                        <button
-                            onClick={() => router.back()}
-                            className="p-2 hover:bg-gray-100 rounded-md transition-colors lg:hidden"
-                            aria-label="Go back"
-                        >
-                            <ChevronLeft className="w-6 h-6 text-gray-600" />
-                        </button>
-                        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">My Reviews</h1>
-                    </div>
-
-                    {/* Header with Filter */}
-                    <div className="mb-6 lg:mb-8">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="w-full sm:w-auto">
-                                <CustomDropdown
-                                    value={filter}
-                                    onValueChange={setFilter}
-                                    options={filterOptions}
-                                    placeholder="Products and reviews"
-                                    className="w-full sm:w-auto"
-                                />
-                            </div>
+                    {/* Page Header with Filter */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 lg:mb-8">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => router.back()}
+                                className="p-2 hover:bg-gray-100 rounded-md transition-colors lg:hidden"
+                                aria-label="Go back"
+                            >
+                                <ChevronLeft className="w-6 h-6 text-gray-600" />
+                            </button>
+                            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">My Reviews</h1>
+                        </div>
+                        <div className="w-full sm:w-auto">
+                            <CustomDropdown
+                                value={filter}
+                                onValueChange={setFilter}
+                                options={filterOptions}
+                                placeholder="Products and reviews"
+                                className="w-full sm:w-auto"
+                            />
                         </div>
                     </div>
 

@@ -355,28 +355,25 @@ export default function AddressesPage() {
         <>
             {!showEditForm ? (
                 <>
-                    {/* Page Header */}
-                    <div className="flex items-center gap-3 mb-6 lg:mb-8">
-                        <button
-                            type="button"
-                            onClick={() => router.back()}
-                            className="p-2 hover:bg-gray-100 rounded-md transition-colors lg:hidden"
-                            aria-label="Go back"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-                        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Saved Address</h1>
-                    </div>
-
-                    {/* Header with Add Address button */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div></div>
+                    {/* Page Header with Add Address button */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 lg:mb-8">
+                        <div className="flex items-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => router.back()}
+                                className="p-2 hover:bg-gray-100 rounded-md transition-colors lg:hidden"
+                                aria-label="Go back"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Saved Address</h1>
+                        </div>
                         <button
                             type="button"
                             onClick={handleAddClick}
-                            className="flex items-center gap-2 px-4 py-2 border border-orange-500 text-orange-500 hover:text-white hover:bg-orange-500 hover:border-orange-500 font-semibold rounded-lg transition-colors cursor-pointer"
+                            className="flex items-center gap-2 px-4 py-2 border border-orange-500 text-orange-500 hover:text-white hover:bg-orange-500 hover:border-orange-500 font-semibold rounded-lg transition-colors cursor-pointer w-fit"
                         >
                             Add Address +
                         </button>
