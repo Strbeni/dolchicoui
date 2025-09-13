@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Star, ChevronDown, ChevronLeft, ChevronRight, Upload, X } from "lucide-react";
+import { useLoading } from '../../../contexts/LoadingContext';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
@@ -340,6 +341,9 @@ export default function ReviewsPage() {
     const [error, setError] = useState<string | null>(null);
     const [filter, setFilter] = useState("all");
 
+    // Global loading context
+    const { setLoading: setGlobalLoading } = useLoading();
+
     // Review form state
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -409,6 +413,7 @@ export default function ReviewsPage() {
             setError(err instanceof Error ? err.message : 'Failed to load products');
         } finally {
             setLoading(false);
+            setGlobalLoading(false); // Clear global loading when component data is loaded
         }
     }, [checkAuth]);
 
@@ -439,6 +444,13 @@ export default function ReviewsPage() {
     useEffect(() => {
         fetchOrderedProducts();
     }, [fetchOrderedProducts]);
+
+    // Clear global loading when component is ready
+    useEffect(() => {
+        if (!loading) {
+            setGlobalLoading(false);
+        }
+    }, [loading, setGlobalLoading]);
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);

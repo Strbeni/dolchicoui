@@ -335,6 +335,13 @@ function WishlistPage() {
         setIsMounted(true);
     }, []);
 
+    // Clear global loading when component is ready
+    useEffect(() => {
+        if (isMounted && !loading) {
+            setGlobalLoading(false);
+        }
+    }, [isMounted, loading, setGlobalLoading]);
+
     useEffect(() => {
         if (isAuth) {
             // For authenticated users, fetch from API
@@ -387,7 +394,7 @@ function WishlistPage() {
             <div className="px-4 md:px-6 lg:px-20 py-6 md:py-10">
                 <div className="flex justify-center py-10">
                     <div className="text-center">
-                        <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-gray-300 border-t-[#d4a524] rounded-full animate-spin mx-auto mb-4"></div>
+                        <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-gray-300 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
                         <p className="text-base md:text-lg">Loading...</p>
                     </div>
                 </div>
@@ -400,7 +407,7 @@ function WishlistPage() {
             <div className="px-4 md:px-6 lg:px-20 py-6 md:py-10">
                 <div className="flex justify-center py-10">
                     <div className="text-center">
-                        <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-gray-300 border-t-[#d4a524] rounded-full animate-spin mx-auto mb-4"></div>
+                        <div className="w-6 h-6 md:w-8 md:h-8 border-4 border-gray-300 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
                         <p className="text-base md:text-lg">Loading wishlist...</p>
                     </div>
                 </div>

@@ -1,12 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Package, Clock, CreditCard, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useLoading } from "../../../contexts/LoadingContext";
 
 export default function ReturnPolicyPage() {
     const router = useRouter();
+    const { setLoading: setGlobalLoading } = useLoading();
+
+    // Clear global loading when component mounts
+    useEffect(() => {
+        setGlobalLoading(false);
+    }, [setGlobalLoading]);
 
     return (
         <>

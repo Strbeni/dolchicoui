@@ -187,7 +187,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                         key={item.id}
                         type="button"
                         onClick={() => handleNavigation(item.href)}
-                        className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium ${isActive(item.id)
+                        className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium cursor-pointer ${isActive(item.id)
                             ? "bg-[#F3612A] text-white"
                             : "hover:bg-gray-100 text-gray-900"
                             }`}
@@ -209,7 +209,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                             key={item.id}
                             type="button"
                             onClick={() => handleNavigation(item.href)}
-                            className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium ${isActive(item.id)
+                            className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium cursor-pointer ${isActive(item.id)
                                 ? "bg-[#F3612A] text-white"
                                 : "hover:bg-gray-100 text-gray-900"
                                 }`}
@@ -232,7 +232,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                             key={item.id}
                             type="button"
                             onClick={() => handleNavigation(item.href)}
-                            className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium ${isActive(item.id)
+                            className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium cursor-pointer ${isActive(item.id)
                                 ? "bg-[#F3612A] text-white"
                                 : "hover:bg-gray-100 text-gray-900"
                                 }`}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Phone, Mail, MessageCircle, MapPin, Clock, HelpCircle, ArrowLeft } from 'lucide-react';
 import { useAppSelector } from '@/lib/store/hooks';
 import { selectUser } from '@/lib/store/userSlice';
+import { useLoading } from '../../../contexts/LoadingContext';
 
 // Toast utility function
 const toast = (msg: string, ok = true) => {
@@ -25,6 +26,7 @@ const toast = (msg: string, ok = true) => {
 export default function ContactPage() {
     const router = useRouter();
     const user = useAppSelector(selectUser);
+    const { setLoading: setGlobalLoading } = useLoading();
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -34,6 +36,11 @@ export default function ContactPage() {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Clear global loading when component mounts
+    useEffect(() => {
+        setGlobalLoading(false);
+    }, [setGlobalLoading]);
 
     // Check for refund order info and auto-fill form
     useEffect(() => {

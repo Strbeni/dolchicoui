@@ -8,15 +8,30 @@ import { Button } from "@/components/ui/button";
 import { useAppSelector } from "@/lib/store/hooks";
 import { selectUser } from "@/lib/store/userSlice";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useLoading } from "../../../contexts/LoadingContext";
 
 export default function DashboardPage() {
     const router = useRouter();
     const user = useAppSelector(selectUser);
+    const { setLoading: setGlobalLoading } = useLoading();
 
     const { isAuthorized, isLoading: authLoading, authInitialized } = useAuthGuard({
         requireAuth: true,
         redirectTo: '/login'
     });
+
+    // Clear global loading when page is ready
+    useEffect(() => {
+        if (!authLoading && isAuthorized && authInitialized) {
+            setGlobalLoading(false);
+        }
+    }, [authLoading, isAuthorized, authInitialized, setGlobalLoading]);
+
+    // Navigation handlers with loading states
+    const handleNavigation = (path: string) => {
+        setGlobalLoading(true);
+        router.push(path);
+    };
 
     // Mock data - replace with actual API calls
     const [dashboardStats, setDashboardStats] = useState({
@@ -127,7 +142,7 @@ export default function DashboardPage() {
                         <h2 className="text-xl font-semibold text-gray-900">Recent Orders</h2>
                         <Button
                             variant="outline"
-                            onClick={() => router.push('/account/order-history')}
+                            onClick={() => handleNavigation('/account/order-history')}
                             className="text-sm"
                         >
                             View All
@@ -168,7 +183,7 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <Button
                             variant="outline"
-                            onClick={() => router.push('/account/reviews')}
+                            onClick={() => handleNavigation('/account/reviews')}
                             className="flex items-center gap-2 p-4 h-auto"
                         >
                             <Star className="w-5 h-5" />
@@ -177,7 +192,7 @@ export default function DashboardPage() {
 
                         <Button
                             variant="outline"
-                            onClick={() => router.push('/account/wishlist')}
+                            onClick={() => handleNavigation('/account/wishlist')}
                             className="flex items-center gap-2 p-4 h-auto"
                         >
                             <Heart className="w-5 h-5" />
@@ -186,7 +201,7 @@ export default function DashboardPage() {
 
                         <Button
                             variant="outline"
-                            onClick={() => router.push('/account/delivery-reviews')}
+                            onClick={() => handleNavigation('/account/delivery-reviews')}
                             className="flex items-center gap-2 p-4 h-auto"
                         >
                             <Truck className="w-5 h-5" />
@@ -195,7 +210,7 @@ export default function DashboardPage() {
 
                         <Button
                             variant="outline"
-                            onClick={() => router.push('/account/personal-info')}
+                            onClick={() => handleNavigation('/account/personal-info')}
                             className="flex items-center gap-2 p-4 h-auto"
                         >
                             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -207,7 +222,7 @@ export default function DashboardPage() {
 
                         <Button
                             variant="outline"
-                            onClick={() => router.push('/account/addresses')}
+                            onClick={() => handleNavigation('/account/addresses')}
                             className="flex items-center gap-2 p-4 h-auto"
                         >
                             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -219,7 +234,7 @@ export default function DashboardPage() {
 
                         <Button
                             variant="outline"
-                            onClick={() => router.push('/account/coupons')}
+                            onClick={() => handleNavigation('/account/coupons')}
                             className="flex items-center gap-2 p-4 h-auto"
                         >
                             <CreditCard className="w-5 h-5" />

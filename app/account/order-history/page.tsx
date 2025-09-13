@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Package, Truck, MapPin, Calendar, DollarSign, Hash, ChevronDown, ShoppingBag, X } from "lucide-react";
+import { useLoading } from '../../../contexts/LoadingContext';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
@@ -359,6 +360,7 @@ export default function OrderHistoryPage() {
     const [selectedOrderForRefund, setSelectedOrderForRefund] = useState<Order | null>(null);
 
     const router = useRouter();
+    const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading();
 
     // Dropdown options
     const statusOptions: DropdownOption[] = [
@@ -433,6 +435,13 @@ export default function OrderHistoryPage() {
     useEffect(() => {
         fetchUserOrders();
     }, [fetchUserOrders]);
+
+    // Clear global loading when component is ready
+    useEffect(() => {
+        if (!loading) {
+            setGlobalLoading(false);
+        }
+    }, [loading, setGlobalLoading]);
 
     const formatDate = useCallback((timestamp: string) => {
         return new Date(parseInt(timestamp)).toLocaleDateString('en-GB', {
@@ -553,7 +562,21 @@ export default function OrderHistoryPage() {
     }, [orders, statusFilter, getFilteredOrdersByTime]);
 
     const handleViewDetails = (orderId: number) => {
+        setGlobalLoading(true);
+        setLoadingMessage('Loading order details...');
         router.push(`/account/order-history/orderDetail/${orderId}`);
+    };
+
+    const handleNavigateToDeliveryReviews = () => {
+        setGlobalLoading(true);
+        setLoadingMessage('Loading delivery reviews...');
+        router.push('/account/delivery-reviews');
+    };
+
+    const handleNavigateToProductReviews = () => {
+        setGlobalLoading(true);
+        setLoadingMessage('Loading product reviews...');
+        router.push('/account/reviews');
     };
 
     const handleRefundClick = (order: Order) => {
@@ -676,6 +699,8 @@ Best regards`);
         };
 
         sessionStorage.setItem('refundOrderInfo', JSON.stringify(orderInfo));
+        setGlobalLoading(true);
+        setLoadingMessage('Loading contact page...');
         router.push('/account/contact');
     };
 
@@ -811,12 +836,10 @@ Thank you!`;
     // Loading state
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-100 p-3 md:p-6 overflow-x-hidden">
-                <div className="flex items-center justify-center h-64">
-                    <div className="text-center">
-                        <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-gray-600">Loading your orders...</p>
-                    </div>
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="w-8 h-8 border-4 border-gray-300 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading your orders...</p>
                 </div>
             </div>
         );
@@ -897,7 +920,7 @@ Thank you!`;
                 {loading && (
                     <div className="flex items-center justify-center h-64">
                         <div className="text-center">
-                            <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                            <div className="w-8 h-8 border-4 border-gray-300 border-t-orange-600 rounded-full animate-spin mx-auto mb-4"></div>
                             <p className="text-gray-600">Loading your orders...</p>
                         </div>
                     </div>
@@ -1066,7 +1089,7 @@ Thank you!`;
                                                                     <Button
                                                                         size="sm"
                                                                         className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-3 text-xs md:text-sm h-8 cursor-pointer w-full md:w-auto whitespace-nowrap"
-                                                                        onClick={() => router.push('/account/delivery-reviews')}
+                                                                        onClick={handleNavigateToDeliveryReviews}
                                                                     >
                                                                         Leave Delivery Feedback
                                                                     </Button>
@@ -1074,7 +1097,7 @@ Thank you!`;
                                                                         size="sm"
                                                                         variant="outline"
                                                                         className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full px-3 text-xs md:text-sm h-8 cursor-pointer w-full md:w-auto whitespace-nowrap"
-                                                                        onClick={() => router.push('/account/reviews')}
+                                                                        onClick={handleNavigateToProductReviews}
                                                                     >
                                                                         Leave Product Review
                                                                     </Button>

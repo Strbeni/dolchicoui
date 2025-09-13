@@ -6,6 +6,7 @@ import { ChevronLeft, Calendar, Percent, Tag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useLoading } from "../../../contexts/LoadingContext";
 
 interface Coupon {
     id: number;
@@ -23,6 +24,7 @@ interface Coupon {
 
 export default function CouponsPage() {
     const router = useRouter();
+    const { setLoading: setGlobalLoading } = useLoading();
 
     const { isAuthorized, isLoading: authLoading, authInitialized } = useAuthGuard({
         requireAuth: true,
@@ -97,6 +99,13 @@ export default function CouponsPage() {
     ]);
 
     const [filter, setFilter] = useState<'all' | 'active' | 'used' | 'expired'>('active');
+
+    // Clear global loading when page is ready
+    useEffect(() => {
+        if (!authLoading && isAuthorized && authInitialized) {
+            setGlobalLoading(false);
+        }
+    }, [authLoading, isAuthorized, authInitialized, setGlobalLoading]);
 
     // Filter coupons based on selected filter
     const filteredCoupons = coupons.filter(coupon => {

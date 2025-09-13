@@ -18,6 +18,7 @@ import {
 import { fetchUser } from "@/lib/store/userSlice";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useLogout } from "@/hooks/useLogout";
+import { useLoading } from "../../../contexts/LoadingContext";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
@@ -38,6 +39,7 @@ export default function PersonalInfoPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const logout = useLogout();
+    const { setLoading: setGlobalLoading } = useLoading();
 
     const { isAuthorized, isLoading: authLoading, authInitialized } = useAuthGuard({
         requireAuth: true,
@@ -112,6 +114,13 @@ export default function PersonalInfoPage() {
             setIsPhoneVerified(!!user?.phoneNumber);
         }
     }, [user]);
+
+    // Clear global loading when page is ready
+    useEffect(() => {
+        if (!authLoading && isAuthorized && authInitialized && !userLoading) {
+            setGlobalLoading(false);
+        }
+    }, [authLoading, isAuthorized, authInitialized, userLoading, setGlobalLoading]);
 
     // Fetch user from backend when auth is initialized
     useEffect(() => {
@@ -597,7 +606,7 @@ export default function PersonalInfoPage() {
     // Show loading if authentication is being checked
     if (authLoading || !isAuthorized || !authInitialized) {
         return (
-            <div className="flex min-h-screen bg-gray-100 p-6 items-center justify-center">
+            <div className="flex min-h-screen p-6 items-center justify-center">
                 <div className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3">
                     <div className="w-6 h-6 border-2 border-[#d9673f] border-t-transparent rounded-full animate-spin" />
                     <span className="text-gray-700 font-medium">
