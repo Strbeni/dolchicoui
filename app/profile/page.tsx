@@ -16,6 +16,7 @@ import {
   selectUserLoading,
   selectUserError
 } from "@/lib/store/userSlice";
+import { fetchUser } from "@/lib/store/userSlice";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useLogout } from "@/hooks/useLogout";
 
@@ -113,6 +114,14 @@ export default function AccountSettings() {
     }
   }, [user]);
 
+  // Fetch user from backend when auth is initialized
+  useEffect(() => {
+    if (authInitialized) {
+      // dispatch fetchUser to ensure we have latest server data
+      dispatch(fetchUser());
+    }
+  }, [authInitialized, dispatch]);
+
   const getAuthToken = () => {
     return typeof window !== 'undefined' ? localStorage.getItem('token') || sessionStorage.getItem('token') : null;
   };
@@ -192,6 +201,8 @@ export default function AccountSettings() {
       if (updateUser.fulfilled.match(result)) {
         setIsEditing(false);
         toast('Profile updated successfully!');
+        // Refresh user from server to reflect saved changes
+        dispatch(fetchUser());
       } else {
         toast(result.payload as string || 'Failed to update profile', false);
       }
@@ -251,6 +262,8 @@ export default function AccountSettings() {
         setTempEmail("");
         setIsEmailChanged(false);
         toast('Email updated successfully!');
+        // Refresh user from backend to pick up the verified email
+        dispatch(fetchUser());
       } else {
         const data = await response.json();
         toast(data.error || 'Invalid OTP', false);
@@ -473,7 +486,7 @@ export default function AccountSettings() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ newPhone: tempPhone }),
+        body: JSON.stringify({ newPhoneNumber: tempPhone }),
       });
       if (response.ok) {
         setShowPhoneOtp(true);
@@ -515,6 +528,8 @@ export default function AccountSettings() {
           setIsEditingContact(false);
         }
         toast('Email updated successfully!');
+          // Refresh user from backend to pick up the verified email
+          dispatch(fetchUser());
       } else {
         const data = await response.json();
         toast(data.error || 'Invalid OTP', false);
@@ -547,6 +562,8 @@ export default function AccountSettings() {
         setTempPhone("");
         setIsEditingContact(false);
         toast('Phone updated successfully!');
+          // Refresh user from backend to pick up the verified phone
+          dispatch(fetchUser());
       } else {
         const data = await response.json();
         toast(data.error || 'Invalid OTP', false);
