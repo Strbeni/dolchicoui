@@ -12,13 +12,12 @@ import { useWishlistInit } from '@/hooks/useWishlistInit';
 function AuthInitializer() {
   const { authInitialized, userLoading } = useAuthInit();
   useWishlistInit();
-  
   // Show a minimal loading state while auth is initializing
   // Only show loading on routes that need authentication
   const pathname = usePathname();
-  const protectedRoutes = ['/profile', '/wishlist', '/cartpage', '/checkout', '/admin'];
+  const protectedRoutes = ['/account', '/cartpage', '/checkout', '/admin'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  
+
   if (!authInitialized && isProtectedRoute) {
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
@@ -29,7 +28,7 @@ function AuthInitializer() {
       </div>
     );
   }
-  
+
   return null;
 }
 

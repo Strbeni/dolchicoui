@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import { useAppSelector } from "@/lib/store/hooks";
 import { selectUser } from "@/lib/store/userSlice";
@@ -16,13 +16,14 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     className = ""
 }) => {
     const router = useRouter();
+    const pathname = usePathname();
     const user = useAppSelector(selectUser);
 
     const navigationItems = [
         {
             id: "dashboard",
             label: "Dashboard",
-            href: "/dashboard",
+            href: "/account/dashboard",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
@@ -34,7 +35,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {
             id: "reviews",
             label: "My Reviews",
-            href: "/reviews",
+            href: "/account/reviews",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
@@ -44,7 +45,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {
             id: "delivery-reviews",
             label: "Delivery Reviews",
-            href: "/deliveryreview",
+            href: "/account/delivery-reviews",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="1" y="3" width="15" height="13" />
@@ -57,13 +58,13 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {
             id: "order-history",
             label: "Order History",
-            href: "/profile/orderHistory",
+            href: "/account/order-history",
             icon: <ShoppingCart className="w-5 h-5" />
         },
         {
             id: "wishlist",
             label: "Wishlist",
-            href: "/wishlist",
+            href: "/account/wishlist",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -73,7 +74,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {
             id: "coupons",
             label: "Coupons",
-            href: "/profile/coupons",
+            href: "/account/coupons",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
@@ -87,7 +88,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {
             id: "personal-info",
             label: "Personal Info",
-            href: "/profile",
+            href: "/account/personal-info",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -98,7 +99,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {
             id: "addresses",
             label: "Addresses",
-            href: "/profile/addressBook",
+            href: "/account/addresses",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -112,7 +113,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {
             id: "return-policy",
             label: "Return Policy",
-            href: "/return-policy",
+            href: "/account/return-policy",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
@@ -124,7 +125,7 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {
             id: "contact",
             label: "Contact Us",
-            href: "/contact",
+            href: "/account/contact",
             icon: (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
@@ -140,7 +141,26 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     };
 
     const isActive = (itemId: string) => {
-        return activeSection === itemId;
+        // Get the current pathname and extract the section
+        const currentSection = pathname.split('/').pop();
+        
+        // Map pathname sections to item IDs
+        const pathMapping: { [key: string]: string } = {
+            'dashboard': 'dashboard',
+            'reviews': 'reviews',
+            'delivery-reviews': 'delivery-reviews',
+            'order-history': 'order-history',
+            'wishlist': 'wishlist',
+            'coupons': 'coupons',
+            'personal-info': 'personal-info',
+            'addresses': 'addresses',
+            'return-policy': 'return-policy',
+            'contact': 'contact'
+        };
+        
+        // If we have a direct match, use it; otherwise fall back to activeSection prop
+        const activeItem = pathMapping[currentSection || ''] || activeSection;
+        return activeItem === itemId;
     };
 
     return (
@@ -168,8 +188,8 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                         type="button"
                         onClick={() => handleNavigation(item.href)}
                         className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium ${isActive(item.id)
-                                ? "bg-[#F3612A] text-white"
-                                : "hover:bg-gray-100 text-gray-900"
+                            ? "bg-[#F3612A] text-white"
+                            : "hover:bg-gray-100 text-gray-900"
                             }`}
                     >
                         <div className={`w-5 h-5 ${isActive(item.id) ? "text-white" : "text-gray-600"}`}>
@@ -190,8 +210,8 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                             type="button"
                             onClick={() => handleNavigation(item.href)}
                             className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium ${isActive(item.id)
-                                    ? "bg-[#F3612A] text-white"
-                                    : "hover:bg-gray-100 text-gray-900"
+                                ? "bg-[#F3612A] text-white"
+                                : "hover:bg-gray-100 text-gray-900"
                                 }`}
                         >
                             <div className={`w-5 h-5 ${isActive(item.id) ? "text-white" : "text-gray-600"}`}>
@@ -213,8 +233,8 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                             type="button"
                             onClick={() => handleNavigation(item.href)}
                             className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-lg transition font-medium ${isActive(item.id)
-                                    ? "bg-[#F3612A] text-white"
-                                    : "hover:bg-gray-100 text-gray-900"
+                                ? "bg-[#F3612A] text-white"
+                                : "hover:bg-gray-100 text-gray-900"
                                 }`}
                         >
                             <div className={`w-5 h-5 ${isActive(item.id) ? "text-white" : "text-gray-600"}`}>
