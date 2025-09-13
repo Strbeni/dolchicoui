@@ -285,12 +285,15 @@ export default function AccountSettings() {
   const handleRequestPasswordReset = async () => {
     setPasswordResetLoading(true);
     try {
-      // Ensure we have an email to send the reset OTP to. Prefer the local `email` state,
-      // fall back to the Redux `user.email` if available.
+      // Prefer email, fallback to phone if email is not available
       const targetEmail = email || (user && (user.email || '')) || '';
+      const targetPhone = phone || (user && (user.phoneNumber || '')) || '';
+      
+      // Use email first, then phone as fallback
+      const emailOrPhone = targetEmail || targetPhone;
 
-      if (!targetEmail) {
-        toast('Email is required to send password reset OTP', false);
+      if (!emailOrPhone) {
+        toast('Email or phone number is required to send password reset OTP', false);
         setPasswordResetLoading(false);
         return;
       }
@@ -300,13 +303,15 @@ export default function AccountSettings() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: targetEmail }),
+        body: JSON.stringify({ emailOrPhone }),
       });
 
       const data = await response.json();
       if (response.ok) {
         setShowPasswordReset(true);
-        toast('Password reset OTP sent to your email');
+        // Show appropriate message based on what was used
+        const resetMethod = targetEmail ? 'email' : 'phone number';
+        toast(`Password reset OTP sent to your ${resetMethod}`);
       } else {
         toast(data.message || 'Failed to send password reset OTP', false);
       }
@@ -337,13 +342,18 @@ export default function AccountSettings() {
     }
 
     try {
+      // Use the same email/phone logic as in handleRequestPasswordReset
+      const targetEmail = email || (user && (user.email || '')) || '';
+      const targetPhone = phone || (user && (user.phoneNumber || '')) || '';
+      const emailOrPhone = targetEmail || targetPhone;
+
       const response = await fetch(`${API_BASE_URL}/api/user/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          emailOrPhone,
           otp: passwordResetOtp,
           newPassword
         }),
