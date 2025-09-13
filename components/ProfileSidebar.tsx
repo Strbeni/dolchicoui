@@ -141,26 +141,17 @@ const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     };
 
     const isActive = (itemId: string) => {
-        // Get the current pathname and extract the section
-        const currentSection = pathname.split('/').pop();
+        if (itemId === 'order-history') {
+            const isOrderHistoryActive = pathname === '/account/order-history' || pathname.startsWith('/account/order-history/');
+            console.log('Order history check:', isOrderHistoryActive);
+            return isOrderHistoryActive;
+        }
         
-        // Map pathname sections to item IDs
-        const pathMapping: { [key: string]: string } = {
-            'dashboard': 'dashboard',
-            'reviews': 'reviews',
-            'delivery-reviews': 'delivery-reviews',
-            'order-history': 'order-history',
-            'wishlist': 'wishlist',
-            'coupons': 'coupons',
-            'personal-info': 'personal-info',
-            'addresses': 'addresses',
-            'return-policy': 'return-policy',
-            'contact': 'contact'
-        };
+        if (pathname === `/account/${itemId}` || pathname.startsWith(`/account/${itemId}/`)) {
+            return true;
+        }
         
-        // If we have a direct match, use it; otherwise fall back to activeSection prop
-        const activeItem = pathMapping[currentSection || ''] || activeSection;
-        return activeItem === itemId;
+        return false;
     };
 
     return (
