@@ -1066,6 +1066,7 @@ Thank you!`;
                                                                     <Button
                                                                         size="sm"
                                                                         className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-3 text-xs md:text-sm h-8 cursor-pointer w-full md:w-auto whitespace-nowrap"
+                                                                        onClick={() => router.push('/account/delivery-reviews')}
                                                                     >
                                                                         Leave Delivery Feedback
                                                                     </Button>

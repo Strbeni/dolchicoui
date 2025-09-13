@@ -117,6 +117,27 @@ interface Product {
     updatedAt: any;
 }
 
+interface OrderItem {
+    id: number;
+    orderId: number;
+    productId: number;
+    size: string;
+    quantity: number;
+    price: number;
+    createdAt: any;
+    updatedAt: any;
+    product: Product;
+}
+
+interface Address {
+    zip: string;
+    city: string;
+    name: string;
+    phone: string;
+    state: string;
+    street: string;
+}
+
 interface DeliveryReview {
     id: number;
     userId: number;
@@ -129,111 +150,19 @@ interface DeliveryReview {
 
 interface Order {
     id: number;
-    orderNumber: string;
-    products: Product[];
-    orderDate: string;
-    deliveryDate: string;
+    userId: number;
+    amount: number;
+    address: Address;
     status: string;
+    paymentMethod: string;
+    payment: boolean;
+    paymentId: string;
+    date: string;
+    createdAt: any;
+    updatedAt: any;
+    items: OrderItem[];
     deliveryReview?: DeliveryReview;
 }
-
-// Static Data for Testing (Replace with API later)
-const STATIC_ORDERS: Order[] = [
-    {
-        id: 1,
-        orderNumber: "DLC001234",
-        products: [
-            {
-                id: 101,
-                name: "Premium Cotton T-Shirt",
-                description: "Comfortable cotton t-shirt perfect for daily wear",
-                price: 1299,
-                image: ["/product.jpg", "/p1.svg"],
-                category: "Men",
-                subCategory: "T-Shirts",
-                sizes: ["S", "M", "L", "XL"],
-                bestseller: true,
-                isActive: true,
-                stock: 50,
-                date: "1693123200000",
-                createdAt: "1693123200000",
-                updatedAt: "1693123200000"
-            }
-        ],
-        orderDate: "2025-01-15",
-        deliveryDate: "2025-01-20",
-        status: "delivered",
-        deliveryReview: {
-            id: 1,
-            userId: 1,
-            orderId: 1,
-            rating: 4,
-            comment: "Great delivery experience, package arrived on time and in perfect condition.",
-            createdAt: "2025-01-21",
-            updatedAt: "2025-01-21"
-        }
-    },
-    {
-        id: 2,
-        orderNumber: "DLC001235",
-        products: [
-            {
-                id: 102,
-                name: "Casual Denim Jeans",
-                description: "Classic blue denim jeans with perfect fit",
-                price: 2499,
-                image: ["/product.jpg", "/p2.svg"],
-                category: "Men",
-                subCategory: "Jeans",
-                sizes: ["30", "32", "34", "36"],
-                bestseller: false,
-                isActive: true,
-                stock: 30,
-                date: "1693123200000",
-                createdAt: "1693123200000",
-                updatedAt: "1693123200000"
-            }
-        ],
-        orderDate: "2025-02-01",
-        deliveryDate: "2025-02-05",
-        status: "delivered"
-        // No delivery review yet
-    },
-    {
-        id: 3,
-        orderNumber: "DLC001236",
-        products: [
-            {
-                id: 103,
-                name: "Formal White Shirt",
-                description: "Crisp white formal shirt for professional look",
-                price: 1899,
-                image: ["/product.jpg", "/p3.svg"],
-                category: "Men",
-                subCategory: "Shirts",
-                sizes: ["S", "M", "L", "XL"],
-                bestseller: true,
-                isActive: true,
-                stock: 25,
-                date: "1693123200000",
-                createdAt: "1693123200000",
-                updatedAt: "1693123200000"
-            }
-        ],
-        orderDate: "2025-02-10",
-        deliveryDate: "2025-02-15",
-        status: "delivered",
-        deliveryReview: {
-            id: 2,
-            userId: 1,
-            orderId: 3,
-            rating: 5,
-            comment: "Excellent delivery service! Fast, safe, and professional. Highly recommended.",
-            createdAt: "2025-02-16",
-            updatedAt: "2025-02-16"
-        }
-    }
-];
 
 export default function DeliveryReviewPage() {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -259,6 +188,15 @@ export default function DeliveryReviewPage() {
 
     const router = useRouter();
 
+    // Get auth headers
+    const getAuthHeaders = useCallback(() => {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    }, []);
+
     // Filter options
     const filterOptions: DropdownOption[] = [
         { value: "all", label: "Orders and delivery reviews" },
@@ -276,7 +214,7 @@ export default function DeliveryReviewPage() {
         return true;
     }, [router]);
 
-    // Fetch delivered orders (currently using static data)
+    // Fetch delivered orders from backend
     const fetchDeliveredOrders = useCallback(async () => {
         try {
             setLoading(true);
@@ -284,23 +222,60 @@ export default function DeliveryReviewPage() {
 
             if (!checkAuth()) return;
 
-            // Using static data for now
-            setOrders(STATIC_ORDERS);
+            const response = await fetch(`${API_BASE_URL}/api/order/user`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch orders: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Filter only delivered orders
+                const deliveredOrders = (result.orders || []).filter((order: Order) => 
+                    order.status.toLowerCase() === 'delivered'
+                );
+                
+                // TODO: Fetch delivery reviews for these orders
+                // For now, we'll use empty delivery reviews
+                const ordersWithReviews = deliveredOrders.map((order: Order) => ({
+                    ...order,
+                    deliveryReview: undefined // Will be populated when we add delivery review API
+                }));
+                
+                setOrders(ordersWithReviews);
+            } else {
+                throw new Error(result.message || 'Failed to fetch orders');
+            }
         } catch (err) {
             console.error('Error fetching delivered orders:', err);
             setError(err instanceof Error ? err.message : 'Failed to load orders');
         } finally {
             setLoading(false);
         }
-    }, [checkAuth]);
+    }, [checkAuth, getAuthHeaders]);
 
-    // Get auth headers
-    const getAuthHeaders = useCallback(() => {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        return {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        };
+    // Load orders on component mount
+    useEffect(() => {
+        fetchDeliveredOrders();
+    }, [fetchDeliveredOrders]);
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentOrders = filteredOrders.slice(startIndex, endIndex);
+
+    // Helper function to format date
+    const formatDate = useCallback((timestamp: string) => {
+        return new Date(parseInt(timestamp)).toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
     }, []);
 
     // Apply filters
@@ -316,17 +291,6 @@ export default function DeliveryReviewPage() {
         setFilteredOrders(filtered);
         setCurrentPage(1); // Reset to first page when filter changes
     }, [orders, filter]);
-
-    // Load orders on component mount
-    useEffect(() => {
-        fetchDeliveredOrders();
-    }, [fetchDeliveredOrders]);
-
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentOrders = filteredOrders.slice(startIndex, endIndex);
 
     const handleLeaveReview = (orderId: number) => {
         const order = orders.find(order => order.id === orderId);
@@ -511,18 +475,18 @@ export default function DeliveryReviewPage() {
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="w-16 h-16 relative shrink-0">
                                     <Image
-                                        src={selectedOrder?.products[0]?.image[0] || '/placeholder.png'}
-                                        alt={selectedOrder?.orderNumber || ''}
+                                        src={selectedOrder?.items[0]?.product?.image[0] || '/placeholder.png'}
+                                        alt={`Order ${selectedOrder?.id}`}
                                         fill
                                         className="object-cover rounded"
                                     />
                                 </div>
                                 <div>
                                     <h2 className="text-lg text-gray-900">
-                                        Order #{selectedOrder?.orderNumber}
+                                        Order #{selectedOrder?.id}
                                     </h2>
                                     <p className="text-sm text-gray-600">
-                                        Delivered on {selectedOrder?.deliveryDate}
+                                        Delivered on {selectedOrder?.date ? formatDate(selectedOrder.date) : 'N/A'}
                                     </p>
                                 </div>
                             </div>
@@ -532,18 +496,18 @@ export default function DeliveryReviewPage() {
                         <div className="flex items-center gap-3 mb-6 lg:hidden">
                             <div className="w-12 h-12 relative shrink-0">
                                 <Image
-                                    src={selectedOrder?.products[0]?.image[0] || '/placeholder.png'}
-                                    alt={selectedOrder?.orderNumber || ''}
+                                    src={selectedOrder?.items[0]?.product?.image[0] || '/placeholder.png'}
+                                    alt={`Order ${selectedOrder?.id}`}
                                     fill
                                     className="object-cover rounded"
                                 />
                             </div>
                             <div>
                                 <h2 className="text-base font-medium text-gray-900">
-                                    Order #{selectedOrder?.orderNumber}
+                                    Order #{selectedOrder?.id}
                                 </h2>
                                 <p className="text-sm text-gray-600">
-                                    Delivered on {selectedOrder?.deliveryDate}
+                                    Delivered on {selectedOrder?.date ? formatDate(selectedOrder.date) : 'N/A'}
                                 </p>
                             </div>
                         </div>
@@ -653,8 +617,8 @@ export default function DeliveryReviewPage() {
                                                 {/* Order Image */}
                                                 <div className="w-12 h-12 lg:w-16 lg:h-16 relative shrink-0">
                                                     <Image
-                                                        src={order.products[0]?.image[0] || '/placeholder.png'}
-                                                        alt={order.orderNumber}
+                                                        src={order.items[0]?.product?.image[0] || '/placeholder.png'}
+                                                        alt={`Order ${order.id}`}
                                                         fill
                                                         className="object-cover rounded"
                                                     />
@@ -663,10 +627,10 @@ export default function DeliveryReviewPage() {
                                                 {/* Order Info */}
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className="font-normal text-sm lg:text-lg text-gray-900 leading-snug">
-                                                        Order #{order.orderNumber}
+                                                        Order #{order.id}
                                                     </h3>
                                                     <p className="text-xs lg:text-sm text-gray-600">
-                                                        Delivered on {order.deliveryDate}
+                                                        Delivered on {formatDate(order.date)}
                                                     </p>
                                                 </div>
 
