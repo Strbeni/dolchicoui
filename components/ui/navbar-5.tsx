@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Heart, Menu, ShoppingCart, User, ShoppingBag, MapPin, LogOut, Star, Ticket, RotateCcw, Phone } from "lucide-react"
+import { Heart, Menu, ShoppingCart, User, ShoppingBag, MapPin, LogOut, Star, Ticket, RotateCcw, Phone, Truck } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import {
   NavigationMenu,
@@ -866,6 +866,22 @@ export const Navbar5 = () => {
                           <span className="text-gray-700">Order history</span>
                         </Link>
                         <Link
+                          href="/reviews"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Star className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">My Reviews</span>
+                        </Link>
+                        <Link
+                          href="/deliveryreview"
+                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Truck className="w-4 h-4 text-gray-600" />
+                          <span className="text-gray-700">Delivery Reviews</span>
+                        </Link>
+                        <Link
                           href="/wishlist"
                           className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
                           onClick={() => setUserMenuOpen(false)}
@@ -1070,6 +1086,14 @@ export const Navbar5 = () => {
                           >
                             <Star className="w-4 h-4 text-gray-600" />
                             <span className="text-gray-700">My Reviews</span>
+                          </Link>
+                          <Link
+                            href="/deliveryreview"
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                            onClick={() => setMobileUserMenuOpen(false)}
+                          >
+                            <Truck className="w-4 h-4 text-gray-600" />
+                            <span className="text-gray-700">Delivery Reviews</span>
                           </Link>
                           <Link
                             href="/profile/orderHistory"
