@@ -65,72 +65,72 @@ const showToast = (msg, success = true) => {
 
 // Available coupons data
 const availableCoupons = [
-  { 
-    code: 'WELCOME15', 
-    discount: 15, 
-    type: 'percentage', 
-    minAmount: 999, 
+  {
+    code: 'WELCOME15',
+    discount: 15,
+    type: 'percentage',
+    minAmount: 999,
     description: '15% OFF on your first order',
     maxDiscount: 500,
     validTill: '31st Dec 2024'
   },
-  { 
-    code: 'FLAT200', 
-    discount: 200, 
-    type: 'fixed', 
-    minAmount: 1500, 
+  {
+    code: 'FLAT200',
+    discount: 200,
+    type: 'fixed',
+    minAmount: 1500,
     description: 'Flat ₹200 OFF on orders above ₹1500',
     validTill: '25th Dec 2024'
   },
-  { 
-    code: 'MEGA30', 
-    discount: 30, 
-    type: 'percentage', 
-    minAmount: 2500, 
+  {
+    code: 'MEGA30',
+    discount: 30,
+    type: 'percentage',
+    minAmount: 2500,
     description: '30% OFF on orders above ₹2500',
     maxDiscount: 1000,
     validTill: '30th Nov 2024'
   },
-  { 
-    code: 'SAVE500', 
-    discount: 500, 
-    type: 'fixed', 
-    minAmount: 3000, 
+  {
+    code: 'SAVE500',
+    discount: 500,
+    type: 'fixed',
+    minAmount: 3000,
     description: 'Save ₹500 on orders above ₹3000',
     validTill: '15th Jan 2025'
   },
-  { 
-    code: 'FASHION25', 
-    discount: 25, 
-    type: 'percentage', 
-    minAmount: 2000, 
+  {
+    code: 'FASHION25',
+    discount: 25,
+    type: 'percentage',
+    minAmount: 2000,
     description: '25% OFF on fashion items',
     maxDiscount: 750,
     validTill: '28th Dec 2024'
   },
-  { 
-    code: 'NEWUSER10', 
-    discount: 10, 
-    type: 'percentage', 
-    minAmount: 0, 
+  {
+    code: 'NEWUSER10',
+    discount: 10,
+    type: 'percentage',
+    minAmount: 0,
     description: '10% OFF for new users - No minimum order',
     maxDiscount: 300,
     validTill: '31st Dec 2024'
   },
-  { 
-    code: 'FESTIVE40', 
-    discount: 40, 
-    type: 'percentage', 
-    minAmount: 4000, 
+  {
+    code: 'FESTIVE40',
+    discount: 40,
+    type: 'percentage',
+    minAmount: 4000,
     description: 'Festive Special - 40% OFF',
     maxDiscount: 1500,
     validTill: '5th Jan 2025'
   },
-  { 
-    code: 'FLAT100', 
-    discount: 100, 
-    type: 'fixed', 
-    minAmount: 800, 
+  {
+    code: 'FLAT100',
+    discount: 100,
+    type: 'fixed',
+    minAmount: 800,
     description: 'Flat ₹100 OFF on orders above ₹800',
     validTill: '20th Dec 2024'
   }
@@ -162,7 +162,6 @@ export default function ShoppingCartComplete() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [showPromoInput, setShowPromoInput] = useState(false);
-  const [showMobileCoupons, setShowMobileCoupons] = useState(false);
   const [showAvailableCoupons, setShowAvailableCoupons] = useState(false);
   const [showMobileAvailableCoupons, setShowMobileAvailableCoupons] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -199,7 +198,7 @@ export default function ShoppingCartComplete() {
         showToast(`Coupon ${appliedCoupon.code} removed: Cart is empty`, false);
         return;
       }
-      
+
       // Remove coupon if minimum amount is not met
       if (newSubtotal < appliedCoupon.minAmount) {
         setAppliedCoupon(null);
@@ -407,7 +406,7 @@ export default function ShoppingCartComplete() {
       const newSummary = calculateSummary(updatedItems, selectedItems);
       setSummary(newSummary);
       validateAndUpdateCoupon(newSummary.subtotal);
-      
+
       // Refresh cart count in navbar
       refreshCartCount()
 
@@ -451,7 +450,7 @@ export default function ShoppingCartComplete() {
       setShowDeleteModal(false);
       setItemToDelete(null);
       showToast('Item removed from cart');
-      
+
       // Refresh cart count in navbar
       refreshCartCount()
 
@@ -563,9 +562,9 @@ export default function ShoppingCartComplete() {
     try {
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
-      
+
       console.log('Fetching product details for ID:', productId);
-      
+
       const res = await fetch(`${API_BASE}/api/product/single/${productId}`, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
@@ -578,14 +577,14 @@ export default function ShoppingCartComplete() {
       if (res.ok) {
         const response = await res.json();
         console.log('API Response:', response);
-        
+
         const product = response.product;
         console.log('Product data:', product);
         console.log('Product category:', product?.category);
-        
+
         const category = product?.category?.name || product?.category || 'All';
         console.log('Extracted category:', category);
-        
+
         // Redirect to product list with category filter
         router.push(`/productlist?cat=${encodeURIComponent(category)}`);
       } else {
@@ -604,15 +603,15 @@ export default function ShoppingCartComplete() {
   const handleShareProduct = async (productId) => {
     try {
       const productUrl = `${window.location.origin}/productdetail/${productId}`;
-      
+
       // Copy to clipboard
       await navigator.clipboard.writeText(productUrl);
-      
+
       // Show success toast
       showToast('Link Copied');
     } catch (error) {
       console.error('Error copying link to clipboard:', error);
-      
+
       // Fallback for older browsers
       try {
         const textArea = document.createElement('textarea');
@@ -621,7 +620,7 @@ export default function ShoppingCartComplete() {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
-        
+
         showToast('Link Copied');
       } catch (fallbackError) {
         console.error('Fallback copy method failed:', fallbackError);
@@ -752,7 +751,6 @@ export default function ShoppingCartComplete() {
       localStorage.setItem("appliedCoupon", JSON.stringify(coupon));
       setCouponCode('');
       setShowPromoInput(false);
-      setShowMobileCoupons(false);
       showToast('Coupon applied successfully!');
     } catch (error) {
       showToast(error.message, false);
@@ -779,7 +777,13 @@ export default function ShoppingCartComplete() {
     }
   }
   const deliveryCharges = 0; // Free delivery
-  const total = Math.max(0, subtotal - discount + deliveryCharges);
+
+  // Calculate tax (18% GST on subtotal after discount)
+  const taxRate = 0.18; // 18% GST
+  const taxableAmount = subtotal - discount;
+  const tax = Math.round(taxableAmount * taxRate * 100) / 100; // Round to 2 decimal places
+
+  const total = Math.max(0, subtotal - discount + deliveryCharges + tax);
 
   // Show loading if authentication is being checked
   if (authLoading || !isAuthorized) {
@@ -881,8 +885,7 @@ export default function ShoppingCartComplete() {
             <div className="flex items-center justify-between">
               <h1 className="text-lg font-semibold text-gray-900">Shopping Cart</h1>
               <div className="text-right">
-                <div className="text-xs text-gray-500">Sub Total :</div>
-                <div className="text-base font-semibold text-gray-900">₹ {subtotal.toLocaleString()}</div>
+                <div className="text-xs text-gray-500">Sub Total : <span className="text-base font-semibold text-gray-900">₹ {subtotal.toLocaleString()}</span></div>
               </div>
             </div>
           </div>
@@ -945,71 +948,46 @@ export default function ShoppingCartComplete() {
                           >
                             {item.product.name}
                           </h3>
-                          
+
                           <div className="space-y-1 mb-3">
                             <p className="text-sm text-gray-600">
                               <span className="font-medium">Color:</span> {item.product.color?.[0] || 'White'}
                             </p>
                             <p className="text-sm text-gray-600">
-                              <span className="font-medium">Size:</span> {item.size || 'M'}
+                              <span className="font-medium">Model:</span> {item.product.model || '128 GB'}
                             </p>
-                            {item.product.model && (
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Model:</span> {item.product.model}
-                              </p>
-                            )}
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Fit:</span> Regular Fit
+                            </p>
                           </div>
 
                           {/* Price */}
                           <div className="flex items-center space-x-2 mb-4">
                             <span className="text-xl font-bold text-gray-900">₹{item.price.toLocaleString()}</span>
                             {item.product.originalPrice && item.product.originalPrice > item.price && (
-                              <>
-                                <span className="text-sm text-gray-400 line-through">₹{item.product.originalPrice.toLocaleString()}</span>
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                                  {Math.round(((item.product.originalPrice - item.price) / item.product.originalPrice) * 100)}% OFF
-                                </span>
-                              </>
+                              <span className="text-sm text-gray-400 line-through">₹{item.product.originalPrice.toLocaleString()}</span>
                             )}
                           </div>
 
                           {/* Quantity Controls */}
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center">
                             <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                               <button
                                 onClick={() => handleQuantityChange(item.id, -1)}
                                 disabled={updating === item.id}
-                                className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                                className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
                               >
-                                <Minus className="w-4 h-4" />
+                                <Minus className="w-3 h-3" />
                               </button>
-                              <div className="px-4 py-2 text-base font-semibold min-w-[60px] text-center bg-gray-50 border-x border-gray-300">
+                              <div className="px-3 py-2 text-sm font-semibold min-w-[40px] text-center bg-gray-50 border-x border-gray-300">
                                 {updating === item.id ? '...' : item.quantity}
                               </div>
                               <button
                                 onClick={() => handleQuantityChange(item.id, 1)}
                                 disabled={updating === item.id}
-                                className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                                className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
                               >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => handleDeleteClick(item.id)}
-                                disabled={updating === item.id}
-                                className="px-3 py-2 text-sm text-orange-500 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors disabled:opacity-50"
-                              >
-                                Delete
-                              </button>
-                              <button
-                                onClick={() => handleSaveForLaterClick(item.id)}
-                                disabled={updating === item.id}
-                                className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-                              >
-                                Save
+                                <Plus className="w-3 h-3" />
                               </button>
                             </div>
                           </div>
@@ -1017,20 +995,34 @@ export default function ShoppingCartComplete() {
                       </div>
                     </div>
 
-                    {/* Bottom Action Buttons */}
+                    {/* Bottom Action Buttons - 5 buttons as per design */}
                     <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
-                      <div className="flex items-center justify-center space-x-8">
-                        <button 
-                          className="flex items-center space-x-2 text-sm text-gray-600 hover:text-orange-500 transition-colors"
+                      <div className="flex items-center justify-between text-sm">
+                        <button
+                          onClick={() => handleDeleteClick(item.id)}
+                          disabled={updating === item.id}
+                          className="text-orange-500 hover:text-orange-600 transition-colors disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => handleSaveForLaterClick(item.id)}
+                          disabled={updating === item.id}
+                          className="text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
+                        >
+                          Save for later
+                        </button>
+                        <button
+                          className="text-gray-600 hover:text-gray-800 transition-colors"
                           onClick={() => handleSeeMoreLikeThis(item.productId)}
                         >
-                          <span>See more like this</span>
+                          See more like this
                         </button>
-                        <button 
-                          className="flex items-center space-x-2 text-sm text-gray-600 hover:text-orange-500 transition-colors"
+                        <button
+                          className="text-gray-600 hover:text-gray-800 transition-colors"
                           onClick={() => handleShareProduct(item.productId)}
                         >
-                          <span>Share</span>
+                          Share
                         </button>
                       </div>
                     </div>
@@ -1040,15 +1032,17 @@ export default function ShoppingCartComplete() {
             )}
           </div>
 
-          {/* Order Summary */}
+          {/* Order Summary - Now placed after products */}
           {selectedCount > 0 && (
-            <div className="bg-white border-t border-gray-200 px-4 py-6">
-              <div className="space-y-4">
+            <div className="bg-white mx-4 rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">Order summary</h2>
+
+              <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">Subtotal ({summary.totalItems} items):</span>
                   <span className="text-lg font-bold text-gray-900">₹ {subtotal.toLocaleString()}</span>
                 </div>
-                
+
                 {/* Show discount if applied */}
                 {appliedCoupon && (
                   <div className="flex justify-between items-center">
@@ -1056,15 +1050,39 @@ export default function ShoppingCartComplete() {
                     <span className="text-lg font-bold text-red-500">-₹{discount.toLocaleString()}</span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">Tax collected:</span>
-                  <span className="text-lg font-bold text-gray-900">₹ 73.40</span>
+                  <span className="text-lg font-bold text-gray-900">₹ {tax.toLocaleString()}</span>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">Delivery Charges:</span>
                   <span className="text-lg font-bold text-green-600">Free Delivery</span>
+                </div>
+
+                {/* Applied Coupon Display */}
+                {appliedCoupon && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-green-600 font-medium">✓ {appliedCoupon.code} applied (₹ {discount.toLocaleString()} OFF)</span>
+                      </div>
+                      <button
+                        onClick={removeCoupon}
+                        className="text-orange-500 hover:text-orange-600 font-medium text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-3 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold text-gray-900">Estimated total:</span>
+                    <span className="text-xl font-bold text-gray-900">₹ {total.toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
 
@@ -1076,40 +1094,92 @@ export default function ShoppingCartComplete() {
                 Proceed To Checkout
                 <ChevronRight className="w-5 h-5" />
               </button>
+            </div>
+          )}
 
-              {/* Applied Coupon Display */}
-              {appliedCoupon && (
-                <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
-                  <div className="flex justify-between items-center">
+          {/* Coupons Section - Desktop style directly in mobile */}
+          <div className="bg-white mx-4 rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
+            <h2 className="text-lg font-semibold mb-4 text-gray-800">Coupons</h2>
+
+            {/* Coupon Input */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="Enter coupon code"
+                className="flex-1 px-3 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
+              <button
+                onClick={() => applyCoupon(couponCode)}
+                disabled={!couponCode.trim() || couponLoading || subtotal === 0}
+                className="bg-orange-500 text-white px-4 py-3 rounded-lg text-sm disabled:opacity-50 font-medium hover:bg-orange-600"
+              >
+                {couponLoading ? 'Applying...' : 'Apply'}
+              </button>
+            </div>
+
+            {/* Available Coupons */}
+            <div className="space-y-3">
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setShowAvailableCoupons(!showAvailableCoupons)}
+              >
+                <h3 className="font-medium text-gray-800">Available coupons:</h3>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-500 transition-transform ${showAvailableCoupons ? 'rotate-180' : ''}`}
+                />
+              </div>
+
+              {showAvailableCoupons && availableCoupons.map((coupon) => (
+                <div
+                  key={coupon.code}
+                  className="border border-gray-200 rounded-lg p-3"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-sm">{coupon.code}</h4>
+                    <span className="text-green-600 font-semibold text-sm">
+                      ₹ {coupon.type === 'percentage'
+                        ? Math.floor((subtotal * coupon.discount) / 100)
+                        : coupon.discount.toLocaleString()
+                      } OFF
+                    </span>
+                  </div>
+
+                  {/* Coupon Banner */}
+                  <div className="bg-gradient-to-r from-pink-100 to-yellow-100 rounded-lg p-3 mb-2">
                     <div className="flex items-center space-x-2">
-                      <span className="text-green-600 font-medium">✓ {appliedCoupon.code} applied (₹ {discount.toLocaleString()} OFF)</span>
+                      <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
+                        <span className="text-lg">🏷️</span>
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-sm">SALE</h5>
+                        <p className="text-xs text-gray-600">
+                          ₹{coupon.type === 'percentage'
+                            ? Math.floor((subtotal * coupon.discount) / 100)
+                            : coupon.discount.toLocaleString()
+                          } OFF
+                        </p>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-600">
+                      Minimum order ₹ {coupon.minAmount.toLocaleString()}
+                    </span>
                     <button
-                      onClick={removeCoupon}
-                      className="text-orange-500 hover:text-orange-600 font-medium text-sm"
+                      onClick={() => applyCoupon(coupon.code)}
+                      disabled={subtotal === 0 || subtotal < coupon.minAmount || couponLoading}
+                      className="bg-orange-500 text-white px-3 py-1 rounded text-xs disabled:opacity-50 font-medium hover:bg-orange-600"
                     >
-                      Remove
+                      Apply
                     </button>
                   </div>
                 </div>
-              )}
-
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-gray-900">Estimated total:</span>
-                  <span className="text-xl font-bold text-gray-900">₹ {total.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {/* Mobile Coupon Button */}
-              <button
-                onClick={() => setShowMobileCoupons(true)}
-                className="w-full bg-gray-100 text-gray-800 py-3 rounded-lg font-medium mt-4 hover:bg-gray-200 border border-gray-300"
-              >
-                View Available Coupons
-              </button>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Mobile Recommendations Section */}
           {recommendedProducts.length > 0 && (
@@ -1223,101 +1293,6 @@ export default function ShoppingCartComplete() {
               </div>
             </div>
           )}
-
-          {/* Mobile Coupon Modal */}
-          {showMobileCoupons && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end">
-              <div className="bg-white w-full max-h-[80vh] rounded-t-xl">
-                <div className="flex items-center justify-between p-4 border-b">
-                  <h3 className="text-lg font-semibold">Coupons</h3>
-                  <button onClick={() => setShowMobileCoupons(false)}>
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="p-4">
-                  {/* Coupon Input */}
-                  <div className="flex space-x-2 mb-4">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      placeholder="Enter coupon code"
-                      className="flex-1 px-3 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                    <button
-                      onClick={() => applyCoupon(couponCode)}
-                      disabled={!couponCode.trim() || couponLoading || subtotal === 0}
-                      className="bg-orange-500 text-white px-4 py-3 rounded-lg text-sm disabled:opacity-50 font-medium"
-                    >
-                      Apply
-                    </button>
-                  </div>
-
-                  {/* Available Coupons */}
-                  <div className="space-y-4">
-                    <div 
-                      className="flex items-center justify-between cursor-pointer"
-                      onClick={() => setShowMobileAvailableCoupons(!showMobileAvailableCoupons)}
-                    >
-                      <h4 className="font-medium text-gray-800">Available coupons:</h4>
-                      <ChevronDown 
-                        className={`w-4 h-4 text-gray-500 transition-transform ${showMobileAvailableCoupons ? 'rotate-180' : ''}`} 
-                      />
-                    </div>
-                    
-                    {showMobileAvailableCoupons && availableCoupons.map((coupon) => (
-                      <div key={coupon.code} className="border border-gray-200 rounded-lg p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <h5 className="font-semibold text-sm">{coupon.code}</h5>
-                          <span className="text-green-600 font-semibold text-sm">
-                            ₹ {coupon.type === 'percentage' 
-                              ? Math.floor((subtotal * coupon.discount) / 100) 
-                              : coupon.discount.toLocaleString()
-                            } OFF
-                          </span>
-                        </div>
-                        
-                        {/* Coupon Banner for mobile */}
-                        <div className="bg-gradient-to-r from-pink-100 to-yellow-100 rounded-lg p-3 mb-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-                              <span className="text-lg">🏷️</span>
-                            </div>
-                            <div>
-                              <h6 className="font-bold text-sm">SALE</h6>
-                              <p className="text-xs text-gray-600">
-                                ₹{coupon.type === 'percentage' 
-                                  ? Math.floor((subtotal * coupon.discount) / 100) 
-                                  : coupon.discount.toLocaleString()
-                                } OFF
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-600">
-                            Minimum order ₹ {coupon.minAmount.toLocaleString()}
-                          </span>
-                          <button
-                            onClick={() => {
-                              applyCoupon(coupon.code);
-                              setShowMobileCoupons(false);
-                            }}
-                            disabled={subtotal === 0 || subtotal < coupon.minAmount || couponLoading}
-                            className="bg-orange-500 text-white px-3 py-1 rounded text-xs disabled:opacity-50 font-medium"
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       ) : (
         /* Desktop Layout */
@@ -1396,7 +1371,7 @@ export default function ShoppingCartComplete() {
                         >
                           {item.product.name}
                         </h3>
-                        
+
                         <div className="text-sm text-gray-600 space-y-1 mb-4">
                           <p><span className="font-medium text-gray-700">Color:</span> {item.product.color?.[0] || 'White'}</p>
                           <p><span className="font-medium text-gray-700">Size:</span> {item.size || 'M'}</p>
@@ -1445,13 +1420,13 @@ export default function ShoppingCartComplete() {
                           >
                             Move to wishlist
                           </button>
-                          <button 
+                          <button
                             className="text-blue-500 hover:text-blue-600 font-medium transition-colors"
                             onClick={() => handleSeeMoreLikeThis(item.productId)}
                           >
                             See more like this
                           </button>
-                          <button 
+                          <button
                             className="text-blue-500 hover:text-blue-600 font-medium transition-colors"
                             onClick={() => handleShareProduct(item.productId)}
                           >
@@ -1476,7 +1451,7 @@ export default function ShoppingCartComplete() {
                   ))}
                 </div>
               )}
-              
+
               {/* Continue Shopping */}
               <div className="mt-6">
                 <button
@@ -1506,6 +1481,11 @@ export default function ShoppingCartComplete() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Delivery Charges:</span>
                     <span className="font-semibold">Free Delivery</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tax collected:</span>
+                    <span className="font-semibold">₹ {tax.toLocaleString()}</span>
                   </div>
 
                   {/* Applied Coupons - Only show if coupon is applied */}
@@ -1544,7 +1524,7 @@ export default function ShoppingCartComplete() {
               {/* Separate Coupons Section */}
               <div className="bg-white rounded-lg p-6 mt-4">
                 <h2 className="text-2xl text-center font-semibold mb-6 text-gray-800">Coupons</h2>
-                
+
                 {/* Coupon Input */}
                 <div className="flex gap-3 mb-6">
                   <input
@@ -1565,16 +1545,16 @@ export default function ShoppingCartComplete() {
 
                 {/* Available Coupons */}
                 <div className="space-y-4">
-                  <div 
+                  <div
                     className="flex items-center justify-between cursor-pointer"
                     onClick={() => setShowAvailableCoupons(!showAvailableCoupons)}
                   >
                     <h3 className="text-lg font-medium text-gray-800">Available coupons:</h3>
-                    <ChevronDown 
-                      className={`w-5 h-5 text-gray-500 transition-transform ${showAvailableCoupons ? 'rotate-180' : ''}`} 
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-500 transition-transform ${showAvailableCoupons ? 'rotate-180' : ''}`}
                     />
                   </div>
-                  
+
                   {showAvailableCoupons && availableCoupons.map((coupon) => (
                     <div
                       key={coupon.code}
@@ -1583,13 +1563,13 @@ export default function ShoppingCartComplete() {
                       <div className="flex justify-between items-start mb-3">
                         <h4 className="text-lg font-semibold text-gray-800">{coupon.code}</h4>
                         <span className="text-green-600 font-semibold text-lg">
-                          ₹ {coupon.type === 'percentage' 
-                            ? Math.floor((subtotal * coupon.discount) / 100) 
+                          ₹ {coupon.type === 'percentage'
+                            ? Math.floor((subtotal * coupon.discount) / 100)
                             : coupon.discount.toLocaleString()
                           } OFF
                         </span>
                       </div>
-                      
+
                       {/* Coupon Image/Banner */}
                       <div className="bg-gradient-to-r from-pink-100 to-yellow-100 rounded-lg p-4 mb-3 relative overflow-hidden">
                         <div className="flex items-center justify-between">
@@ -1600,8 +1580,8 @@ export default function ShoppingCartComplete() {
                             <div>
                               <h5 className="font-bold text-lg text-gray-800">SALE</h5>
                               <p className="text-gray-600">
-                                ₹{coupon.type === 'percentage' 
-                                  ? Math.floor((subtotal * coupon.discount) / 100) 
+                                ₹{coupon.type === 'percentage'
+                                  ? Math.floor((subtotal * coupon.discount) / 100)
                                   : coupon.discount.toLocaleString()
                                 } OFF
                               </p>
@@ -1609,7 +1589,7 @@ export default function ShoppingCartComplete() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">
                           Minimum order ₹ {coupon.minAmount.toLocaleString()}

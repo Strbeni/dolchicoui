@@ -4,7 +4,7 @@ import { ChevronRight, Plus, Edit2, ShoppingCart, MapPin, Phone, Mail, User } fr
 import { useRouter } from "next/navigation";
 
 // API Configuration
-const API_BASE_URL = 'https://valyris-i.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 // Types
 interface CartItem {
@@ -100,7 +100,7 @@ export default function CheckoutForm() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/addresses`, { headers });
+      const response = await fetch(`${API_BASE_URL}/api/addresses`, { headers });
 
       if (response.ok) {
         const data = await response.json();
@@ -131,7 +131,7 @@ export default function CheckoutForm() {
   // Fetch cart data
   const fetchCart = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/cart`, {
+      const response = await fetch(`${API_BASE_URL}/api/cart`, {
         method: 'GET',
         headers: getAuthHeaders()
       });
@@ -201,20 +201,22 @@ export default function CheckoutForm() {
 
   // Handle address selection
   const handleAddressSelect = useCallback((addressId: number) => {
+    // Prevent full page refresh on selection by ensuring no default form submit occurs
     const selectedAddress = savedAddresses.find(addr => addr.id === addressId);
     if (selectedAddress) {
       setSelectedAddressId(addressId);
       setUseNewAddress(false);
-      setShowAddressForm(false);
-      setFormData(prev => ({
-        ...prev,
-        name: selectedAddress.name,
-        phone: selectedAddress.phone,
-        street: selectedAddress.street,
-        country: selectedAddress.country,
-        province: selectedAddress.state,
-        zipCode: selectedAddress.zip
-      }));
+      // Show the address form so users can see and edit the populated values
+      setShowAddressForm(true);
+      setFormData({
+        name: selectedAddress.name || '',
+        phone: selectedAddress.phone || '',
+        email: '',
+        street: selectedAddress.street || '',
+        country: selectedAddress.country || 'Indonesia',
+        province: selectedAddress.state || '',
+        zipCode: selectedAddress.zip || ''
+      });
     }
   }, [savedAddresses]);
 
@@ -355,6 +357,7 @@ export default function CheckoutForm() {
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">Saved Address</h2>
                     <button
+                      type="button"
                       onClick={() => setShowAddressForm(true)}
                       className="flex items-center text-orange-500 hover:text-orange-600 text-sm font-medium"
                     >
@@ -390,7 +393,7 @@ export default function CheckoutForm() {
                                     Default
                                   </span>
                                 )}
-                                <button className="text-orange-500 hover:text-orange-600 text-xs">
+                                <button type="button" className="text-orange-500 hover:text-orange-600 text-xs">
                                   Edit
                                 </button>
                               </div>
@@ -435,7 +438,7 @@ export default function CheckoutForm() {
                           className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                         />
                         <span className="font-medium text-gray-900">Use this address</span>
-                        <span className="text-orange-500 text-xs">Edit</span>
+                        <button type="button" className="text-orange-500 text-xs">Edit</button>
                       </div>
                     </div>
                   </div>
@@ -553,6 +556,7 @@ export default function CheckoutForm() {
               )}
 
               <button
+                type="button"
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors duration-200 flex items-center justify-center"
                 onClick={handleContinue}
                 disabled={!isFormValid()}
