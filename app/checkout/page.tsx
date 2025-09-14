@@ -4,7 +4,7 @@ import { ChevronRight, Plus, Edit2, ShoppingCart, MapPin, Phone, Mail, User } fr
 import { useRouter } from "next/navigation";
 
 // API Configuration
-const API_BASE_URL = 'https://valyris-i.onrender.com/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
 // Types
 interface CartItem {
@@ -100,7 +100,7 @@ export default function CheckoutForm() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/addresses`, { headers });
+      const response = await fetch(`${API_BASE_URL}/api/addresses`, { headers });
 
       if (response.ok) {
         const data = await response.json();
@@ -131,7 +131,7 @@ export default function CheckoutForm() {
   // Fetch cart data
   const fetchCart = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/cart`, {
+      const response = await fetch(`${API_BASE_URL}/api/cart`, {
         method: 'GET',
         headers: getAuthHeaders()
       });
@@ -200,26 +200,39 @@ export default function CheckoutForm() {
   }, [fetchCart, fetchAddresses]);
 
   // Handle address selection
-  const handleAddressSelect = useCallback((addressId: number) => {
+  const handleAddressSelect = useCallback((addressId: number, e?: React.MouseEvent | React.ChangeEvent) => {
+    // Prevent any default form submission or page refresh
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     const selectedAddress = savedAddresses.find(addr => addr.id === addressId);
     if (selectedAddress) {
       setSelectedAddressId(addressId);
       setUseNewAddress(false);
-      setShowAddressForm(false);
-      setFormData(prev => ({
-        ...prev,
-        name: selectedAddress.name,
-        phone: selectedAddress.phone,
-        street: selectedAddress.street,
-        country: selectedAddress.country,
-        province: selectedAddress.state,
-        zipCode: selectedAddress.zip
-      }));
+      // Show the address form so users can see and edit the populated values
+      setShowAddressForm(true);
+      setFormData({
+        name: selectedAddress.name || '',
+        phone: selectedAddress.phone || '',
+        email: '',
+        street: selectedAddress.street || '',
+        country: selectedAddress.country || 'Indonesia',
+        province: selectedAddress.state || '',
+        zipCode: selectedAddress.zip || ''
+      });
     }
   }, [savedAddresses]);
 
   // Handle new address option
-  const handleUseNewAddress = useCallback(() => {
+  const handleUseNewAddress = useCallback((e?: React.MouseEvent | React.ChangeEvent) => {
+    // Prevent any default form submission or page refresh
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     setUseNewAddress(true);
     setSelectedAddressId(null);
     setShowAddressForm(true);
@@ -247,32 +260,40 @@ export default function CheckoutForm() {
   }, [formData]);
 
   // Handle form input changes
-  const handleInputChange = useCallback((field: keyof FormData, value: string) => {
+  const handleInputChange = useCallback((field: keyof FormData, value: string, e?: React.ChangeEvent) => {
+    // Prevent any default form submission
+    if (e) {
+      e.preventDefault();
+    }
+
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-    if (field !== 'email' && selectedAddressId && !useNewAddress) {
+
+    // Only clear address selection if user is actually editing the address details
+    // and not just changing country, province/state, or other non-address fields
+    if (field !== 'email' && field !== 'country' && field !== 'province' && selectedAddressId && !useNewAddress) {
       setSelectedAddressId(null);
     }
   }, [selectedAddressId, useNewAddress]);
 
   const handleContinue = useCallback(() => {
-  if (!isFormValid()) {
-    setError('Please fill in all required fields');
-    return;
-  }
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(formData.email)) {
-    setError('Please enter a valid email address');
-    return;
-  }
-  setError(null);
-  if (typeof window !== 'undefined') {
-    localStorage?.setItem('checkoutFormData', JSON.stringify(formData));
-  }
-  router.push("/checkout/shipping"); // <-- Yahan route update karo
-}, [isFormValid, formData, router]);
+    if (!isFormValid()) {
+      setError('Please fill in all required fields');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    setError(null);
+    if (typeof window !== 'undefined') {
+      localStorage?.setItem('checkoutFormData', JSON.stringify(formData));
+    }
+    router.push("/checkout/shipping"); // <-- Yahan route update karo
+  }, [isFormValid, formData, router]);
 
   // Handle edit cart (Back)
   const handleEditCart = () => {
@@ -327,8 +348,7 @@ export default function CheckoutForm() {
 
   // Calculate totals
   const subtotal = cartData.summary.subtotal;
-   const savings = 0;
-  const taxCollected =0;
+  const savings = 0;
   const deliveryCharges = 0;
 
   let couponDiscount = 0;
@@ -339,6 +359,12 @@ export default function CheckoutForm() {
       couponDiscount = appliedCoupon.discount;
     }
   }
+
+  // Calculate tax (18% GST on subtotal after discount)
+  const taxRate = 0.18; // 18% GST
+  const taxableAmount = subtotal - couponDiscount;
+  const taxCollected = Math.round(taxableAmount * taxRate * 100) / 100; // Round to 2 decimal places
+
   const total = Math.max(0, subtotal - savings + taxCollected + deliveryCharges - couponDiscount);
 
   return (
@@ -355,6 +381,7 @@ export default function CheckoutForm() {
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">Saved Address</h2>
                     <button
+                      type="button"
                       onClick={() => setShowAddressForm(true)}
                       className="flex items-center text-orange-500 hover:text-orange-600 text-sm font-medium"
                     >
@@ -366,11 +393,10 @@ export default function CheckoutForm() {
                     {savedAddresses.map((address) => (
                       <div
                         key={address.id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                          selectedAddressId === address.id
+                        className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${selectedAddressId === address.id
                             ? 'border-orange-500 bg-orange-50 shadow-sm'
                             : 'border-gray-200 hover:border-orange-300 hover:shadow-sm'
-                        }`}
+                          }`}
                         onClick={() => handleAddressSelect(address.id)}
                       >
                         <div className="flex items-start justify-between">
@@ -379,7 +405,7 @@ export default function CheckoutForm() {
                               type="radio"
                               name="address"
                               checked={selectedAddressId === address.id}
-                              onChange={() => handleAddressSelect(address.id)}
+                              onChange={(e) => handleAddressSelect(address.id, e)}
                               className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                             />
                             <div className="flex-1">
@@ -390,7 +416,7 @@ export default function CheckoutForm() {
                                     Default
                                   </span>
                                 )}
-                                <button className="text-orange-500 hover:text-orange-600 text-xs">
+                                <button type="button" className="text-orange-500 hover:text-orange-600 text-xs">
                                   Edit
                                 </button>
                               </div>
@@ -419,23 +445,26 @@ export default function CheckoutForm() {
                     ))}
                     {/* Use New Address Option */}
                     <div
-                      className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
-                        useNewAddress
+                      className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${useNewAddress
                           ? 'border-orange-500 bg-orange-50 shadow-sm'
                           : 'border-gray-200 hover:border-orange-300 hover:shadow-sm'
-                      }`}
-                      onClick={handleUseNewAddress}
+                        }`}
+                      onClick={(e) => handleUseNewAddress(e)}
                     >
                       <div className="flex items-center space-x-3">
                         <input
                           type="radio"
                           name="address"
                           checked={useNewAddress}
-                          onChange={handleUseNewAddress}
+                          onChange={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleUseNewAddress();
+                          }}
                           className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                         />
                         <span className="font-medium text-gray-900">Use this address</span>
-                        <span className="text-orange-500 text-xs">Edit</span>
+                        <button type="button" className="text-orange-500 text-xs">Edit</button>
                       </div>
                     </div>
                   </div>
@@ -460,7 +489,7 @@ export default function CheckoutForm() {
                         type="text"
                         placeholder="Enter your full name"
                         value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        onChange={(e) => handleInputChange('name', e.target.value, e)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                       />
                     </div>
@@ -472,7 +501,7 @@ export default function CheckoutForm() {
                         type="tel"
                         placeholder="Enter mobile number"
                         value={formData.phone}
-                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        onChange={(e) => handleInputChange('phone', e.target.value, e)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                       />
                     </div>
@@ -484,7 +513,7 @@ export default function CheckoutForm() {
                         type="email"
                         placeholder="Enter email address"
                         value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        onChange={(e) => handleInputChange('email', e.target.value, e)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                       />
                     </div>
@@ -494,7 +523,7 @@ export default function CheckoutForm() {
                       </label>
                       <select
                         value={formData.country}
-                        onChange={(e) => handleInputChange('country', e.target.value)}
+                        onChange={(e) => handleInputChange('country', e.target.value, e)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                       >
                         <option value="Indonesia">Indonesia</option>
@@ -508,7 +537,7 @@ export default function CheckoutForm() {
                         </label>
                         <select
                           value={formData.province}
-                          onChange={(e) => handleInputChange('province', e.target.value)}
+                          onChange={(e) => handleInputChange('province', e.target.value, e)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                         >
                           <option value="">Select State/Province</option>
@@ -525,7 +554,7 @@ export default function CheckoutForm() {
                           type="text"
                           placeholder="Enter ZIP code"
                           value={formData.zipCode}
-                          onChange={(e) => handleInputChange('zipCode', e.target.value)}
+                          onChange={(e) => handleInputChange('zipCode', e.target.value, e)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                         />
                       </div>
@@ -537,7 +566,7 @@ export default function CheckoutForm() {
                       <textarea
                         placeholder="House number and street name"
                         value={formData.street}
-                        onChange={(e) => handleInputChange('street', e.target.value)}
+                        onChange={(e) => handleInputChange('street', e.target.value, e)}
                         rows={3}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-colors"
                       />
@@ -553,6 +582,7 @@ export default function CheckoutForm() {
               )}
 
               <button
+                type="button"
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors duration-200 flex items-center justify-center"
                 onClick={handleContinue}
                 disabled={!isFormValid()}
