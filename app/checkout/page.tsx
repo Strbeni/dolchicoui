@@ -66,6 +66,7 @@ export default function CheckoutForm() {
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  // const [showEmailAdress, setShowEmailAdress] = useState(null); For additional email field if needed
 
   const router = useRouter();
 
@@ -84,7 +85,8 @@ export default function CheckoutForm() {
   // Get auth headers (memoized for stability)
   const getAuthHeaders = useCallback(() => {
     const token = typeof window !== 'undefined' ?
-      localStorage?.getItem('token') || sessionStorage?.getItem('token') : null;
+      localStorage?.getItem('token') || sessionStorage?.
+      getItem('token') : null;
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -106,7 +108,7 @@ export default function CheckoutForm() {
         const data = await response.json();
         const addresses = data.addresses || [];
         setSavedAddresses(addresses);
-
+        console.log('Fetched addresses:', addresses);
         const defaultAddress = addresses.find((addr: AddressType) => addr.isDefault);
         if (defaultAddress && !selectedAddressId) {
           setSelectedAddressId(defaultAddress.id);
@@ -374,7 +376,7 @@ export default function CheckoutForm() {
           {/* Left Column - Form */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-8">Checkout Form</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-8 font-libre">Checkout Form</h1>
               {/* Saved Addresses Section */}
               {savedAddresses.length > 0 && (
                 <div className="mb-8">
@@ -443,7 +445,7 @@ export default function CheckoutForm() {
                         </div>
                       </div>
                     ))}
-                    {/* Use New Address Option */}
+                    {/* Add New Address Option */}
                     <div
                       className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${useNewAddress
                           ? 'border-orange-500 bg-orange-50 shadow-sm'
@@ -463,8 +465,8 @@ export default function CheckoutForm() {
                           }}
                           className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                         />
-                        <span className="font-medium text-gray-900">Use this address</span>
-                        <button type="button" className="text-orange-500 text-xs">Edit</button>
+                        <span className="font-medium text-gray-900">Add New Address</span>
+                        <Plus className="w-4 h-4 text-orange-500" />
                       </div>
                     </div>
                   </div>

@@ -118,7 +118,7 @@ const apiData = {
             }
           ]
         },
-        {
+        { 
           "name": "30-40% Discount",
           "icon": "https://example.com/icons/discount.png",
           "grouping": "Offers",

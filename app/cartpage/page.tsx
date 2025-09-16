@@ -881,9 +881,9 @@ export default function ShoppingCartComplete() {
       {isMobile ? (
         <div className="bg-gray-50 min-h-screen">
           {/* Header */}
-          <div className="bg-white px-4 py-3 border-b shadow-sm">
+          <div className="bg-gray-100 mx-2 mt-8 rounded-md px-4 py-3 border-b shadow-sm">
             <div className="flex items-center justify-between">
-              <h1 className="text-lg font-semibold text-gray-900">Shopping Cart</h1>
+              <h1 className="text-lg font-semibold text-gray-900 font-libre">Shopping Cart</h1>
               <div className="text-right">
                 <div className="text-xs text-gray-500">Sub Total : <span className="text-base font-semibold text-gray-900">₹ {subtotal.toLocaleString()}</span></div>
               </div>
@@ -967,10 +967,12 @@ export default function ShoppingCartComplete() {
                             {item.product.originalPrice && item.product.originalPrice > item.price && (
                               <span className="text-sm text-gray-400 line-through">₹{item.product.originalPrice.toLocaleString()}</span>
                             )}
+
+                            
                           </div>
 
                           {/* Quantity Controls */}
-                          <div className="flex items-center">
+                          <div className="flex">
                             <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                               <button
                                 onClick={() => handleQuantityChange(item.id, -1)}
@@ -1304,16 +1306,16 @@ export default function ShoppingCartComplete() {
                 <h1 className="text-2xl font-semibold">Shopping Cart</h1>
                 {items.length > 0 && (
                   <div className="flex items-center space-x-6">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 bg-gray-200 px-4 py-2 rounded-md">
                       <input
                         type="checkbox"
                         className="w-4 h-4 text-orange-500 border-gray-300 rounded"
                         checked={allSelected}
                         onChange={(e) => handleSelectAll(e.target.checked)}
                       />
-                      <span className="text-gray-600">Select all</span>
+                      <span className="text-gray-600 ">Select all</span>
                     </div>
-                    <span className="text-gray-600">Items selected: {selectedCount}</span>
+                    <span className="text-gray-600 bg-gray-200 px-4 py-2 rounded-md">Items selected: {selectedCount}</span>
                   </div>
                 )}
               </div>
@@ -1375,9 +1377,6 @@ export default function ShoppingCartComplete() {
                         <div className="text-sm text-gray-600 space-y-1 mb-4">
                           <p><span className="font-medium text-gray-700">Color:</span> {item.product.color?.[0] || 'White'}</p>
                           <p><span className="font-medium text-gray-700">Size:</span> {item.size || 'M'}</p>
-                          {item.product.model && (
-                            <p><span className="font-medium text-gray-700">Model:</span> {item.product.model}</p>
-                          )}
                         </div>
 
                         {/* Quantity Controls */}
@@ -1405,23 +1404,23 @@ export default function ShoppingCartComplete() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center space-x-6 text-sm">
+                        <div className="flex items-center  space-x-6 text-sm">
                           <button
                             onClick={() => handleDeleteClick(item.id)}
                             disabled={updating === item.id}
-                            className="text-orange-500 hover:text-orange-600 font-medium disabled:opacity-50 transition-colors"
+                            className="text-orange-500 border-r-2 border-r-gray-200 pr-3 hover:text-orange-600 font-medium disabled:opacity-50 transition-colors"
                           >
                             Remove
                           </button>
                           <button
                             onClick={() => handleSaveForLaterClick(item.id)}
                             disabled={updating === item.id}
-                            className="text-blue-500 hover:text-blue-600 font-medium disabled:opacity-50 transition-colors"
+                            className="text-blue-500 border-r-2 border-r-gray-200 pr-3 hover:text-blue-600 font-medium disabled:opacity-50 transition-colors"
                           >
                             Move to wishlist
                           </button>
                           <button
-                            className="text-blue-500 hover:text-blue-600 font-medium transition-colors"
+                            className="text-blue-500 border-r-2 border-r-gray-200 pr-3 hover:text-blue-600 font-medium transition-colors"
                             onClick={() => handleSeeMoreLikeThis(item.productId)}
                           >
                             See more like this
