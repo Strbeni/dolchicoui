@@ -29,6 +29,7 @@ import Zoom from "react-medium-image-zoom"
 import "react-medium-image-zoom/dist/styles.css"
 import { useNavbarCounts } from "@/contexts/NavbarCountsContext"
 import { useLoading } from "@/contexts/LoadingContext"
+import ShareButton from "@/components/ShareButton"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001"
   // Sync wishlist state for all products shown (related + popular)
@@ -72,6 +73,7 @@ export default function ProductDetailPage() {
  
   const [activeTab, setActiveTab] = useState("details")
   const [wishlistSuccess, setWishlistSuccess] = useState(false)
+  const [deliveryEta, setDeliveryEta] = useState<any>(null)
   // Fetch product reviews by ID
   const fetchReviews = async () => {
     try {
@@ -135,6 +137,9 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState<string>("")
   const [quantity, setQuantity] = useState(1)
   const [pinCode, setPinCode] = useState("")
+  const [deliveryInfo, setDeliveryInfo] = useState<any>(null)
+  const [checkingDelivery, setCheckingDelivery] = useState(false)
+  const [deliveryError, setDeliveryError] = useState<string>("")
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([])
@@ -397,12 +402,101 @@ export default function ProductDetailPage() {
     router.push("/cartpage")
   }
 
-  const checkPinCode = () => {
+  const checkPinCode = async () => {
+    console.log('checkPinCode called with pinCode:', pinCode)
+    
     if (!pinCode) {
-      alert("Please enter PIN code")
+      setDeliveryError("Please enter PIN code")
       return
     }
-    alert("Delivery available in your area!")
+
+    if (pinCode.length !== 6) {
+      setDeliveryError("Please enter a valid 6-digit PIN code")
+      return
+    }
+    // setDeliveryEta()
+    setCheckingDelivery(true)
+    setDeliveryError("")
+    setDeliveryInfo(null)
+
+    try {
+      // For now, let's create a mock response to test the UI
+      console.log('Starting API call...')
+      
+      // // Mock delivery data for testing
+      // const mockDeliveryData = {
+      //   status: 200,
+      //   data: {
+      //     available_courier_companies: [
+      //       {
+      //         courier_name: "Delhivery",
+      //         rate: 45,
+      //         estimated_delivery_days: "3-4"
+      //       },
+      //       {
+      //         courier_name: "Blue Dart",
+      //         rate: 65,
+      //         estimated_delivery_days: "2-3"
+      //       },
+      //       {
+      //         courier_name: "DTDC",
+      //         rate: 40,
+      //         estimated_delivery_days: "4-5"
+      //       }
+      //     ],
+      //     cod_available: true
+      //   }
+      // }
+
+      // // Simulate API delay
+      // await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // console.log('Mock API response:', mockDeliveryData)
+      // setDeliveryInfo(mockDeliveryData.data)
+
+      // Uncomment below for real API call once CORS is resolved
+      
+      const apiUrl = `https://apiv2.shiprocket.in/v1/external/courier/serviceability/?pickup_postcode=110001&delivery_postcode=${pinCode}&weight=0.5&cod=1`
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjc5MTY2OTEsInNvdXJjZSI6InNyLWF1dGgtaW50IiwiZXhwIjoxNzU4ODk2NDIzLCJqdGkiOiJuVm40WmpYNDRzSXlUZ0RNIiwiaWF0IjoxNzU4MDMyNDIzLCJpc3MiOiJodHRwczovL3NyLWF1dGguc2hpcHJvY2tldC5pbi9hdXRob3JpemUvdXNlciIsIm5iZiI6MTc1ODAzMjQyMywiY2lkIjo3Njc2MjU5LCJ0YyI6MzYwLCJ2ZXJib3NlIjpmYWxzZSwidmVuZG9yX2lkIjowLCJ2ZW5kb3JfY29kZSI6IiJ9.NugckMfrCPcv1SotMmIsj1xEI0OPNPCFxKB9xhAl0qA'
+        }
+      }).then(res => res.json()).then(data=>{
+        console.log('Real API response:', data)
+
+        const Etd = data.data.available_courier_companies[0].etd
+        
+        if (data.status === 200 && data.data) {
+          setDeliveryEta(Etd)
+        } else {
+          setDeliveryError("Delivery not available for this PIN code")
+        }
+      })
+
+      // if (!response.ok) {
+      //   throw new Error(`HTTP error! status: ${response.status}`)
+      // }
+
+      // const data = await response.json()
+      // console.log('Real API response:', data)
+
+      // const Eta = data.data.available_courier_companies[0].etd
+      
+      // if (data.status === 200 && data.data) {
+      //   setDeliveryInfo(data.data)
+      // } else {
+      //   setDeliveryError("Delivery not available for this PIN code")
+      // }
+      
+    } catch (error) {
+      console.error('Error checking delivery:', error)
+      setDeliveryError("Unable to check delivery. Please try again later.")
+    } finally {
+      setCheckingDelivery(false)
+    }
   }
 
   if (loading) {
@@ -478,7 +572,8 @@ export default function ProductDetailPage() {
           {/* Action Icons */}
           <div className="absolute right-3 top-3 flex flex-col gap-3">
             <Button size="sm" variant="outline" className="w-10 h-10 p-0 bg-white">
-              <Share2 className="h-4 w-4" />
+              {/* <Share2 className="h-4 w-4" /> */}
+              <ShareButton/>
             </Button>
             <Button
               size="sm"
@@ -632,11 +727,50 @@ export default function ProductDetailPage() {
               value={pinCode}
               onChange={(e) => setPinCode(e.target.value)}
               className="flex-1 px-3 py-2 border border-gray-300 rounded"
+              maxLength={6}
             />
-            <Button onClick={checkPinCode} className="bg-orange-500 hover:bg-orange-600">
-              Check ✓
+            <Button 
+              onClick={checkPinCode} 
+              className="bg-orange-500 hover:bg-orange-600"
+              // disabled={checkingDelivery}
+            >
+              {checkingDelivery ? "Checking..." : "Check ✓"}
             </Button>
           </div>
+
+          {deliveryError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{deliveryError}</p>
+            </div>
+          )}
+
+          {deliveryInfo && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+              <h4 className="font-semibold text-green-800 mb-2">Delivery Available!</h4>
+              <div className="space-y-2 text-sm text-green-700">
+                {deliveryInfo.available_courier_companies && deliveryInfo.available_courier_companies.length > 0 ? (
+                  <>
+                    <p>Available courier services:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {deliveryInfo.available_courier_companies.slice(0, 3).map((courier: any, index: number) => (
+                        <li key={index}>
+                          {courier.courier_name} - ₹{courier.rate} 
+                          {courier.estimated_delivery_days && (
+                            <span className="text-gray-600"> (Delivery in {courier.estimated_delivery_days} days)</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {deliveryInfo.cod_available && (
+                      <p className="text-green-600 font-medium">✓ Cash on Delivery Available</p>
+                    )}
+                  </>
+                ) : (
+                  <p>Delivery service available for PIN code {pinCode}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2 text-sm text-gray-600">
             <p>Please enter PIN code to check delivery time & pay on Delivery Availability</p>
@@ -1011,7 +1145,9 @@ export default function ProductDetailPage() {
                 {/* Action buttons on image */}
                 <div className="absolute right-4 top-4 flex flex-col gap-2">
                   <button className="p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow">
-                    <Share2 size={20} className="text-gray-600" />
+                    {/* <Share2 size={20} className="text-gray-600" /> */}
+                    <ShareButton/>
+
                   </button>
                   <button
                     onClick={handleWishlistToggle}

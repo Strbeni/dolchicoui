@@ -108,7 +108,7 @@ export default function PersonalInfoPage() {
             const nameParts = (user.name || "").split(" ");
             setFirstName(nameParts[0] || "");
             setLastName(nameParts.slice(1).join(" ") || "");
-            setDateOfBirth((user as any).dateOfBirth ? new Date((user as any).dateOfBirth) : undefined);
+            setDateOfBirth((user as any).dob ? new Date((user as any).dob) : undefined);
             setLanguage((user as any).language || "English");
             setIsEmailVerified(!!user?.email);
             setIsPhoneVerified(!!user?.phoneNumber);
@@ -199,7 +199,7 @@ export default function PersonalInfoPage() {
                 zip,
                 firstName,
                 lastName,
-                dateOfBirth: dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : "",
+                dob: dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : "",
                 language,
             };
 
@@ -699,7 +699,7 @@ export default function PersonalInfoPage() {
                                                 value={dateOfBirth ? dateOfBirth.toLocaleDateString() : ''}
                                                 disabled={true}
                                                 className="mt-1 h-10 w-full bg-gray-100 cursor-not-allowed"
-                                                placeholder="Not set"
+                                                placeholder={dateOfBirth ? "" : "Not set"}
                                             />
                                         )}
                                     </div>
