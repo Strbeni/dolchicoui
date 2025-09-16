@@ -23,7 +23,7 @@ const AccountLayout: React.FC<AccountLayoutProps> = ({ children }) => {
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 min-w-0 max-w-4xl w-full">
+                <div className="flex-1 min-w-lg max-w-4xl w-full">
                     {children}
                 </div>
             </div>

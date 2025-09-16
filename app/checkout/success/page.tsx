@@ -46,6 +46,7 @@ function OrderSuccessContent({ orderId, showOrderDetails, setShowOrderDetails }:
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCodOrder, setIsCodOrder] = useState(false);
 
   // For responsive
   const [isMobile, setIsMobile] = useState(false);
@@ -64,6 +65,45 @@ function OrderSuccessContent({ orderId, showOrderDetails, setShowOrderDetails }:
     };
   }, []);
 
+  // Create COD order details from localStorage data
+  const createCodOrderDetails = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+    
+    try {
+      const paymentData = localStorage.getItem('checkoutPaymentData');
+      const formData = localStorage.getItem('checkoutFormData');
+      
+      if (!paymentData) return null;
+      
+      const payment = JSON.parse(paymentData);
+      const form = formData ? JSON.parse(formData) : null;
+      
+      if (payment.method !== 'cod') return null;
+      
+      // Create mock order details for COD
+      const codOrderDetails: OrderDetails = {
+        id: Date.now(), // Use timestamp as temporary order ID
+        status: 'Order Placed',
+        amount: (payment.codCharges || 0) + (form?.totalAmount || 0),
+        date: Date.now(),
+        transactionId: 'COD-' + Date.now(),
+        paymentMethod: 'Cash on Delivery',
+        sender: form?.selectedAddress?.name || form?.address?.name || 'Customer',
+        items: [], // COD orders don't have item details in localStorage
+        user: {
+          id: 1,
+          name: form?.selectedAddress?.name || form?.address?.name || 'Customer',
+          email: form?.selectedAddress?.email || form?.address?.email || 'customer@example.com'
+        }
+      };
+      
+      return codOrderDetails;
+    } catch (error) {
+      console.error('Error creating COD order details:', error);
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     if (orderDetails && typeof window !== 'undefined') {
       localStorage.removeItem('checkoutFormData');
@@ -72,9 +112,15 @@ function OrderSuccessContent({ orderId, showOrderDetails, setShowOrderDetails }:
     }
   }, [orderDetails]);
 
-  // Fetch order details if orderId is provided
+  // Fetch order details if orderId is provided, or create COD order details
 const fetchOrderDetails = useCallback(async () => {
   if (!orderId) {
+    // Check if this is a COD order
+    const codOrderDetails = createCodOrderDetails();
+    if (codOrderDetails) {
+      setIsCodOrder(true);
+      setOrderDetails(codOrderDetails);
+    }
     setLoading(false);
     return;
   }
@@ -111,8 +157,8 @@ const fetchOrderDetails = useCallback(async () => {
         status: result.data.orderStatus,
         amount: result.data.amount,
         date: new Date(result.data.createdAt).getTime(),
-        transactionId: result.data.razorpayPaymentId || 'N/A',
-        paymentMethod: result.data.paymentMethod,
+        transactionId: result.data.razorpayPaymentId || (result.data.paymentMethod === 'cod' ? 'COD-' + result.data.orderId : 'N/A'),
+        paymentMethod: result.data.paymentMethod === 'cod' ? 'Cash on Delivery' : result.data.paymentMethod,
         sender: result.data.address?.name || 'N/A',
         items: result.data.items || [],
         user: {
@@ -122,6 +168,10 @@ const fetchOrderDetails = useCallback(async () => {
         }
       };
       setOrderDetails(orderData);
+      // Set COD flag if this is a COD order
+      if (result.data.paymentMethod === 'cod') {
+        setIsCodOrder(true);
+      }
     } else {
       throw new Error(result.message || 'Order details not available');
     }
@@ -130,7 +180,7 @@ const fetchOrderDetails = useCallback(async () => {
   } finally {
     setLoading(false);
   }
-}, [orderId]);
+}, [orderId, createCodOrderDetails]);
 
 
   useEffect(() => {
@@ -186,8 +236,15 @@ const fetchOrderDetails = useCallback(async () => {
         <div className="mb-4">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-green-600 mb-2 text-center">Payment Success!</h1>
-        <p className="text-gray-700 mb-6 text-center">Your payment has been successfully done.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-green-600 mb-2 text-center">
+          {isCodOrder ? 'Order Placed Successfully!' : 'Payment Success!'}
+        </h1>
+        <p className="text-gray-700 mb-6 text-center">
+          {isCodOrder 
+            ? 'Your order has been placed successfully. Pay cash on delivery.' 
+            : 'Your payment has been successfully done.'
+          }
+        </p>
         <div className="flex justify-center mb-4">
           {/* Avatar fallback */}
           {orderDetails.user?.avatar ? (

@@ -1379,58 +1379,60 @@ export default function ShoppingCartComplete() {
                           <p><span className="font-medium text-gray-700">Size:</span> {item.size || 'M'}</p>
                         </div>
 
-                        {/* Quantity Controls */}
-                        <div className="flex items-center space-x-4 mb-4">
-                          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                            <button
-                              onClick={() => handleQuantityChange(item.id, -1)}
-                              disabled={updating === item.id}
-                              className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </button>
-                            <div className="px-4 py-2 text-base font-semibold min-w-[50px] text-center bg-gray-50 border-x border-gray-300">
-                              {updating === item.id ? '...' : item.quantity}
+                        {/* Quantity Controls and Action Buttons on same line */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                              <button
+                                onClick={() => handleQuantityChange(item.id, -1)}
+                                disabled={updating === item.id}
+                                className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <div className="px-3 py-1 text-sm font-semibold min-w-[40px] text-center bg-gray-50 border-x border-gray-300">
+                                {updating === item.id ? '...' : item.quantity}
+                              </div>
+                              <button
+                                onClick={() => handleQuantityChange(item.id, 1)}
+                                disabled={updating === item.id}
+                                className="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
                             </div>
+                            {/* <span className="text-xs text-gray-500 whitespace-nowrap">Qty</span> */}
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center space-x-3 text-sm flex-wrap">
                             <button
-                              onClick={() => handleQuantityChange(item.id, 1)}
+                              onClick={() => handleDeleteClick(item.id)}
                               disabled={updating === item.id}
-                              className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                              className="text-orange-500 border-r-2 border-r-gray-200 pr-3 hover:text-orange-600 font-medium disabled:opacity-50 transition-colors"
                             >
-                              <Plus className="w-4 h-4" />
+                              Remove
+                            </button>
+                            <button
+                              onClick={() => handleSaveForLaterClick(item.id)}
+                              disabled={updating === item.id}
+                              className="text-blue-500 border-r border-r-gray-200 pr-2 hover:text-blue-600 font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
+                            >
+                              Move to wishlist
+                            </button>
+                            <button
+                              className="text-blue-500 border-r border-r-gray-200 pr-2 hover:text-blue-600 font-medium transition-colors whitespace-nowrap"
+                              onClick={() => handleSeeMoreLikeThis(item.productId)}
+                            >
+                              See more like this
+                            </button>
+                            <button
+                              className="text-blue-500 hover:text-blue-600 font-medium transition-colors whitespace-nowrap"
+                              onClick={() => handleShareProduct(item.productId)}
+                            >
+                              Share
                             </button>
                           </div>
-                          <span className="text-sm text-gray-500">Qty</span>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center  space-x-6 text-sm">
-                          <button
-                            onClick={() => handleDeleteClick(item.id)}
-                            disabled={updating === item.id}
-                            className="text-orange-500 border-r-2 border-r-gray-200 pr-3 hover:text-orange-600 font-medium disabled:opacity-50 transition-colors"
-                          >
-                            Remove
-                          </button>
-                          <button
-                            onClick={() => handleSaveForLaterClick(item.id)}
-                            disabled={updating === item.id}
-                            className="text-blue-500 border-r-2 border-r-gray-200 pr-3 hover:text-blue-600 font-medium disabled:opacity-50 transition-colors"
-                          >
-                            Move to wishlist
-                          </button>
-                          <button
-                            className="text-blue-500 border-r-2 border-r-gray-200 pr-3 hover:text-blue-600 font-medium transition-colors"
-                            onClick={() => handleSeeMoreLikeThis(item.productId)}
-                          >
-                            See more like this
-                          </button>
-                          <button
-                            className="text-blue-500 hover:text-blue-600 font-medium transition-colors"
-                            onClick={() => handleShareProduct(item.productId)}
-                          >
-                            Share
-                          </button>
                         </div>
                       </div>
 
