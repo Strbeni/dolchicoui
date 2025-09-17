@@ -58,6 +58,7 @@ const PaymentMethodPage = () => {
   const [error, setError] = useState(null);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [processingOrder, setProcessingOrder] = useState(false);
   
   // Card form state
   const [cardForm, setCardForm] = useState({
@@ -210,21 +211,121 @@ const PaymentMethodPage = () => {
     if (paymentMethod === 'upi') return true;
   }, [paymentMethod]);
 
-const handleContinueToPayment = useCallback(() => {
+  // Handle COD order submission
+  const handleCodOrderSubmission = useCallback(async (codCharges) => {
+    if (!cartData || !formData) {
+      throw new Error('Missing required data for order creation');
+    }
+
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    setProcessingOrder(true);
+
+    // Calculate totals
+    const subtotal = cartData.summary.subtotal || 0;
+    const couponDiscount = appliedCoupon ? (appliedCoupon.type === "percentage" 
+      ? Math.floor((subtotal * appliedCoupon.discount) / 100) 
+      : appliedCoupon.discount) : 0;
+    const finalAmount = subtotal - couponDiscount + codCharges;
+
+    // Prepare order data matching the confirmation page format
+    const orderData = {
+      items: cartData.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        size: item.size,
+        price: item.price
+      })),
+      amount: finalAmount,
+      address: {
+        name: formData.name,
+        street: formData.street,
+        city: formData.province,
+        state: formData.province,
+        zip: formData.zipCode,
+        phone: formData.phone
+      },
+      paymentMethod: 'cod',
+      codCharges: codCharges,
+      notes: {
+        coupon: appliedCoupon?.code || null,
+        totalItems: cartData.summary.totalItems,
+        paymentMethod: 'Cash on Delivery'
+      }
+    };
+
+    try {
+      // Create order using the same endpoint as confirmation page
+      const response = await fetch(`${API_BASE_URL}/payment/create-order`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const orderResult = await response.json();
+      
+      if (!orderResult.success) {
+        throw new Error(orderResult.message || 'Failed to create COD order');
+      }
+
+      const { dbOrderId } = orderResult.data;
+
+      // Clear cart from backend
+      try {
+        await fetch(`${API_BASE_URL}/cart/clear`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (clearError) {
+        console.error('Failed to clear cart:', clearError);
+      }
+
+      // Clear checkout data
+      localStorage.removeItem('checkoutFormData');
+      localStorage.removeItem('checkoutPaymentData');
+      localStorage.removeItem('appliedCoupon');
+      
+      // Navigate to success page with order ID
+      window.location.href = `/checkout/success?orderId=${dbOrderId}`;
+      
+    } catch (error) {
+      console.error('COD order creation error:', error);
+      throw new Error(error.message || 'Failed to create COD order');
+    } finally {
+      setProcessingOrder(false);
+    }
+  }, [cartData, formData, appliedCoupon]);
+
+const handleContinueToPayment = useCallback(async () => {
   try {
     setError(null);
+    const currentCodCharges = paymentMethod === 'cod' ? 100 : 0;
     const paymentData = {
-      method: 'razorpay', // Always use Razorpay
-      // Remove other payment method specific data
+      method: paymentMethod,
+      codCharges: currentCodCharges
     };
     localStorage.setItem('checkoutPaymentData', JSON.stringify(paymentData));
     
-    // Navigate to confirmation page
-    window.location.href = '/checkout/confirmation';
-  } catch {
-    setError('Failed to save payment information. Please try again.');
+    // If COD, create order directly without payment gateway
+    if (paymentMethod === 'cod') {
+      await handleCodOrderSubmission(currentCodCharges);
+    } else {
+      // For online payment, go to confirmation page
+      window.location.href = '/checkout/confirmation';
+    }
+  } catch (err) {
+    setError(err.message || 'Failed to process payment. Please try again.');
   }
-}, []);
+}, [paymentMethod, cartData, formData, appliedCoupon]);
 
 
   const handleEditAddress = () => {
@@ -251,7 +352,8 @@ const handleContinueToPayment = useCallback(() => {
   const savings = couponDiscount; // You can make this dynamic based on your business logic
   const taxCollected = 0; // You can make this dynamic based on your business logic
   const deliveryCharges = 0;
-  const total = Math.max(0, subtotal + savings + taxCollected + deliveryCharges - couponDiscount);
+  const codCharges = paymentMethod === 'cod' ? 100 : 0;
+  const total = Math.max(0, subtotal + savings + taxCollected + deliveryCharges + codCharges - couponDiscount);
 
   // Loading state
   if (loading) {
@@ -352,7 +454,7 @@ const handleContinueToPayment = useCallback(() => {
               {paymentMethod === 'cod' && (
                 <div className="ml-6 text-xs text-gray-600">
                   Cash, UPI and Cards accepted. <span className="text-blue-600 underline">Know more</span>.<br />
-                  A convenience fee of ₹15 will apply.
+                  A convenience fee of ₹100 will apply.
                 </div>
               )}
             </div>
@@ -362,9 +464,16 @@ const handleContinueToPayment = useCallback(() => {
               type="button"
               className="w-full bg-orange-500 text-white py-4 rounded-md font-semibold text-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
               onClick={handleContinueToPayment}
-              disabled={!isPaymentValid()}
+              disabled={!isPaymentValid() || processingOrder}
             >
-              Make Payment
+              {processingOrder ? (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>{paymentMethod === 'cod' ? 'PLACING ORDER...' : 'PROCESSING...'}</span>
+                </div>
+              ) : (
+                paymentMethod === 'cod' ? 'Place COD Order' : 'Make Payment'
+              )}
             </button>
 
             {/* Delivery Address */}
@@ -418,6 +527,12 @@ const handleContinueToPayment = useCallback(() => {
                   <span>Delivery Charges:</span>
                   <span className="text-green-600 font-medium">Free Delivery</span>
                 </div>
+                {codCharges > 0 && (
+                  <div className="flex justify-between">
+                    <span>COD Charges:</span>
+                    <span>₹ {codCharges}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Coupons:</span>
                   {appliedCoupon ? (
@@ -491,7 +606,7 @@ const handleContinueToPayment = useCallback(() => {
                 {paymentMethod === 'cod' && (
                   <div className="ml-7 text-xs text-gray-500">
                     Cash, UPI and Cards accepted. <span className="text-blue-600 underline cursor-pointer">Know more</span>.<br />
-                    A convenience fee of ₹15 will apply.
+                    A convenience fee of ₹100 will apply.
                   </div>
                 )}
               </div>
@@ -510,9 +625,16 @@ const handleContinueToPayment = useCallback(() => {
                 type="button"
                 className="flex-1 bg-orange-500 text-white py-2 px-6 rounded font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
                 onClick={handleContinueToPayment}
-                disabled={!isPaymentValid()}
+                disabled={!isPaymentValid() || processingOrder}
               >
-                Proceed To Checkout
+                {processingOrder ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>{paymentMethod === 'cod' ? 'PLACING...' : 'PROCESSING...'}</span>
+                  </div>
+                ) : (
+                  paymentMethod === 'cod' ? 'Place COD Order' : 'Proceed To Checkout'
+                )}
               </button>
             </div>
 
@@ -559,6 +681,12 @@ const handleContinueToPayment = useCallback(() => {
                   <span>Delivery Charges:</span>
                   <span className="text-green-600 font-medium">Free Delivery</span>
                 </div>
+                {codCharges > 0 && (
+                  <div className="flex justify-between">
+                    <span>COD Charges:</span>
+                    <span>₹ {codCharges}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Coupons:</span>
                   {appliedCoupon ? (

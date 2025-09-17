@@ -66,6 +66,7 @@ export default function CheckoutForm() {
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [addressesLoading, setAddressesLoading] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showAllAddresses, setShowAllAddresses] = useState(false);
   // const [showEmailAdress, setShowEmailAdress] = useState(null); For additional email field if needed
 
   const router = useRouter();
@@ -391,55 +392,54 @@ export default function CheckoutForm() {
                       Add Address
                     </button>
                   </div>
-                  <div className="space-y-3">
-                    {savedAddresses.map((address) => (
+                  <div className="grid grid-cols-1  md:grid-cols-2 gap-4">
+                    {(showAllAddresses ? savedAddresses : savedAddresses.slice(0, 2)).map((address) => (
                       <div
                         key={address.id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${selectedAddressId === address.id
+                        className={`border rounded-lg p-4 cursor-pointer bg-gray-100 transition-all duration-200 ${selectedAddressId === address.id
                             ? 'border-orange-500 bg-orange-50 shadow-sm'
                             : 'border-gray-200 hover:border-orange-300 hover:shadow-sm'
                           }`}
                         onClick={() => handleAddressSelect(address.id)}
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3">
-                            <input
-                              type="radio"
-                              name="address"
-                              checked={selectedAddressId === address.id}
-                              onChange={(e) => handleAddressSelect(address.id, e)}
-                              className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="font-semibold text-gray-900">{address.name}</span>
+                        <div className="flex items-start space-x-3">
+                          <input
+                            type="radio"
+                            name="address"
+                            checked={selectedAddressId === address.id}
+                            onChange={(e) => handleAddressSelect(address.id, e)}
+                            className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-medium text-gray-900">Use this address</span>
+                              <div className="flex items-center gap-2">
                                 {address.isDefault && (
-                                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                                  <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded font-medium">
                                     Default
                                   </span>
                                 )}
-                                <button type="button" className="text-orange-500 hover:text-orange-600 text-xs">
-                                  Edit
+                                <button type="button" className="text-orange-500 hover:text-orange-600 text-xs font-medium">
+                                  Edit 
                                 </button>
                               </div>
-                              <div className="text-sm text-gray-600 space-y-1">
-                                <div className="flex items-center">
-                                  <Phone className="w-3 h-3 mr-2 text-gray-400" />
-                                  Mobile number: {address.phone}
-                                </div>
-                                <div className="flex items-center">
-                                  <MapPin className="w-3 h-3 mr-2 text-gray-400" />
-                                  Postcode: {address.zip}
-                                </div>
-                                <div className="flex items-start">
-                                  <MapPin className="w-3 h-3 mr-2 mt-0.5 text-gray-400" />
-                                  City: {address.city}
-                                </div>
-                                <div className="flex items-start">
-                                  <MapPin className="w-3 h-3 mr-2 mt-0.5 text-gray-400" />
-                                  House / apartment no. and street address: {address.street}
-                                </div>
-                              </div>
+                            </div>
+                            <div className="text-sm text-gray-700 space-y-1">
+                              <p>
+                                <span className="font-medium">Full Name :</span> {address.name}
+                              </p>
+                              <p>
+                                <span className="font-medium">Mobile number :</span> {address.phone}
+                              </p>
+                              <p>
+                                <span className="font-medium">Postcode :</span> {address.zip}
+                              </p>
+                              <p>
+                                <span className="font-medium">City :</span> {address.city}
+                              </p>
+                              <p>
+                                <span className="font-medium">House / apartment no. and street address :</span> {address.street}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -465,15 +465,21 @@ export default function CheckoutForm() {
                           }}
                           className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
                         />
-                        <span className="font-medium text-gray-900">Add New Address</span>
+                        <span className="font-medium text-gray-900">Use this address</span>
                         <Plus className="w-4 h-4 text-orange-500" />
                       </div>
                     </div>
                   </div>
                   {savedAddresses.length > 2 && (
-                    <button className="text-orange-500 hover:text-orange-600 text-sm font-medium mt-3">
-                      See less
-                    </button>
+                    <div className="mt-4 text-center">
+                      <button 
+                        type="button"
+                        onClick={() => setShowAllAddresses(!showAllAddresses)}
+                        className="text-orange-500 hover:text-orange-600 text-sm font-medium transition-colors duration-200"
+                      >
+                        {showAllAddresses ? 'See Less' : `See More (${savedAddresses.length - 2} more)`}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}

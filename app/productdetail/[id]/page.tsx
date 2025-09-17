@@ -407,17 +407,20 @@ export default function ProductDetailPage() {
     
     if (!pinCode) {
       setDeliveryError("Please enter PIN code")
+      setDeliveryEta(null)
       return
     }
 
     if (pinCode.length !== 6) {
       setDeliveryError("Please enter a valid 6-digit PIN code")
+      setDeliveryEta(null)
       return
     }
     // setDeliveryEta()
     setCheckingDelivery(true)
     setDeliveryError("")
     setDeliveryInfo(null)
+    setDeliveryEta(null)
 
     try {
       // For now, let's create a mock response to test the UI
@@ -462,17 +465,19 @@ export default function ProductDetailPage() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjc5MTY2OTEsInNvdXJjZSI6InNyLWF1dGgtaW50IiwiZXhwIjoxNzU4ODk2NDIzLCJqdGkiOiJuVm40WmpYNDRzSXlUZ0RNIiwiaWF0IjoxNzU4MDMyNDIzLCJpc3MiOiJodHRwczovL3NyLWF1dGguc2hpcHJvY2tldC5pbi9hdXRob3JpemUvdXNlciIsIm5iZiI6MTc1ODAzMjQyMywiY2lkIjo3Njc2MjU5LCJ0YyI6MzYwLCJ2ZXJib3NlIjpmYWxzZSwidmVuZG9yX2lkIjowLCJ2ZW5kb3JfY29kZSI6IiJ9.NugckMfrCPcv1SotMmIsj1xEI0OPNPCFxKB9xhAl0qA'
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjc5MTY2OTEsInNvdXJjZSI6InNyLWF1dGgtaW50IiwiZXhwIjoxNzU4OTYyNjY0LCJqdGkiOiJubDFnVXZUZXNEZ0h6QWg1IiwiaWF0IjoxNzU4MDk4NjY0LCJpc3MiOiJodHRwczovL3NyLWF1dGguc2hpcHJvY2tldC5pbi9hdXRob3JpemUvdXNlciIsIm5iZiI6MTc1ODA5ODY2NCwiY2lkIjo3Njc2MjU5LCJ0YyI6MzYwLCJ2ZXJib3NlIjpmYWxzZSwidmVuZG9yX2lkIjowLCJ2ZW5kb3JfY29kZSI6IiJ9.cx7SYrEdS49X1i1mEVtpHCQs1LlVUrRplZU9ARIbpms`
         }
       }).then(res => res.json()).then(data=>{
         console.log('Real API response:', data)
 
-        const Etd = data.data.available_courier_companies[0].etd
-        
-        if (data.status === 200 && data.data) {
-          setDeliveryEta(Etd)
+        if (data.status === 200 && data.data && data.data.available_courier_companies && data.data.available_courier_companies.length > 0) {
+          // Get the estimated delivery days from the first courier company
+          const estimatedDays = data.data.available_courier_companies[0].estimated_delivery_days
+          setDeliveryEta(estimatedDays)
+          setDeliveryInfo(data.data)
         } else {
           setDeliveryError("Delivery not available for this PIN code")
+          setDeliveryEta(null)
         }
       })
 
@@ -494,6 +499,7 @@ export default function ProductDetailPage() {
     } catch (error) {
       console.error('Error checking delivery:', error)
       setDeliveryError("Unable to check delivery. Please try again later.")
+      setDeliveryEta(null)
     } finally {
       setCheckingDelivery(false)
     }
@@ -744,23 +750,25 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          {deliveryInfo && (
+          {/* {deliveryInfo && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
               <h4 className="font-semibold text-green-800 mb-2">Delivery Available!</h4>
               <div className="space-y-2 text-sm text-green-700">
                 {deliveryInfo.available_courier_companies && deliveryInfo.available_courier_companies.length > 0 ? (
                   <>
                     <p>Available courier services:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      {deliveryInfo.available_courier_companies.slice(0, 3).map((courier: any, index: number) => (
+                    <ul className="list-disc list-inside space-y-1"> */}
+
+                      {/* {deliveryInfo.available_courier_companies.slice(0, 3).map((courier: any, index: number) => (
                         <li key={index}>
                           {courier.courier_name} - ₹{courier.rate} 
                           {courier.estimated_delivery_days && (
                             <span className="text-gray-600"> (Delivery in {courier.estimated_delivery_days} days)</span>
                           )}
+
                         </li>
-                      ))}
-                    </ul>
+                      ))} */}
+                    {/* </ul>
                     {deliveryInfo.cod_available && (
                       <p className="text-green-600 font-medium">✓ Cash on Delivery Available</p>
                     )}
@@ -770,10 +778,16 @@ export default function ProductDetailPage() {
                 )}
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="space-y-2 text-sm text-gray-600">
-            <p>Please enter PIN code to check delivery time & pay on Delivery Availability</p>
+            {deliveryEta ? (
+              <p className="text-green-600 font-medium">
+                Product is available on this Pincode, arrive in {deliveryEta}.
+              </p>
+            ) : (
+              <p>Please enter PIN code to check delivery time & pay on Delivery Availability</p>
+            )}
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               <span>100 % Original Products</span>
@@ -1371,18 +1385,35 @@ export default function ProductDetailPage() {
                     <input
                       type="text"
                       placeholder="Enter your PIN code"
+                      value={pinCode}
+                      onChange={(e) => setPinCode(e.target.value)}
                       className="border border-gray-300 px-3 py-2 rounded flex-1"
+                      maxLength={6}
                     />
                     <Button
                       variant="outline"
+                      onClick={checkPinCode}
+                      disabled={checkingDelivery}
                       className="px-4 py-2 text-orange-600 border-orange-600 hover:bg-orange-50 bg-transparent"
                     >
-                      Check ✓
+                      {checkingDelivery ? "Checking..." : "Check ✓"}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-600">
-                    Please enter PIN code to check delivery time & pay on Delivery Availability
-                  </p>
+                  {deliveryError && (
+                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm text-red-600">{deliveryError}</p>
+                    </div>
+                  )}
+                  
+                  {deliveryEta ? (
+                    <p className="text-sm text-green-600 font-medium">
+                      This product will arrive in {deliveryEta} days
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-600">
+                      Please enter PIN code to check delivery time & pay on Delivery Availability
+                    </p>
+                  )}
                   <div className="space-y-2 text-sm">
                     <p className="flex items-center gap-2">
                       <span className="text-green-600">✓</span>
