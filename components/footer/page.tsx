@@ -36,7 +36,7 @@ const Footer = () => {
             <li>Womens Collection</li>
             <li>Kids Collection</li>
             <li>Accessories</li>
-            <li>Size Guide</li>
+            <li>Home Living</li>
           </ul>
         </div>
 
