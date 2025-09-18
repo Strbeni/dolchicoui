@@ -1,6 +1,6 @@
 // components/footer.tsx
 import React from "react";
-import Link from 'next/link';
+import Link from "next/link";
 
 const Footer = () => {
   return (
@@ -103,21 +103,50 @@ const Footer = () => {
 
         {/* Social Media Icons */}
         <div className="flex space-x-3">
-          <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer">
+          <a
+            href="https://www.facebook.com/dolchiteam"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
+          >
             <span className="text-white text-xs">f</span>
-          </div>
-          <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer">
+          </a>
+
+          <a
+            href="https://twitter.com/dolchiteam"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
+          >
             <span className="text-white text-xs">🐦</span>
-          </div>
-          <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer">
+          </a>
+
+          <a
+            href="https://www.instagram.com/dolchiteam"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
+          >
             <span className="text-white text-xs">📷</span>
-          </div>
-          <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer">
+          </a>
+
+          <a
+            href="https://www.linkedin.com/company/dolchiteam"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
+          >
             <span className="text-white text-xs">in</span>
-          </div>
-          <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer">
+          </a>
+
+          <a
+            href="https://www.tiktok.com/@dolchiteam"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
+          >
             <span className="text-white text-xs">📸</span>
-          </div>
+          </a>
         </div>
       </div>
     </footer>
