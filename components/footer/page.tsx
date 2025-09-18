@@ -58,13 +58,13 @@ const Footer = () => {
             </div>
             <div className="flex items-center">
               <span className="mr-2">✉️</span>
-              <span>support@fancy.com</span>
+              <span>sales@dolchico.com</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Popular Searches */}
+      {/* Popular Searches
       <div className="mt-12 mb-8">
         <h3 className="font-semibold mb-4 text-lg">Popular Searches</h3>
         <div className="flex flex-wrap gap-2 text-gray-300 text-xs">
@@ -91,7 +91,7 @@ const Footer = () => {
           <span>Facewash</span> <span>|</span>
           <span>Sunscreen</span>
         </div>
-      </div>
+      </div> */}
 
       {/* Footer Bottom */}
       <div className="flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-gray-600">
