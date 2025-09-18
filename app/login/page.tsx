@@ -149,10 +149,16 @@ export default function UnifiedAuthComponent() {
         const verifyAuthStatus = async () => {
           try {
             const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://valyris-i.onrender.com"
+            const token = localStorage.getItem("token");
+
             const res = await fetch(`${API_BASE_URL}/api/auth/profile`, {
               credentials: 'include',
-              headers: { 'Content-Type': 'application/json' }
-            })
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
 
             if (res.ok) {
               const data = await res.json()
@@ -172,7 +178,7 @@ export default function UnifiedAuthComponent() {
             console.error("Auth check failed:", error)
           }
         }
-        
+
 
 
         verifyAuthStatus()
@@ -182,9 +188,9 @@ export default function UnifiedAuthComponent() {
       // Fallback: Check for token in cookies for existing sessions
       const cookieToken = document.cookie
         .split('; ')
-        .find(row => row.startsWith('auth-token='))   
+        .find(row => row.startsWith('auth-token='))
         ?.split('=')[1]
-      
+
       if (cookieToken && !localStorage.getItem("token")) {
         console.log("[OAuth] Token found in cookies, storing...")
         localStorage.setItem("token", cookieToken)
@@ -194,7 +200,7 @@ export default function UnifiedAuthComponent() {
   }, [router])
 
   // Step and form state
-  const [step, setStep] = useState(1) // 1: Contact Check, 2: Auth Flow, 3: Profile Setup
+  const [step, setStep] = useState(1) // 1: Contact Check, 2: Auth Flow, 3: Profile Setup 4: Define this constant at the top
   const [contactInput, setContactInput] = useState("")
   const [contactType, setContactType] = useState<"email" | "mobile">("email")
   const [countryCode, setCountryCode] = useState("+91")
@@ -473,9 +479,31 @@ export default function UnifiedAuthComponent() {
       setUserId(data.userId)
     }
 
-    setOtpSent(true)
-    setResendTimer(RESEND_SECONDS)
-  }, [])
+  setOtpSent(true);
+  setResendTimer(RESEND_SECONDS);
+}, []);
+
+
+const handleSendOTPClick = React.useCallback(async (): Promise<void> => {
+  setOtpLoading(true);  // Use the OTP specific loading flag
+  setError('');
+  try {
+    if (userExists) {
+      await handleSendOTPForExistingUser(verifiedContact);
+    } else {
+      await handleSendOTPForNewUser(verifiedContact);
+    }
+    setShowOtpMethod(true);  // Show OTP UI as in reference
+    setStep(2);              // Optional: Move to Auth Flow step if needed
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to send OTP');
+  } finally {
+    setOtpLoading(false);
+  }
+}, [userExists, verifiedContact, handleSendOTPForExistingUser, handleSendOTPForNewUser]);
+
+
+
 
   // Enhanced continue handler with verification check
   const handleContinue = React.useCallback(async (): Promise<void> => {
@@ -502,37 +530,44 @@ export default function UnifiedAuthComponent() {
         userStatus = await checkUserExists(cleanContact)
       }
 
-      if (userStatus.exists) {
-        // Check verification status for existing users
-        const isEmailContact = contactType === "email"
-        const isPhoneContact = contactType === "mobile"
-        const needsVerification = 
-          (isEmailContact && !userStatus.emailVerified) ||
-          (isPhoneContact && !userStatus.phoneVerified)
+    if (userStatus.exists) {
+      const needsVerification =
+        (contactType === 'email' && !userStatus.emailVerified) ||
+        (contactType === 'mobile' && !userStatus.phoneVerified);
 
-        if (needsVerification) {
-          console.log("User exists but needs verification, sending OTP")
-          await handleSendOTPForExistingUser(cleanContact)
-          // Don't set showOtpMethod for unverified users - they should go straight to OTP
-        }
-        
-        setStep(2)
-      } else {
-        // New user: Check terms and send OTP immediately
-        if (!acceptTerms) {
-          setError("Please accept the Terms of Use and Privacy Policy to continue")
-          return
-        }
-
-        await handleSendOTPForNewUser(cleanContact)
-        setStep(2)
+      if (needsVerification) {
+        // Do NOT send OTP automatically for existing users needing verification
+        setStep(2); // Move to Auth Flow with option to request OTP manually
+        return;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred")
-    } finally {
-      setLoading(false)
+
+      setStep(2); // Verified existing users proceed to password input
+    } else {
+      if (!acceptTerms) {
+        setError('Please accept the Terms of Use and Privacy Policy to continue');
+        return;
+      }
+
+      // Automatically send OTP for new users right here
+      await handleSendOTPForNewUser(cleanContact);
+      setStep(3); // Profile setup or registration step
     }
-  }, [contactInput, contactType, acceptTerms, formatContactForAPI, checkUserExists, handleSendOTPForNewUser, handleSendOTPForExistingUser, lastCheckedContact, userExists])
+  } catch (err) {
+    console.error('handleContinue error:', err);
+    setError(err instanceof Error ? err.message : "An unexpected error occurred");
+  } finally {
+    setLoading(false);
+  }
+}, [
+  contactInput,
+  contactType,
+  acceptTerms,
+  formatContactForAPI,
+  checkUserExists,
+  handleSendOTPForNewUser,
+  userExists,
+  lastCheckedContact,
+]);
 
   // Handle edit contact (inline editing with pencil icon)
   const handleEditContact = React.useCallback((): void => {
@@ -1299,7 +1334,7 @@ export default function UnifiedAuthComponent() {
                           </Button>
 
                           <Button
-                            onClick={handleRequestOTP}
+                            onClick={handleSendOTPClick}
                             disabled={otpLoading}
                             variant="outline"
                             className="w-full h-11 font-medium tracking-wide border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white bg-transparent"
