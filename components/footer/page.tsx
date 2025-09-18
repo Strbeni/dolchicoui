@@ -1,5 +1,6 @@
 // components/footer.tsx
 import React from "react";
+import Link from 'next/link';
 
 const Footer = () => {
   return (
@@ -21,7 +22,11 @@ const Footer = () => {
             <li>Our Story</li>
             <li>Terms & Conditions</li>
             <li>Privacy Policy</li>
-            <li>Return Policy</li>
+            <li>
+              <Link href="/account/return-policy" className="hover:underline">
+                Return Policy
+              </Link>
+            </li>
           </ul>
         </div>
 
