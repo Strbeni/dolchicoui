@@ -19,12 +19,9 @@ const Footer = () => {
           <h3 className="font-semibold mb-4 text-lg">About Us</h3>
           <ul className="space-y-2 text-gray-300">
             <li>Our Story</li>
-            <li>FAQ</li>
-            <li>Sustainability</li>
-            <li>Ethical Practices</li>
             <li>Terms & Conditions</li>
             <li>Privacy Policy</li>
-            <li>Shipping & Returns</li>
+            <li>Return Policy</li>
           </ul>
         </div>
 
@@ -96,7 +93,7 @@ const Footer = () => {
       {/* Footer Bottom */}
       <div className="flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-gray-600">
         <div className="text-gray-400 text-xs mb-4 sm:mb-0">
-          © 2025 Dolchi . All rights reserved .
+          © 2025 Dolchi. All rights reserved.
         </div>
 
         {/* Social Media Icons */}
