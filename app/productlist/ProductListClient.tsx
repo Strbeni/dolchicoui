@@ -16,23 +16,23 @@ import { useNavbarCounts } from "@/contexts/NavbarCountsContext";
 import { useLoading } from "@/contexts/LoadingContext";
 
 interface Product {
-  id: number
-  name: string
-  description: string
-  price: number
-  originalPrice?: number
-  discount?: number
-  image: string[]
-  category: string
-  subCategory: string
-  sizes: string[]
-  color?: string[]
-  stock: number
-  rating?: number
-  reviews?: number
-  isNew?: boolean
-  badge?: string
-  tags?: string[]
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string[];
+  category: string;
+  subCategory: string;
+  sizes: string[];
+  color: string;
+  stock: number;
+  rating: number;
+  reviews: number;
+  isNew: boolean;
+  badge?: string;
+  tags: string[];
+  isActive: boolean;
+  bestseller?: boolean;
 }
 
 interface WishlistEntry {
@@ -59,8 +59,7 @@ const showToast = (msg: string, success = true) => {
   if (typeof window === "undefined") return
   const el = document.createElement("div")
   el.textContent = msg
-  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 ${success ? "bg-green-600" : "bg-red-600"
-    }`
+  el.className = `fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-50 ${success ? "bg-green-600" : "bg-red-600"}`
   document.body.appendChild(el)
   setTimeout(() => el.remove(), 3000)
 }
@@ -174,7 +173,7 @@ export default function ProductListClient({ category, searchParams }: ProductLis
       selectedSizes.forEach(size => params.append('sizes', size))
     }
 
-    // Brand filtering (if we have a way to map brands to API)
+    // Brand filtering
     if (selectedBrands.length > 0) {
       selectedBrands.forEach(brand => params.append('brands', brand))
     }
@@ -222,93 +221,974 @@ export default function ProductListClient({ category, searchParams }: ProductLis
     params.set('sortBy', apiSortBy)
     params.set('sortOrder', apiSortOrder)
 
-    // Pagination (we can add this later)
+    // Pagination
     params.set('page', currentPage.toString())
     params.set('limit', itemsPerPage.toString())
 
     return params.toString()
   }
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true)
-      setError("")
+useEffect(() => {
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError('');
 
-      try {
-        const queryString = buildAPIQueryString()
-        const apiUrl = `${API_BASE}/api/product/list${queryString ? `?${queryString}` : ''}`
+    try {
+      const queryString = buildAPIQueryString();
+      const apiUrl = `${API_BASE}/api/product/list${queryString ? `?${queryString}` : ''}`;
 
-        const response = await fetch(apiUrl, {
-          headers: { "Content-Type": "application/json" },
-        })
+      const response = await fetch(apiUrl, {
+        headers: authHeaders(),
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-        if (data.success && Array.isArray(data.products)) {
-          const transformedProducts = data.products.map((product: any, index: number) => {
-            const discount = product.discount || 0
-            const originalPrice = product.price
-            const discountedPrice = discount > 0 ? Math.round(originalPrice * (1 - discount / 100)) : originalPrice
-
-            return {
-              id: product.id || index + 1,
-              name: product.name || "Product",
-              description: product.description || "",
-              price: discountedPrice,
-              originalPrice: discount > 0 ? originalPrice : undefined,
-              discount: discount,
-              image: Array.isArray(product.image) ? product.image : ["/images/hoodie-placeholder.png"],
-              category: product.category?.name || "Men",
-              subCategory: product.subcategory?.name || "Topwear",
-              sizes: Array.isArray(product.sizes) ? product.sizes : ["S", "M", "L", "XL"],
-              color: [], // Not in API, set empty
-              stock: product.stock || 10,
-              rating: 5.0, // Default
-              reviews: 10, // Default
-              isNew: false, // Can be based on date if needed
-              badge: product.bestseller ? "Bestseller" : undefined,
-              tags: product.tags || [],
-            }
-          })
-
-          setProducts(transformedProducts)
-        } else {
-          throw new Error("Invalid API response format")
-        }
-      } catch (err) {
-        console.error("[v0] Error fetching products:", err)
-        setError(err instanceof Error ? err.message : "Failed to load products")
-
-        const mockProducts: Product[] = Array.from({ length: 12 }, (_, i) => ({
-          id: i + 1,
-          name: "SSneakers",
-          description: "Premium quality sneakers",
-          price: 600,
-          originalPrice: 1200,
-          discount: 55,
-          image: ["/images/hoodie-placeholder.png"],
-          category: "Men",
-          subCategory: "T-Shirt",
-          sizes: ["S", "M", "L", "XL"],
-          color: [],
-          stock: 10,
-          rating: 5.0,
-          reviews: 10,
-          isNew: i === 2 || i === 8,
-          badge: i === 2 || i === 8 ? "New" : undefined,
-          tags: [],
-        }))
-        setProducts(mockProducts)
-      } finally {
-        setLoading(false)
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-    }
 
-    fetchProducts()
-  }, [activeCategory, minPrice, maxPrice, selectedSizes, selectedBrands, selectedCategories, sortBy, currentPage, initialOffer, searchParams?.q])
+      // Mock product data (replace with actual API response in production)
+      const data = {
+  "success": true,
+  "products": [
+    {
+      "id": 31,
+      "name": "Men's Classic White T-Shirt",
+      "description": "A timeless and versatile 100% cotton white t-shirt, perfect for any wardrobe. A staple for every man.",
+      "price": 1499,
+      "image": [
+        "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHQlMjBzaGlydHxlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dCUyMHNoaXJ0fGVufDB8fDB8fHww"
+      ],
+      "category": "Men",
+      "grouping": "Topwear",
+      "subcategory": "T-Shirt",
+      "sizes": ["S", "M", "L", "XL", "XXL"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660142393",
+      "createdAt": "2025-08-31T17:09:02.395Z",
+      "updatedAt": "2025-08-31T17:09:02.395Z",
+      "tags": ["Navratri", "Trending", "HotDeal"],
+      "brand": "UrbanThread",
+      "color": "White"
+    },
+    {
+      "id": 32,
+      "name": "Men's Black Graphic Tee",
+      "description": "A comfortable black t-shirt with a minimalist graphic print. Made with soft, breathable cotton.",
+      "price": 1799,
+      "image": [
+        "https://images.unsplash.com/photo-1503341504253-dff489862571?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8bWVuJTIwdCUyMHNoaXJ0fGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1503341338985-c0477be52513?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fG1lbiUyMHQlMjBzaGlydHxlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Men",
+      "grouping": "Topwear",
+      "subcategory": "T-Shirt",
+      "sizes": ["S", "M", "L", "XL"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660143100",
+      "createdAt": "2025-08-31T17:09:03.101Z",
+      "updatedAt": "2025-08-31T17:09:03.101Z",
+      "tags": ["NewArrival"],
+      "brand": "TrendVibe",
+      "color": "Black"
+    },
+    {
+      "id": 33,
+      "name": "Men's Formal Oxford Shirt",
+      "description": "A crisp, slim-fit formal dress shirt made from wrinkle-resistant cotton. Perfect for the office or formal events.",
+      "price": 2599,
+      "image": [
+        "https://images.unsplash.com/photo-1603252109612-24fa63c053c3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fG1lbiUyMHNoaXJ0fGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1598554747448-3693c35467e4?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fG1lbiUyMHNoaXJ0fGVufDB8fDB8fHww"
+      ],
+      "category": "Men",
+      "grouping": "Topwear",
+      "subcategory": "Shirt",
+      "sizes": ["M", "L", "XL"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660143508",
+      "createdAt": "2025-08-31T17:09:03.509Z",
+      "updatedAt": "2025-08-31T17:09:03.509Z",
+      "tags": ["HotDeal", "Limited"],
+      "brand": "ClassyFit",
+      "color": "White"
+    },
+    {
+      "id": 34,
+      "name": "Men's Classic Polo",
+      "description": "A classic polo shirt made from breathable pique cotton. A smart-casual essential.",
+      "price": 1999,
+      "image": [
+        "https://images.unsplash.com/photo-1622519360341-35b88849b20d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8cG9sbyUyMHNoaXJ0fGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1554972302-389547563458?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHBvbG8lMjBzaGlydHxlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Men",
+      "grouping": "Topwear",
+      "subcategory": "Polo Shirt",
+      "sizes": ["S", "M", "L", "XL"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660143918",
+      "createdAt": "2025-08-31T17:09:03.919Z",
+      "updatedAt": "2025-08-31T17:09:03.919Z",
+      "tags": ["Trending", "NewArrival"],
+      "brand": "SportyChic",
+      "color": "Navy Blue"
+    },
+    {
+      "id": 35,
+      "name": "Men's Plaid Flannel Shirt",
+      "description": "A soft and warm flannel shirt with a classic plaid pattern. Perfect for layering.",
+      "price": 2899,
+      "image": [
+        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Zmxhbm5lbCUyMHNoaXJ0fGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1587579732858-696a66708767?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8Zmxhbm5lbCUyMHNoaXJ0fGVufDB8fDB8fHww"
+      ],
+      "category": "Men",
+      "grouping": "Topwear",
+      "subcategory": "Shirt",
+      "sizes": ["M", "L", "XL"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660144234",
+      "createdAt": "2025-08-31T17:09:04.235Z",
+      "updatedAt": "2025-08-31T17:09:04.235Z",
+      "tags": [],
+      "brand": "RusticWear",
+      "color": "Red/Black"
+    },
+    {
+      "id": 36,
+      "name": "Men's Crewneck Sweatshirt",
+      "description": "A comfortable crewneck sweatshirt featuring a unique graphic print. Made from a soft cotton blend.",
+      "price": 3199,
+      "image": [
+        "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3dlYXRzaGlydHxlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1614252366333-c24cca63c2cb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHN3ZWF0c2hpcnR8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Men",
+      "grouping": "Topwear",
+      "subcategory": "Sweatshirt",
+      "sizes": ["S", "M", "L"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660144635",
+      "createdAt": "2025-08-31T17:09:04.636Z",
+      "updatedAt": "2025-08-31T17:09:04.636Z",
+      "tags": ["Navratri"],
+      "brand": "CoolVibe",
+      "color": "Grey"
+    },
+    {
+      "id": 37,
+      "name": "Men's Textured Pullover Sweater",
+      "description": "A sophisticated pullover sweater with a unique textured knit. Ideal for smart-casual looks.",
+      "price": 3599,
+      "image": [
+        "https://images.unsplash.com/photo-1610384104075-e8391c0598b9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8bWVucyUyMHN3ZWF0ZXJ8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1619208983086-07b97c0f1627?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fG1lbnMlMjBzd2VhdGVyfGVufDB8fDB8fHww"
+      ],
+      "category": "Men",
+      "grouping": "Topwear",
+      "subcategory": "Sweater",
+      "sizes": ["M", "L", "XL"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660145042",
+      "createdAt": "2025-08-31T17:09:05.043Z",
+      "updatedAt": "2025-08-31T17:09:05.043Z",
+      "tags": ["Limited", "HotDeal"],
+      "brand": "ElegantKnit",
+      "color": "Charcoal"
+    },
+    {
+      "id": 38,
+      "name": "Men's Henley Long Sleeve",
+      "description": "A versatile long-sleeve Henley shirt with a three-button placket. Great for layering or wearing on its own.",
+      "price": 2299,
+      "image": [
+        "https://images.unsplash.com/photo-1512435288292-a7d5392527b1?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8aGVubGV5JTIwc2hpcnR8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1627225793944-383791a9b2b1?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aGVubGV5JTIwc2hpcnR8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Men",
+      "grouping": "Topwear",
+      "subcategory": "Shirt",
+      "sizes": ["S", "M", "L", "XL"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660145448",
+      "createdAt": "2025-08-31T17:09:05.449Z",
+      "updatedAt": "2025-08-31T17:09:05.449Z",
+      "tags": ["Trending"],
+      "brand": "UrbanThread",
+      "color": "Olive Green"
+    },
+    {
+      "id": 39,
+      "name": "Men's Slim-Fit Chinos",
+      "description": "Versatile slim-fit chinos crafted from comfortable stretch cotton twill.",
+      "price": 3499,
+      "image": [
+        "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y2hpbm9zfGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2hpbm9zfGVufDB8fDB8fHww"
+      ],
+      "category": "Men",
+      "grouping": "Bottomwear",
+      "subcategory": "Trousers",
+      "sizes": ["30", "32", "34", "36"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660145785",
+      "createdAt": "2025-08-31T17:09:05.786Z",
+      "updatedAt": "2025-08-31T17:09:05.786Z",
+      "tags": ["Navratri", "HotDeal"],
+      "brand": "ClassyFit",
+      "color": "Khaki"
+    },
+    {
+      "id": 40,
+      "name": "Men's Performance Joggers",
+      "description": "Lightweight and flexible performance joggers designed for comfort and athletics. Features zip pockets.",
+      "price": 2999,
+      "image": [
+        "https://images.unsplash.com/photo-1563319251-83c9c2f04368?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGpvZ2dlcnN8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8am9nZ2Vyc3xlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Men",
+      "grouping": "Bottomwear",
+      "subcategory": "Joggers",
+      "sizes": ["S", "M", "L", "XL"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660146250",
+      "createdAt": "2025-08-31T17:09:06.251Z",
+      "updatedAt": "2025-08-31T17:09:06.251Z",
+      "tags": ["NewArrival", "Limited"],
+      "brand": "ActivePulse",
+      "color": "Black"
+    },
+    {
+      "id": 41,
+      "name": "Men's Cargo Shorts",
+      "description": "Durable and practical cargo shorts with multiple pockets for functionality. Perfect for outdoor activities.",
+      "price": 2199,
+      "image": [
+        "https://images.unsplash.com/photo-1603344287439-447a19c72c1c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y2FyZ28lMjBzaG9ydHN8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1591130901961-369420650989?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Y2FyZ28lMjBzaG9ydHN8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Men",
+      "grouping": "Bottomwear",
+      "subcategory": "Shorts",
+      "sizes": ["30", "32", "34", "36"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660146566",
+      "createdAt": "2025-08-31T17:09:06.567Z",
+      "updatedAt": "2025-08-31T17:09:06.567Z",
+      "tags": [],
+      "brand": "AdventureGear",
+      "color": "Olive Green"
+    },
+    {
+      "id": 42,
+      "name": "Men's Classic Denim Jeans",
+      "description": "Classic straight-fit denim jeans made with durable, high-quality fabric. A wardrobe must-have.",
+      "price": 4299,
+      "image": [
+        "https://images.unsplash.com/photo-1602293589914-9FF05f8b2ca4?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8amVhbnN8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8amVhbnN8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Men",
+      "grouping": "Bottomwear",
+      "subcategory": "Jeans",
+      "sizes": ["30", "32", "34", "36", "38"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660146885",
+      "createdAt": "2025-08-31T17:09:06.885Z",
+      "updatedAt": "2025-08-31T17:09:06.885Z",
+      "tags": ["Navratri", "Trending", "NewArrival"],
+      "brand": "DenimCraft",
+      "color": "Blue"
+    },
+    {
+      "id": 43,
+      "name": "Men's Classic Denim Jacket",
+      "description": "A rugged and timeless denim jacket, perfect for layering in any season. Features chest pockets and button closure.",
+      "price": 4599,
+      "image": [
+        "https://images.unsplash.com/photo-1604176354204-926873782855?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZGVuaW0lMjBqYWNrZXR8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8ZGVuaW0lMjBqYWNrZXR8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Men",
+      "grouping": "Jackets",
+      "subcategory": "Jacket",
+      "sizes": ["M", "L", "XL"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660147210",
+      "createdAt": "2025-08-31T17:09:07.211Z",
+      "updatedAt": "2025-08-31T17:09:07.211Z",
+      "tags": ["HotDeal"],
+      "brand": "DenimCraft",
+      "color": "Blue"
+    },
+    {
+      "id": 44,
+      "name": "Men's Leather Biker Jacket",
+      "description": "A classic biker jacket made from genuine leather with durable metal hardware and an asymmetrical zip.",
+      "price": 12999,
+      "image": [
+        "https://images.unsplash.com/photo-1521223890158-f9f7c3d5d504?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bGVhdGhlciUyMGphY2tldHxlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bGVhdGhlciUyMGphY2tldHxlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Men",
+      "grouping": "Jackets",
+      "subcategory": "Jacket",
+      "sizes": ["M", "L", "XL"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660147562",
+      "createdAt": "2025-08-31T17:09:07.563Z",
+      "updatedAt": "2025-08-31T17:09:07.563Z",
+      "tags": ["Limited", "Trending"],
+      "brand": "RogueWear",
+      "color": "Black"
+    },
+    {
+      "id": 45,
+      "name": "Men's Lightweight Bomber Jacket",
+      "description": "A stylish and lightweight bomber jacket, perfect for transitional weather. Features ribbed cuffs and hem.",
+      "price": 5299,
+      "image": [
+        "https://images.unsplash.com/photo-1591852801-757c3905080b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Ym9tYmVyJTIwamFja2V0fGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1517616179509-db7c1514a7db?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Ym9tYmVyJTIwamFja2V0fGVufDB8fDB8fHww"
+      ],
+      "category": "Men",
+      "grouping": "Jackets",
+      "subcategory": "Jacket",
+      "sizes": ["S", "M", "L", "XL"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660147888",
+      "createdAt": "2025-08-31T17:09:07.889Z",
+      "updatedAt": "2025-08-31T17:09:07.889Z",
+      "tags": ["Navratri", "NewArrival", "HotDeal"],
+      "brand": "UrbanThread",
+      "color": "Navy Blue"
+    },
+    {
+      "id": 46,
+      "name": "Women's Ribbed Knit Sweater",
+      "description": "A chic and comfortable ribbed knit sweater with classic crewneck design. Perfect for a cozy yet stylish look.",
+      "price": 3299,
+      "image": [
+        "https://images.unsplash.com/photo-1519409393393-214e2a8298a2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fHdvbWVucyUyMHN3ZWF0ZXJ8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8d29tZW5zJTIwc3dlYXRlcnxlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Women",
+      "grouping": "Topwear",
+      "subcategory": "Sweater",
+      "sizes": ["XS", "S", "M"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660148214",
+      "createdAt": "2025-08-31T17:09:08.215Z",
+      "updatedAt": "2025-08-31T17:09:08.215Z",
+      "tags": ["Trending"],
+      "brand": "ElegantKnit",
+      "color": "Beige"
+    },
+    {
+      "id": 47,
+      "name": "Women's Silk Satin Cami",
+      "description": "A luxurious and versatile satin camisole top that can be dressed up or down. Features adjustable straps.",
+      "price": 1899,
+      "image": [
+        "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8d29tZW4lMjB0b3B8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1579744415849-c451b6a15e61?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8c2F0aW4lMjB0b3B8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Women",
+      "grouping": "Topwear",
+      "subcategory": "Cami Top",
+      "sizes": ["XS", "S", "M"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660148638",
+      "createdAt": "2025-08-31T17:09:08.639Z",
+      "updatedAt": "2025-08-31T17:09:08.639Z",
+      "tags": ["Navratri", "HotDeal", "Limited"],
+      "brand": "SilkVogue",
+      "color": "Champagne"
+    },
+    {
+      "id": 48,
+      "name": "Women's Off-Shoulder Blouse",
+      "description": "A trendy and feminine off-shoulder top made from lightweight, breathable fabric.",
+      "price": 2299,
+      "image": [
+        "https://images.unsplash.com/photo-1525399938183-5838d7a12391?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8b2ZmJTIwc2hvdWxkZXIlMjB0b3B8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1563178406-41fb3927b944?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8b2ZmJTIwc2hvdWxkZXIlMjB0b3B8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Women",
+      "grouping": "Topwear",
+      "subcategory": "Blouse",
+      "sizes": ["S", "M", "L"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660149060",
+      "createdAt": "2025-08-31T17:09:09.060Z",
+      "updatedAt": "2025-08-31T17:09:09.060Z",
+      "tags": ["NewArrival"],
+      "brand": "ChicAura",
+      "color": "White"
+    },
+    {
+      "id": 49,
+      "name": "Women's Oversized Graphic T-Shirt",
+      "description": "A cool and casual oversized t-shirt with a vintage-inspired graphic. Perfect for a relaxed fit.",
+      "price": 1999,
+      "image": [
+        "https://images.unsplash.com/photo-1554412933-574a44333519?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d29tZW4lMjBncmFwaGljJTIwdGVlfGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1581368135215-09b9d12e88a3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8d29tZW4lMjBncmFwaGljJTIwdGVlfGVufDB8fDB8fHww"
+      ],
+      "category": "Women",
+      "grouping": "Topwear",
+      "subcategory": "T-Shirt",
+      "sizes": ["S", "M", "L", "XL"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660149373",
+      "createdAt": "2025-08-31T17:09:09.374Z",
+      "updatedAt": "2025-08-31T17:09:09.374Z",
+      "tags": [],
+      "brand": "TrendVibe",
+      "color": "Black"
+    },
+    {
+      "id": 50,
+      "name": "Women's Classic V-Neck Tee",
+      "description": "A soft, everyday v-neck t-shirt made from a premium cotton-modal blend for a flattering drape.",
+      "price": 1299,
+      "image": [
+        "https://images.unsplash.com/photo-1622442442344-35b88849b20d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8d29tZW4lMjB2JTIwbmVjayUyMHRlZXxlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1589109736809-399a9108c90b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d29tZW4lMjB2JTIwbmVjayUyMHRlZXxlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Women",
+      "grouping": "Topwear",
+      "subcategory": "Kurta",
+      "sizes": ["XS", "S", "M", "L"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660149689",
+      "createdAt": "2025-08-31T17:09:09.690Z",
+      "updatedAt": "2025-08-31T17:09:09.690Z",
+      "tags": ["Navratri", "Trending"],
+      "brand": "UrbanThread",
+      "color": "White"
+    },
+    {
+      "id": 51,
+      "name": "Women's High-Rise Skinny Jeans",
+      "description": "Flattering high-rise skinny jeans made with stretch denim for ultimate comfort and style.",
+      "price": 3999,
+      "image": [
+        "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8am9nZ2Vyc3xlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1582418702059-97ebafb35d09?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c2tpbm55JTIwamVhbnN8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Women",
+      "grouping": "Bottomwear",
+      "subcategory": "Jeans",
+      "sizes": ["XS", "S", "M", "L"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660150041",
+      "createdAt": "2025-08-31T17:09:10.042Z",
+      "updatedAt": "2025-08-31T17:09:10.042Z",
+      "tags": ["HotDeal", "NewArrival", "Limited"],
+      "brand": "DenimCraft",
+      "color": "Dark Blue"
+    },
+    {
+      "id": 52,
+      "name": "Women's Pleated Midi Skirt",
+      "description": "An elegant and versatile pleated midi skirt that flows beautifully with every step.",
+      "price": 3799,
+      "image": [
+        "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c2tpcnR8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1583496661160-fb5886a13d74?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2tpcnR8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Women",
+      "grouping": "Bottomwear",
+      "subcategory": "Skirt",
+      "sizes": ["S", "M", "L"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660150393",
+      "createdAt": "2025-08-31T17:09:10.394Z",
+      "updatedAt": "2025-08-31T17:09:10.394Z",
+      "tags": ["Navratri"],
+      "brand": "ChicAura",
+      "color": "Navy Blue"
+    },
+    {
+      "id": 53,
+      "name": "Women's Athleisure Leggings",
+      "description": "High-waisted, squat-proof leggings designed for performance and style. Features a convenient side pocket.",
+      "price": 2499,
+      "image": [
+        "https://images.unsplash.com/photo-1551632811-561732d1e306?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bGVnZ2luZ3N8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1506629905607-bb5e3c1e3b8d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8bGVnZ2luZ3N8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Women",
+      "grouping": "Bottomwear",
+      "subcategory": "Leggings",
+      "sizes": ["XS", "S", "M", "L"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660150744",
+      "createdAt": "2025-08-31T17:09:10.745Z",
+      "updatedAt": "2025-08-31T17:09:10.745Z",
+      "tags": ["Trending", "HotDeal"],
+      "brand": "ActivePulse",
+      "color": "Black"
+    },
+    {
+      "id": 54,
+      "name": "Women's Wide-Leg Trousers",
+      "description": "Effortlessly chic wide-leg trousers that offer both comfort and style. Made from a flowy, lightweight material.",
+      "price": 4299,
+      "image": [
+        "https://images.unsplash.com/photo-1594611545628-3b9518a2879f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d2lkZSUyMGxlZyUyMHRyb3VzZXJzfGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1529391409740-59f2618d3d52?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8d2lkZSUyMGxlZyUyMHRyb3VzZXJzfGVufDB8fDB8fHww"
+      ],
+      "category": "Women",
+      "grouping": "Bottomwear",
+      "subcategory": "Trousers",
+      "sizes": ["S", "M", "L"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660151097",
+      "createdAt": "2025-08-31T17:09:11.097Z",
+      "updatedAt": "2025-08-31T17:09:11.097Z",
+      "tags": ["NewArrival", "Limited"],
+      "brand": "ChicAura",
+      "color": "Black"
+    },
+    {
+      "id": 55,
+      "name": "Women's Floral Maxi Dress",
+      "description": "An elegant floral maxi dress with a flowing silhouette, perfect for summer occasions and beach vacations.",
+      "price": 5999,
+      "image": [
+        "https://images.unsplash.com/photo-1572804013427-4d7ca7268211?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZHJlc3N8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGRyZXNzfGVufDB8fDB8fHww"
+      ],
+      "category": "Women",
+      "grouping": "Dresses",
+      "subcategory": "Dress",
+      "sizes": ["S", "M", "L"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660151448",
+      "createdAt": "2025-08-31T17:09:11.449Z",
+      "updatedAt": "2025-08-31T17:09:11.449Z",
+      "tags": [],
+      "brand": "BloomVogue",
+      "color": "Multicolor"
+    },
+    {
+      "id": 56,
+      "name": "Women's Little Black Dress",
+      "description": "A stunning and form-fitting bodycon dress for a night out. The quintessential little black dress.",
+      "price": 4999,
+      "image": [
+        "https://images.unsplash.com/photo-1595777457587-43798a6f3152?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YmxhY2slMjBkcmVzc3xlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1597096051989-3d4c38210e74?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YmxhY2slMjBkcmVzc3xlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Women",
+      "grouping": "Dresses",
+      "subcategory": "Dress",
+      "sizes": ["XS", "S", "M"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660151761",
+      "createdAt": "2025-08-31T17:09:11.762Z",
+      "updatedAt": "2025-08-31T17:09:11.762Z",
+      "tags": ["Navratri", "Trending", "HotDeal"],
+      "brand": "ChicAura",
+      "color": "Black"
+    },
+    {
+      "id": 57,
+      "name": "Women's Stylish Jumpsuit",
+      "description": "A stylish and comfortable one-piece jumpsuit perfect for any occasion, from casual outings to evening events.",
+      "price": 5499,
+      "image": [
+        "https://images.unsplash.com/photo-1574695333990-5a34a8e35a11?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8anVtcHN1aXR8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1596958414436-3b89b88496ce?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8anVtcHN1aXR8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Women",
+      "grouping": "Dresses",
+      "subcategory": "Jumpsuit",
+      "sizes": ["S", "M", "L"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660152073",
+      "createdAt": "2025-08-31T17:09:12.074Z",
+      "updatedAt": "2025-08-31T17:09:12.074Z",
+      "tags": ["NewArrival"],
+      "brand": "TrendVibe",
+      "color": "Navy Blue"
+    },
+    {
+      "id": 58,
+      "name": "Women's Classic Trench Coat",
+      "description": "A sophisticated and timeless double-breasted trench coat for a polished look. Water-resistant fabric.",
+      "price": 8999,
+      "image": [
+        "https://images.unsplash.com/photo-1616852367931-a83d472a74d9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dHJlbmNoJTIwY29hdHxlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8dHJlbmNoJTIwY29hdHxlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Women",
+      "grouping": "Jackets",
+      "subcategory": "Coat",
+      "sizes": ["S", "M", "L"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660152414",
+      "createdAt": "2025-08-31T17:09:12.415Z",
+      "updatedAt": "2025-08-31T17:09:12.415Z",
+      "tags": ["HotDeal", "Limited"],
+      "brand": "ClassyFit",
+      "color": "Beige"
+    },
+    {
+      "id": 59,
+      "name": "Women's Cropped Denim Jacket",
+      "description": "A modern cropped denim jacket perfect for layering over dresses or tops. A trendy twist on a classic.",
+      "price": 4799,
+      "image": [
+        "https://images.unsplash.com/photo-1606760227091-3ddc9ac882b4?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3JvcHBlZCUyMGRlbmltJTIwamFja2V0fGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1595950653106-6c986e588e2f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c25lYWtlcnN8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Women",
+      "grouping": "Jackets",
+      "subcategory": "Jacket",
+      "sizes": ["XS", "S", "M"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660152826",
+      "createdAt": "2025-08-31T17:09:12.827Z",
+      "updatedAt": "2025-08-31T17:09:12.827Z",
+      "tags": ["Trending", "NewArrival"],
+      "brand": "DenimCraft",
+      "color": "Blue"
+    },
+    {
+      "id": 60,
+      "name": "Unisex Oversized Hoodie",
+      "description": "A cozy and stylish oversized hoodie made from a premium fleece blend. Perfect for a relaxed, comfortable fit.",
+      "price": 4999,
+      "image": [
+        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8aG9vZGllfGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3dlYXRzaGlydHxlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Unisex",
+      "grouping": "Topwear",
+      "subcategory": "Hoodie",
+      "sizes": ["M", "L", "XL", "XXL"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660153850",
+      "createdAt": "2025-08-31T17:09:13.850Z",
+      "updatedAt": "2025-08-31T17:09:13.850Z",
+      "tags": [],
+      "brand": "CoolVibe",
+      "color": "Grey"
+    },
+    {
+      "id": 61,
+      "name": "Unisex Classic Beanie",
+      "description": "A soft, warm, and stylish ribbed beanie hat perfect for cold weather. Made from 100% acrylic yarn.",
+      "price": 999,
+      "image": [
+        "https://images.unsplash.com/photo-1575428652377-a3d80e281498?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YmVhbmllfGVufDB8fDB8fHww",
+        "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YmVhbmllfGVufDB8fDB8fHww"
+      ],
+      "category": "Unisex",
+      "grouping": "Accessories",
+      "subcategory": "Beanie",
+      "sizes": ["One Size"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660154259",
+      "createdAt": "2025-08-31T17:09:14.260Z",
+      "updatedAt": "2025-08-31T17:09:14.260Z",
+      "tags": ["Navratri", "HotDeal"],
+      "brand": "UrbanThread",
+      "color": "Black"
+    },
+    {
+      "id": 62,
+      "name": "Unisex Low-Top Sneakers",
+      "description": "Versatile and comfortable low-top sneakers that complement any casual outfit. Features a durable canvas upper.",
+      "price": 3499,
+      "image": [
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c25lYWtlcnN8ZW58MHx8MHx8fDA%3D",
+        "https://images.unsplash.com/photo-1595950653106-6c986e588e2f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8c25lYWtlcnN8ZW58MHx8MHx8fDA%3D"
+      ],
+      "category": "Unisex",
+      "grouping": "Footwear",
+      "subcategory": "Sneakers",
+      "sizes": ["7", "8", "9", "10", "11"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660154669",
+      "createdAt": "2025-08-31T17:09:14.670Z",
+      "updatedAt": "2025-08-31T17:09:14.670Z",
+      "tags": ["Trending", "NewArrival", "Limited"],
+      "brand": "StepVibe",
+      "color": "White"
+    },
+    {
+      "id": 63,
+      "name": "Unisex Canvas Tote Bag",
+      "description": "A durable and spacious canvas tote bag for everyday use. Features an internal pocket for small items.",
+      "price": 1599,
+      "image": [
+        "https://images.unsplash.com/photo-1544813545-169b433b7d76?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8dG90ZSUyMGJhZ3xlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1572196289918-f8a84a3234a2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8dG90ZSUyMGJhZ3xlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Unisex",
+      "grouping": "Accessories",
+      "subcategory": "Tote Bag",
+      "sizes": ["One Size"],
+      "bestseller": false,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660155076",
+      "createdAt": "2025-08-31T17:09:15.077Z",
+      "updatedAt": "2025-08-31T17:09:15.077Z",
+      "tags": [],
+      "brand": "EcoCarry",
+      "color": "Natural"
+    },
+    {
+      "id": 64,
+      "name": "Unisex Aviator Sunglasses",
+      "description": "Classic aviator sunglasses with polarized lenses for 100% UV protection. Timeless style.",
+      "price": 2499,
+      "image": [
+        "https://images.unsplash.com/photo-1577803645773-f92475de7001?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3VuZ2xhc3Nlc3xlbnwwfHwwfHx8MA%3D%3D",
+        "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8c3VuZ2xhc3Nlc3xlbnwwfHwwfHx8MA%3D%3D"
+      ],
+      "category": "Unisex",
+      "grouping": "Accessories",
+      "subcategory": "Sunglasses",
+      "sizes": ["One Size"],
+      "bestseller": true,
+      "isActive": true,
+      "stock": 100,
+      "date": "1756660155389",
+      "createdAt": "2025-08-31T17:09:15.389Z",
+      "updatedAt": "2025-08-31T17:09:15.389Z",
+      "tags": ["Navratri", "HotDeal", "Trending"],
+      "brand": "SunVibe",
+      "color": "Silver/Black"
+    }
+  ]
+};
+
+      if (data.success && Array.isArray(data.products)) {
+        // Transform products to match the expected format
+        const transformedProducts: Product[] = data.products.map((product: any, index: number) => ({
+          id: product.id || index + 1,
+          name: product.name || 'Product',
+          description: product.description || '',
+          price: product.price || 0,
+          image: Array.isArray(product.image) ? product.image : ['/images/placeholder.png'],
+          category: product.category || 'Men',
+          subCategory: product.subcategory || product.subCategory || 'Topwear',
+          sizes: Array.isArray(product.sizes) ? product.sizes : ['S', 'M', 'L', 'XL'],
+          color: product.color || 'Unknown',
+          stock: product.stock || 10,
+          rating: product.rating || 5.0,
+          reviews: product.reviews || 10,
+          isNew: false,
+          badge: product.bestseller ? 'Bestseller' : undefined,
+          tags: product.tags || [],
+          isActive: product.isActive !== undefined ? product.isActive : true,
+          brand: product.brand || 'Unknown',
+          bestseller: product.bestseller || false,
+        }));
+
+        // Get query parameters
+        const activeCat = (searchParams?.category as string) || 'All';
+        const subCat = (searchParams?.subCategory as string) || (searchParams?.subcategory as string) || '';
+        const offerTag = (searchParams?.offerTag as string) || '';
+
+        // Get offerType from sessionStorage, default to empty array if not set
+        const offerType = JSON.parse(sessionStorage.getItem('currentOfferTypeFilters') || '[]') as {
+          price_below?: number;
+          price_above?: number;
+          min_discount?: number;
+          max_discount?: number;
+          tags?: string[];
+          subCategoriesName?: string;
+        }[];
+
+        console.log('ActiveCategory:', activeCat);
+        console.log('SubCategory:', subCat);
+        console.log('OfferTag:', offerTag);
+        console.log('OfferType from sessionStorage:', JSON.stringify(offerType, null, 2));
+        console.log('Products count before filter:', transformedProducts.length);
+
+        // Filter products
+        const filtered = transformedProducts.filter((product) => {
+          // Match category
+          const matchCategory =
+            activeCat && activeCat !== 'All'
+              ? product.category.toLowerCase() === activeCat.toLowerCase()
+              : true;
+
+          // Match subcategory (handle case sensitivity)
+          const matchSubCategory = subCat
+            ? product.subCategory.toLowerCase() === subCat.toLowerCase()
+            : true;
+
+          // Match tags: Allow all products if no offerTag and no offerType.tags
+          const offerTypeTags = offerType[0]?.tags || [];
+          const matchTags =
+            offerTag || offerTypeTags.length > 0
+              ? product.tags.some((tag) =>
+                  [...(offerTag ? [offerTag] : []), ...offerTypeTags].some(
+                    (t) => t && tag.toLowerCase() === t.toLowerCase()
+                  )
+                ) ||
+                (offerType[0]?.subCategoriesName &&
+                  product.subCategory.toLowerCase() === offerType[0].subCategoriesName.toLowerCase())
+              : true;
+
+          // Apply offerType price filters only if offerTag is present and offerType is defined
+          let matchOfferType = true;
+          if (offerTag && offerType.length > 0 && offerType[0]) {
+            const { price_below, price_above, min_discount } = offerType[0];
+            console.log(`Product ${product.id} - OfferType check:`, {
+              price_below,
+              price_above,
+              min_discount,
+              productPrice: product.price,
+            });
+
+            // Check for invalid price range and bypass if invalid
+            if (
+              price_below !== undefined &&
+              price_above !== undefined &&
+              price_above > price_below
+            ) {
+              console.warn('Invalid price range: price_above > price_below, bypassing price filter.');
+              matchOfferType = true;
+            } else {
+              matchOfferType =
+                (price_below === undefined || product.price <= price_below) &&
+                (price_above === undefined || product.price >= price_above);
+            }
+
+            // Skip min_discount since no discount field exists
+            if (min_discount !== undefined) {
+              console.warn(
+                `min_discount (${min_discount}) applied, but no discount field in product. Bypassing.`
+              );
+            }
+          }
+
+          console.log(
+            `Product ${product.id} - matchCategory: ${matchCategory}, matchSubCategory: ${matchSubCategory}, matchTags: ${matchTags}, matchOfferType: ${matchOfferType}`
+          );
+
+          return matchCategory && matchSubCategory && matchTags && matchOfferType && product.isActive && product.stock > 0;
+        });
+
+        // Prioritize products based on URL parameters and offerType
+        let prioritized: Product[] = [];
+        let others: Product[] = [];
+
+        if (offerTag) {
+          // First scenario: Prioritize products matching offerTag
+          prioritized = filtered.filter((product) =>
+            product.tags.some((tag) => tag.toLowerCase() === offerTag.toLowerCase())
+          );
+
+          // Include products matching other offerType.tags or offerType.subCategoriesName
+          others = filtered.filter((product) => {
+            const matchesOtherTags = offerType[0]?.tags?.some((tag) =>
+              product.tags.includes(tag) && tag.toLowerCase() !== offerTag.toLowerCase()
+            ) || false;
+            const matchesOtherSubCat = offerType[0]?.subCategoriesName
+              ? product.subCategory.toLowerCase() === offerType[0].subCategoriesName.toLowerCase()
+              : false;
+            return matchesOtherTags || matchesOtherSubCat;
+          });
+        } else {
+          // Second scenario: No offerTag, prioritize bestsellers
+          prioritized = filtered.filter((product) => product.badge === 'Bestseller');
+          others = filtered.filter((product) => product.badge !== 'Bestseller');
+        }
+
+        console.log('Prioritized products:', prioritized);
+        console.log('Other products:', others);
+
+        // Combine prioritized and others, removing duplicates
+        const finalProducts = [...prioritized, ...others.filter((p) => !prioritized.some((pp) => pp.id === p.id))];
+        setProducts(finalProducts);
+      } else {
+        throw new Error('Invalid API response format');
+      }
+    } catch (err) {
+      console.error('[v0] Error fetching products:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProducts();
+}, [searchParams, activeCategory, minPrice, maxPrice, selectedSizes, selectedBrands, selectedCategories, sortBy, currentPage, initialOffer]);
 
   useEffect(() => {
     if (!isAuthenticated()) return // Only fetch wishlist for authenticated users
@@ -581,10 +1461,7 @@ export default function ProductListClient({ category, searchParams }: ProductLis
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...products]
 
-    // NOTE: Category filtering is now handled server-side via API query parameters
-    // No need to filter by activeCategory here since API returns filtered results
-
-    // Size filter - temporarily keeping client-side until API supports it
+    // Size filter
     if (selectedSizes.length > 0) {
       filtered = filtered.filter((product) => product.sizes.some((size) => selectedSizes.includes(size)))
     }
@@ -592,7 +1469,7 @@ export default function ProductListClient({ category, searchParams }: ProductLis
     // Color filter
     if (selectedColors.length > 0) {
       filtered = filtered.filter(
-        (product) => product.color && product.color.some((color) => selectedColors.includes(color)),
+        (product) => product.color && selectedColors.includes(product.color)
       )
     }
 
@@ -601,17 +1478,17 @@ export default function ProductListClient({ category, searchParams }: ProductLis
       filtered = filtered.filter((product) => {
         if (selectedCategories.includes("New") && product.isNew) return true
         if (selectedCategories.includes("Trending") && product.rating && product.rating >= 4.5) return true
-        if (selectedCategories.includes("Hot Deals") && product.discount && product.discount >= 50) return true
+        if (selectedCategories.includes("Hot Deals") && product.badge === "Bestseller") return true
         return false
       })
     }
 
-    // Brand filter (using product name as brand for now)
-    if (selectedBrands.length > 0) {
-      filtered = filtered.filter((product) =>
-        selectedBrands.some((brand) => product.name.toLowerCase().includes(brand.toLowerCase())),
-      )
-    }
+    // Brand filter
+    // if (selectedBrands.length > 0) {
+    //   filtered = filtered.filter((product) =>
+    //     selectedBrands.includes(product.brand)
+    //   )
+    // }
 
     // Price range filter (checkboxes)
     if (priceRanges.length > 0) {
@@ -633,14 +1510,7 @@ export default function ProductListClient({ category, searchParams }: ProductLis
       filtered = filtered.filter((product) => product.price >= minPriceNum && product.price <= maxPriceNum)
     }
 
-    // Special filters from URL (like offers)
-    // Note: Offer filtering should ideally be handled server-side via API
-    // For now, we'll apply a generic discount filter for any offer type
-    if (initialOffer) {
-      // Apply a general discount filter for any offer
-      // The backend should handle specific offer logic based on the offer parameter
-      filtered = filtered.filter((product) => product.discount && product.discount > 0)
-    }
+
 
     // Sorting
     switch (sortBy) {
@@ -670,8 +1540,7 @@ export default function ProductListClient({ category, searchParams }: ProductLis
     minPrice,
     maxPrice,
     sortBy,
-    activeCategory,
-    initialOffer,
+
   ])
 
   const paginatedProducts = useMemo(() => {
@@ -702,6 +1571,14 @@ export default function ProductListClient({ category, searchParams }: ProductLis
           <div className="w-8 h-8 border-2 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading products...</p>
         </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-red-600">{error}</p>
       </div>
     )
   }
@@ -1193,7 +2070,7 @@ export default function ProductListClient({ category, searchParams }: ProductLis
                     </span>
                   </div>
 
-                  <div className="flex items-center space-x-1 md:space-x-2">
+                  {/* <div className="flex items-center space-x-1 md:space-x-2">
                     <span className="font-semibold text-base md:text-lg">₹{product.price}</span>
                     {product.originalPrice && (
                       <>
@@ -1201,7 +2078,7 @@ export default function ProductListClient({ category, searchParams }: ProductLis
                         <span className="text-sm text-red-500 font-medium">{product.discount}% OFF</span>
                       </>
                     )}
-                  </div>
+                  </div> */}
 
                   <button
                     onClick={(e) => {
