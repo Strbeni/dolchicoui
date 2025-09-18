@@ -47,9 +47,9 @@ const Footer = () => {
             <div className="flex items-start">
               <span className="mr-2">📍</span>
               <div>
-                123 Fashion St., Suite 456
+                SAYA South X,
                 <br />
-                City, State, ZIP Code
+                Greater Noida West, Uttar Pradesh - 201306
               </div>
             </div>
             <div className="flex items-center">
