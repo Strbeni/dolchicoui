@@ -2071,7 +2071,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose Us - compact mobile version */}
+      {/* Why Choose Us - compact mobile version
       <section className="px-4 py-6 bg-[#101820] text-white rounded-t-2xl mt-4">
         <h3 className="text-2xl font-serif mb-1">Why Choose Us</h3>
         <p className="text-xs text-gray-300 mb-4">Fashion You Can Feel Good About</p>
@@ -2107,7 +2107,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
     </>
   )
 
