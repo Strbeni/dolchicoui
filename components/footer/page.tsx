@@ -1,6 +1,7 @@
 // components/footer.tsx
 import React from "react";
 import Link from "next/link";
+import { FaInstagram } from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -127,7 +128,7 @@ const Footer = () => {
             rel="noopener noreferrer"
             className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
           >
-            <span className="text-white text-xs">📷</span>
+            <FaInstagram className="text-white text-lg" />
           </a>
 
           <a
