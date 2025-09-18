@@ -13,6 +13,7 @@ export interface User {
   country?: string;
   state?: string;
   zip?: string;
+  dob?: string;
   // Add other user properties as needed
 }
 
@@ -187,12 +188,13 @@ const userSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-        state.error = null;
-      })
+.addCase(fetchUser.fulfilled, (state, action) => {
+  console.log('fetchUser payload:', action.payload);  // should include dob
+  state.user = action.payload;
+  state.isAuthenticated = true;
+  state.loading = false;
+  state.error = null;
+})
       .addCase(fetchUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
@@ -203,11 +205,12 @@ const userSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(updateUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = { ...state.user, ...action.payload };
-        state.error = null;
-      })
+    .addCase(updateUser.fulfilled, (state, action) => {
+      console.log('User payload from updateUser:', action.payload);
+      state.user = { ...state.user, ...action.payload }; // merge update
+      state.loading = false;
+      state.error = null;
+    })
       .addCase(updateUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
