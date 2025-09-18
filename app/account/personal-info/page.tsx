@@ -95,25 +95,27 @@ export default function PersonalInfoPage() {
     const [showDeleteOtp, setShowDeleteOtp] = useState(false);
     const [deleteEmailOtp, setDeleteEmailOtp] = useState("");
 
-    useEffect(() => {
-        if (user) {
-            setUsername(user.username || "");
-            setEmail(user.email || "");
-            setPhone(user.phoneNumber || "");
-            setFullName(user.fullName || "");
-            setCountry(user.country || "INDIA");
-            setState(user.state || "PUNJAB");
-            setZip(user.zip || "");
+useEffect(() => {
+    if (user) {
+        setUsername(user.username || "");
+        setEmail(user.email || "");
+        setPhone(user.phoneNumber || "");
+        setFullName(user.fullName || "");
+        setCountry(user.country || "INDIA");
+        setState(user.state || "PUNJAB");
+        setZip(user.zip || "");
 
-            const nameParts = (user.name || "").split(" ");
-            setFirstName(nameParts[0] || "");
-            setLastName(nameParts.slice(1).join(" ") || "");
-            setDateOfBirth((user as any).dob ? new Date((user as any).dob) : undefined);
-            setLanguage((user as any).language || "English");
-            setIsEmailVerified(!!user?.email);
-            setIsPhoneVerified(!!user?.phoneNumber);
-        }
-    }, [user]);
+        const nameParts = (user.name || "").split(" ");
+        setFirstName(nameParts[0] || "");
+        setLastName(nameParts.slice(1).join(" ") || "");
+        console.log('Setting dateOfBirth from user.dob:', user.dob);
+        setDateOfBirth((user as any).dob ? new Date((user as any).dob) : undefined);
+        setLanguage((user as any).language || "English");
+        setIsEmailVerified(!!user?.email);
+        setIsPhoneVerified(!!user?.phoneNumber);
+    }
+}, [user]);
+
 
     // Clear global loading when page is ready
     useEffect(() => {
@@ -180,47 +182,80 @@ export default function PersonalInfoPage() {
         }
     };
 
-    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-        if (isEmailChanged) {
-            await handleEmailChangeRequest();
+    if (isEmailChanged) {
+        await handleEmailChangeRequest();
+        return;
+    }
+
+    // Basic frontend validations
+    if (username && username.trim().length < 3) {
+        toast('Username must be at least 3 characters long.', false);
+        return;
+    }
+
+    if (dateOfBirth) {
+        const dobDate = new Date(dateOfBirth);
+        if (isNaN(dobDate.getTime())) {
+            toast('Invalid date of birth format. Use YYYY-MM-DD.', false);
             return;
         }
+    }
 
-        setLoading(true);
-        try {
-            const updateData = {
-                name: `${firstName} ${lastName}`.trim(),
-                username,
-                fullName,
-                country,
-                state,
-                zip,
-                firstName,
-                lastName,
-                dob: dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : "",
-                language,
-            };
+    setLoading(true);
 
-            // Use Redux action to update user
-            const result = await dispatch(updateUser(updateData));
+    try {
+        // Construct only allowed update fields
+        
+        const updateData: Record<string, any> = {
+            name: `${firstName} ${lastName}`.trim(),
+            username: username?.trim(),
+            fullName,
+            country,
+            state,
+            zip,
+            firstName,
+            lastName,
+            dob: dateOfBirth ? new Date(dateOfBirth).toISOString().split('T')[0] : "",
+            language,
+        };
+console.log('updateData sent to backend:', updateData);
 
-            if (updateUser.fulfilled.match(result)) {
-                setIsEditing(false);
-                toast('Profile updated successfully!');
-                // Refresh user from server to reflect saved changes
-                dispatch(fetchUser());
-            } else {
-                toast(result.payload as string || 'Failed to update profile', false);
+        // Remove any undefined or empty fields to avoid backend validation issues
+        Object.keys(updateData).forEach(key => {
+            if (updateData[key] === undefined || updateData[key] === "") {
+                delete updateData[key];
             }
-        } catch (err) {
-            console.error('Error updating profile:', err);
-            toast('Failed to update profile', false);
-        } finally {
-            setLoading(false);
-        }
-    };
+        });
+
+        // Never include email or password in updateData as backend rejects them
+        // So do not add those fields here
+
+        const result = await dispatch(updateUser(updateData));
+
+if (updateUser.fulfilled.match(result)) {
+    setIsEditing(false);
+    toast('Profile updated successfully!');
+    const userResult = await dispatch(fetchUser());
+    if (userResult.payload) {
+        setDateOfBirth(userResult.payload.dob ? new Date(userResult.payload.dob) : undefined);
+        // Also reset other states similarly if needed
+    }
+} else {
+    toast('Failed to update profile', false);
+}
+    } catch (err) {
+        console.error('Error updating profile:', err);
+        toast('Failed to update profile', false);
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+
 
     const handleEmailChangeRequest = async () => {
         try {
@@ -685,13 +720,12 @@ export default function PersonalInfoPage() {
                                             Date of Birth
                                         </Label>
                                         {isEditing ? (
-                                            <DatePickerComponent
-                                                date={dateOfBirth}
-                                                onDateChange={(date) => setDateOfBirth(date || undefined)}
-                                                placeholder="Select date of birth"
-                                                disabled={!isEditing}
-                                                className="mt-1 w-full"
-                                            />
+<DatePickerComponent
+  date={user?.dob ? new Date(user.dob) : undefined}
+  onDateChange={(date) => setDateOfBirth(date || undefined)}
+  disabled={!isEditing}
+/>
+
                                         ) : (
                                             <Input
                                                 id="dateOfBirth"
