@@ -1,7 +1,7 @@
 // components/footer.tsx
 import React from "react";
 import Link from "next/link";
-import { FaInstagram } from "react-icons/fa";
+import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaTiktok } from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -110,7 +110,7 @@ const Footer = () => {
             rel="noopener noreferrer"
             className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
           >
-            <span className="text-white text-xs">f</span>
+            <FaFacebookF className="text-white text-lg" />
           </a>
 
           <a
@@ -119,7 +119,7 @@ const Footer = () => {
             rel="noopener noreferrer"
             className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
           >
-            <span className="text-white text-xs">🐦</span>
+            <FaTwitter className="text-white text-lg" />
           </a>
 
           <a
@@ -137,16 +137,7 @@ const Footer = () => {
             rel="noopener noreferrer"
             className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
           >
-            <span className="text-white text-xs">in</span>
-          </a>
-
-          <a
-            href="https://www.tiktok.com/@dolchiteam"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
-          >
-            <span className="text-white text-xs">📸</span>
+            <FaLinkedinIn className="text-white text-lg" />
           </a>
         </div>
       </div>
