@@ -135,7 +135,7 @@ const Footer = () => {
           </a>
 
           <a
-            href="https://www.linkedin.com/company/dolchiteam"
+            href="https://www.linkedin.com/company/dolchi"
             target="_blank"
             rel="noopener noreferrer"
             className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"
