@@ -36,11 +36,13 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold mb-4 text-lg">Shop</h3>
           <ul className="space-y-2 text-gray-300">
-            <li>Mens Collection</li>
-            <li>Womens Collection</li>
-            <li>Kids Collection</li>
-            <li>Accessories</li>
-            <li>Home Living</li>
+            <li>          <Link href="/productlist?category=Men" className="hover:text-black">
+            Mens Collection
+          </Link></li>
+            <li><Link href="/productlist?category=Women" className="hover:text-black">Womens Collection</Link></li>
+            <li><Link href="/productlist?category=Kid" className="hover:text-black">Kids Collection</Link></li>
+            <li><Link href="/productlist?category=Accessories" className="hover:text-black">Accessories</Link></li>
+            <li><Link href="/productlist?category=HomeLiving" className="hover:text-black">Home Living</Link></li>
           </ul>
         </div>
 
