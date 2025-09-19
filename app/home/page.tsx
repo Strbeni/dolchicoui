@@ -1689,41 +1689,43 @@ const availableCategoryImages = [
   "/w4.svg",
 ];
 
-// Handle offer click to store offerType in sessionStorage
-const handleOfferClick = (offerType) => {
-  sessionStorage.setItem("currentOfferTypeFilters", JSON.stringify(offerType));
+  // Handle offer click to store offerType in sessionStorage
+const handleOfferClick = (offer: any) => {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("currentOfferTypeFilters", JSON.stringify(offer));
+    console.log("Session storage full offer:", offer);
+  }
 };
 
-// Top Deals - show ONLY products with offers OR tags
-const topDealsByCategory = apiData.categories
-  .map((cat, catIndex) => ({
-    categoryName: cat.name,
-    offers: cat.offers
-      .flatMap((offer, offerIndex) => {
-        const matchingSubCategory = cat.subCategories.find(
-          (sub) => sub.name === offer.offerType?.[0]?.subCategoriesName
-        );
 
-        if (matchingSubCategory) {
-          return [
-            {
-              id: `${cat.name}-${matchingSubCategory.name}-${offerIndex}`,
-              productId: catIndex * 10 + offerIndex + 1,
-              title: matchingSubCategory.name, // Subcategory to show and pass in URL
-              image:
-                availableTopDealImages[
-                  (catIndex + offerIndex) % availableTopDealImages.length
-                ] || "/placeholder.svg",
-              badge: offer.offerType?.[0]?.tags?.[0] || null, // First tag only
-              offerType: offer.offerType, // Full offerType for sessionStorage
-            },
-          ];
-        }
-        return [];
-      })
-      .filter((item) => item.badge), // Only include items with a valid tag
-  }))
-  .filter((categoryGroup) => categoryGroup.offers.length > 0);
+// Top Deals - show ONLY products with offers OR tags
+const topDealsByCategory = apiData.categories.map((cat, catIndex) => ({
+  categoryName: cat.name,
+  offers: cat.offers.flatMap((offer, offerIndex) => {
+    const matchingSubCategory = cat.subCategories.find(
+      (sub) => sub.name === offer.offerType?.[0]?.subCategoriesName
+    );
+
+    if (matchingSubCategory) {
+      return [
+        {
+          id: `${cat.name}-${matchingSubCategory.name}-${offerIndex}`,
+          productId: catIndex * 10 + offerIndex + 1,
+          title: matchingSubCategory.name,
+          image:
+            availableTopDealImages[
+              (catIndex + offerIndex) % availableTopDealImages.length
+            ] || "/placeholder.svg",
+          badge: offer.offerType?.[0]?.tags?.[0] || null,
+          offerType: offer.offerType,
+          fullOffer: offer,  // store full offer object here
+        },
+      ];
+    }
+    return [];
+  }),
+})).filter((categoryGroup) => categoryGroup.offers.length > 0);
+
 const categoriesByCategory = apiData.categories.map((cat, catIndex) => ({
   categoryName: cat.name,
   subCategories: cat.subCategories.map((sub, subIndex) => ({
@@ -2098,95 +2100,93 @@ export default function Home() {
       </section>
 
       {/* Top Deals - limited to 3 per category for mobile */}
-      <section className="px-4 sm:px-6 lg:px-20 mt-8 mb-4">
-        <div className="mb-4">
-          <h3 className="text-xl sm:text-2xl font-semibold">Top Deals</h3>
-          <p className="text-sm text-gray-600">
-            Effortless style, inspired by the future of fashion
-          </p>
-        </div>
+<section className="px-4 sm:px-6 lg:px-20 mt-8 mb-4">
+  <div className="mb-4">
+    <h3 className="text-xl sm:text-2xl font-semibold">Top Deals</h3>
+    <p className="text-sm text-gray-600">
+      Effortless style, inspired by the future of fashion
+    </p>
+  </div>
 
-        <div className="space-y-6">
-          {topDealsByCategory.slice(0, 3).map((categoryGroup) => {
-            const isExpanded = expandedCategories.has(
-              categoryGroup.categoryName
-            );
-            const displayedOffers = isExpanded
-              ? categoryGroup.offers
-              : categoryGroup.offers.slice(0, 3);
-            const hasMore = categoryGroup.offers.length > 3;
+  <div className="space-y-6">
+    {topDealsByCategory.slice(0, 3).map((categoryGroup) => {
+      const isExpanded = expandedCategories.has(categoryGroup.categoryName);
+      const displayedOffers = isExpanded
+        ? categoryGroup.offers
+        : categoryGroup.offers.slice(0, 3);
+      const hasMore = categoryGroup.offers.length > 3;
 
-            return (
-              <div key={categoryGroup.categoryName}>
-                <h4 className="text-base sm:text-lg font-semibold mb-3 text-gray-800">
-                  {categoryGroup.categoryName}
-                </h4>
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-                  {displayedOffers.map((item) => (
-                    <Link
-                      key={item.id}
-                      href={{
-                        pathname: "/productlist",
-                        query: {
-                          category: categoryGroup.categoryName,
-                          subCategory: item.title,
-                          offerTag: item.badge || "", // First tag only
-                        },
-                      }}
-                      onClick={() => handleOfferClick(item.offerType)}
-                    >
-                      <Card className="bg-transparent border-none shadow-none p-0 hover:shadow-lg transition-shadow duration-300">
-                        <div className="relative h-32 sm:h-36 md:h-36 lg:h-40 xl:h-44 rounded-lg md:rounded-[18px] overflow-hidden bg-white">
-                          <Image
-                            src={item.image}
-                            alt={item.title}
-                            fill
-                            className="object-cover"
-                          />
-                          {item.badge && (
-                            <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-2 md:px-3 py-1 rounded-md">
-                              {item.badge}
-                            </div>
-                          )}
-                        </div>
-                        <CardContent className="px-2 pt-3 pb-2 md:px-2 md:pt-3 md:pb-2">
-                          <p className="text-xs md:text-sm text-gray-700 font-medium truncate">
-                            {item.title}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Special Offer
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-                {hasMore && (
-                  <div className="flex justify-center mt-6">
-                    <Button
-                      variant="outline"
-                      className="rounded-full bg-transparent hover:bg-gray-50"
-                      onClick={() => {
-                        setExpandedCategories((prev) => {
-                          const newSet = new Set(prev);
-                          if (newSet.has(categoryGroup.categoryName)) {
-                            newSet.delete(categoryGroup.categoryName);
-                          } else {
-                            newSet.add(categoryGroup.categoryName);
-                          }
-                          return newSet;
-                        });
-                      }}
-                    >
-                      {isExpanded ? "See Less" : "See More"} →
-                    </Button>
+      return (
+        <div key={categoryGroup.categoryName}>
+          <h4 className="text-base sm:text-lg font-semibold mb-3 text-gray-800">
+            {categoryGroup.categoryName}
+          </h4>
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+            {displayedOffers.map((item) => (
+              <Link
+                key={item.id}
+                href={{
+                  pathname: "/productlist",
+                  query: {
+                    category: categoryGroup.categoryName,
+                    subCategory: item.title,
+                    offerTag: item.badge || "", // first tag only
+                  },
+                }}
+                onClick={() => handleOfferClick(item.fullOffer)}
+ // store full offerType in sessionStorage
+              >
+                <Card className="bg-transparent border-none shadow-none p-0 hover:shadow-lg transition-shadow duration-300">
+                  <div className="relative h-32 sm:h-36 md:h-36 lg:h-40 xl:h-44 rounded-lg md:rounded-[18px] overflow-hidden bg-white">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      className="object-cover"
+                    />
+                    {item.badge && (
+                      <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-[#ff7a2a] text-white text-xs font-semibold px-2 md:px-3 py-1 rounded-md">
+                        {item.badge}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
+                  <CardContent className="px-2 pt-3 pb-2 md:px-2 md:pt-3 md:pb-2">
+                    <p className="text-xs md:text-sm text-gray-700 font-medium truncate">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Special Offer</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+          {hasMore && (
+            <div className="flex justify-center mt-6">
+              <Button
+                variant="outline"
+                className="rounded-full bg-transparent hover:bg-gray-50"
+                onClick={() => {
+                  setExpandedCategories((prev) => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(categoryGroup.categoryName)) {
+                      newSet.delete(categoryGroup.categoryName);
+                    } else {
+                      newSet.add(categoryGroup.categoryName);
+                    }
+                    return newSet;
+                  });
+                }}
+              >
+                {isExpanded ? "See Less" : "See More"} →
+              </Button>
+            </div>
+          )}
         </div>
-      </section>
+      );
+    })}
+  </div>
+</section>
+
 
       {/* Shop by Category - limited for mobile */}
       <section className="px-4 sm:px-6 lg:px-20 mt-8 mb-8">
