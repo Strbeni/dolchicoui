@@ -584,7 +584,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/productlist?cat=Men">MEN</Link>
+                  <Link href="/productlist?category=Men">MEN</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -632,7 +632,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/productlist?cat=Women">WOMEN</Link>
+                  <Link href="/productlist?category=Women">WOMEN</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -680,7 +680,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/productlist?cat=Kids">KIDS</Link>
+                  <Link href="/productlist?category=Kids">KIDS</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -728,7 +728,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/productlist?cat=Accessories">ACCESSORIES</Link>
+                  <Link href="/productlist?category=Accessories">ACCESSORIES</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">
@@ -776,7 +776,7 @@ export const Navbar5 = () => {
                   asChild
                   className="data-[state=open]:border-b-2 data-[state=open]:border-[#F3612A] text-[#242D35] hover:text-[#F3612A] text-sm font-semibold"
                 >
-                  <Link href="/productlist?cat=Home">HOME LIVING</Link>
+                  <Link href="/productlist?category=Home">HOME LIVING</Link>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <div className="w-[1000px] bg-white">

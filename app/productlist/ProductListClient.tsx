@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,6 @@ import {
   addToWishlist,
   removeFromWishlist,
   selectWishlistItems,
-  selectIsInWishlist,
 } from "@/lib/store/wishlistSlice";
 import { useNavbarCounts } from "@/contexts/NavbarCountsContext";
 import { useLoading } from "@/contexts/LoadingContext";
@@ -36,7 +35,7 @@ interface Product {
   category: string;
   subCategory: string;
   sizes: string[];
-  color: string;
+  color: string[];
   stock: number;
   rating: number;
   reviews: number;
@@ -94,6 +93,22 @@ const showToast = (msg: string, success = true) => {
   setTimeout(() => el.remove(), 3000);
 };
 
+// Utility function to update URL parameters
+const updateURLParams = (params: { [key: string]: string }) => {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  const searchParams = new URLSearchParams(url.search);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      searchParams.set(key, value);
+    } else {
+      searchParams.delete(key);
+    }
+  });
+  url.search = searchParams.toString();
+  window.history.pushState({}, "", url.toString());
+};
+
 export default function ProductListClient({
   category,
   searchParams,
@@ -101,7 +116,7 @@ export default function ProductListClient({
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  // Extract category and filters from search parameters or props
+  // Extract category and initial filters from search parameters or props
   const activeCategory = (searchParams?.category as string) || category || "All";
   const subCategory = (searchParams?.subCategory as string) || (searchParams?.subcategory as string) || "";
   const offerTag = (searchParams?.offerTag as string) || "";
@@ -127,11 +142,10 @@ export default function ProductListClient({
 
   // Context for refreshing navbar counts
   const { refreshWishlistCount, refreshCartCount } = useNavbarCounts();
-
-  // Global loading context
   const { setLoading: setGlobalLoading, setLoadingMessage } = useLoading();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedColors, setSelectedColors] = useState<string[]>(initialColors);
@@ -156,8 +170,30 @@ export default function ProductListClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
 
+  // Dynamic filter options
+  const [sizeOptions, setSizeOptions] = useState<string[]>([]);
+  const [colorOptions, setColorOptions] = useState<{ name: string; hex: string }[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<{ name: string; count: number }[]>([]);
+  const [priceRangeOptions, setPriceRangeOptions] = useState<string[]>([]);
+  const [brandOptions, setBrandOptions] = useState<{ name: string; count: number }[]>([]);
+
   // Cart count state
   const [cartCount, setCartCount] = useState<number>(0);
+
+  // Color to hex mapping
+  const colorHexMap: Record<string, string> = {
+    White: "#FFFFFF",
+    Green: "#22C55E",
+    Blue: "#3B82F6",
+    Red: "#EF4444",
+    Orange: "#F97316",
+    Pink: "#EC4899",
+    Purple: "#A855F7",
+    Black: "#000000",
+    Cyan: "#06B6D4",
+    Teal: "#14B8A6",
+    Magenta: "#D946EF",
+  };
 
   // Determine authentication status
   const isAuthenticated = () => {
@@ -166,77 +202,91 @@ export default function ProductListClient({
   };
 
   // Get wishlist items based on authentication status
-const wishlistItemsFromStore = useAppSelector(selectWishlistItems).map((item) => item.id);
+  const wishlistItemsFromStore = useAppSelector(selectWishlistItems).map((item) => item.id);
+  const wishlistItems = isAuthenticated()
+    ? apiWishlistItems
+    : new Set(wishlistItemsFromStore);
 
-const wishlistItems = isAuthenticated()
-  ? apiWishlistItems
-  : new Set(wishlistItemsFromStore);
+  // Optimized filter application
+  const applyFilters = useCallback(() => {
+    let filtered = [...products];
 
+    if (selectedSizes.length > 0) {
+      filtered = filtered.filter((product) =>
+        selectedSizes.every((size) => product.sizes.includes(size))
+      );
+    }
+    if (selectedColors.length > 0) {
+      filtered = filtered.filter((product) =>
+        selectedColors.every((color) => product.color.includes(color))
+      );
+    }
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter((product) => {
+        return selectedCategories.some((cat) => {
+          if (cat === "New" && product.isNew) return true;
+          if (cat === "Trending" && product.rating >= 4.5) return true;
+          if (cat === "Hot Deals" && product.badge === "Bestseller") return true;
+          return false;
+        });
+      });
+    }
+    if (priceRanges.length > 0) {
+      filtered = filtered.filter((product) =>
+        priceRanges.some((range) => {
+          const [min, max] = range.replace("₹", "").split(" - ").map(Number);
+          return product.price >= min && product.price <= max;
+        })
+      );
+    }
+    const minPriceNum = minPrice ? parseInt(minPrice) : 0;
+    const maxPriceNum = maxPrice ? parseInt(maxPrice) : Infinity;
+    if (minPrice || maxPrice) {
+      filtered = filtered.filter(
+        (product) => product.price >= minPriceNum && product.price <= maxPriceNum
+      );
+    }
+    if (selectedBrands.length > 0) {
+      filtered = filtered.filter((product) =>
+        selectedBrands.includes(product.brand)
+      );
+    }
 
-  // Function to update URL with current filters
-  const updateURLParams = (
-    newParams: Record<string, string | string[] | null>
-  ) => {
-    if (typeof window === "undefined") return;
+    setFilteredProducts(filtered);
+    setCurrentPage(1);
+  }, [
+    products,
+    selectedSizes,
+    selectedColors,
+    selectedCategories,
+    priceRanges,
+    minPrice,
+    maxPrice,
+    selectedBrands,
+  ]);
 
-    const url = new URL(window.location.href);
-    const searchParams = new URLSearchParams(url.search);
-
-    Object.keys(newParams).forEach((key) => {
-      searchParams.delete(key);
-    });
-
-    Object.entries(newParams).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== "") {
-        if (Array.isArray(value)) {
-          if (value.length > 0) {
-            value.forEach((v) => searchParams.append(key, v));
-          }
-        } else {
-          searchParams.set(key, value);
-        }
-      }
-    });
-
-    const newUrl = `${url.pathname}?${searchParams.toString()}`;
-    router.replace(newUrl, { scroll: false });
-  };
+  // Reset filters
+  const resetFilters = useCallback(() => {
+    setSelectedColors([]);
+    setSelectedSizes([]);
+    setSelectedCategories([]);
+    setSelectedBrands([]);
+    setPriceRanges([]);
+    setMinPrice("");
+    setMaxPrice("");
+    setFilteredProducts(products);
+    setCurrentPage(1);
+  }, [products]);
 
   // Function to build API query parameters
   const buildAPIQueryString = () => {
     const params = new URLSearchParams();
-
-    if (activeCategory && activeCategory !== "All") {
-      params.set("category", activeCategory);
-    }
-
-    if (minPrice) params.set("priceMin", minPrice);
-    if (maxPrice) params.set("priceMax", maxPrice);
-
-    if (selectedSizes.length > 0) {
-      selectedSizes.forEach((size) => params.append("sizes", size));
-    }
-
-    if (selectedBrands.length > 0) {
-      selectedBrands.forEach((brand) => params.append("brands", brand));
-    }
-
-    if (initialOffer) {
-      params.set("offer", initialOffer);
-    }
-
-    if (selectedCategories.includes("Hot Deals")) {
-      params.set("bestseller", "true");
-    }
-
+    if (activeCategory && activeCategory !== "All") params.set("category", activeCategory);
+    if (initialOffer) params.set("offer", initialOffer);
     const searchQuery = searchParams?.q as string;
-    if (searchQuery) {
-      params.set("search", searchQuery);
-    }
-
+    if (searchQuery) params.set("search", searchQuery);
     let apiSortBy = "createdAt";
     let apiSortOrder = "desc";
-
     switch (sortBy) {
       case "Sort: Price Low to High":
         apiSortBy = "price";
@@ -252,17 +302,12 @@ const wishlistItems = isAuthenticated()
         break;
       case "Sort: Newest":
       default:
-        apiSortBy = "createdAt";
-        apiSortOrder = "desc";
         break;
     }
-
     params.set("sortBy", apiSortBy);
     params.set("sortOrder", apiSortOrder);
-
     params.set("page", currentPage.toString());
     params.set("limit", itemsPerPage.toString());
-
     return params.toString();
   };
 
@@ -281,46 +326,93 @@ const wishlistItems = isAuthenticated()
   };
 
   // Save offer to session storage when offerTag is present
+  // useEffect(() => {
+  //   if (offerTag && typeof window !== "undefined") {
+  //     const existingOffer = sessionStorage.getItem("offer");
+  //     if (!existingOffer) {
+  //       const offerData = {
+  //         name: "10-60% Discount",
+  //         icon: "https://example.com/icons/discount.png",
+  //         grouping: "Offers",
+  //         offerType: [
+  //           {
+  //             price_below: 5000,
+  //             price_above: 200,
+  //             min_discount: 10,
+  //             max_discount: 60,
+  //             ageGroupStart: 15,
+  //             ageGroupEnd: 25,
+  //             tags: ["Navratri", "BestSeller", "HotDeal"],
+  //             subCategoriesName: "T-Shirt",
+  //           },
+  //         ],
+  //       };
+  //       sessionStorage.setItem("offer", JSON.stringify(offerData));
+  //     }
+  //   }
+  // }, [offerTag]);
+
+  // Update filter options based on all products
   useEffect(() => {
-    if (offerTag && typeof window !== "undefined") {
-      const existingOffer = sessionStorage.getItem("offer");
-      if (!existingOffer) {
-        // Assuming the offer data is passed or available; here we use the provided example
-        const offerData = {
-          name: "10-60% Discount",
-          icon: "https://example.com/icons/discount.png",
-          grouping: "Offers",
-          offerType: [
-            {
-              price_below: 5000,
-              price_above: 200,
-              min_discount: 10,
-              max_discount: 60,
-              ageGroupStart: 15,
-              ageGroupEnd: 25,
-              tags: ["Navratri", "BestSeller", "HotDeal"],
-              subCategoriesName: "T-Shirt",
-            },
-          ],
-        };
-        sessionStorage.setItem("offer", JSON.stringify(offerData));
-      }
-    }
-  }, [offerTag]);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const queryString = buildAPIQueryString();
-        const apiUrl = `${API_BASE}/api/product/list${queryString ? `?${queryString}` : ""}`;
-
-        const response = await fetch(apiUrl, { headers: authHeaders() });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const updateFilterOptions = () => {
+      const uniqueSizes = Array.from(new Set(products.flatMap((p) => p.sizes))).sort();
+      const colorCounts = products.flatMap((p) => p.color).reduce((acc, color) => {
+        if (color) acc[color] = (acc[color] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const uniqueColors = Object.keys(colorCounts).map((color) => ({
+        name: color,
+        hex: colorHexMap[color] || "#000000",
+      }));
+      const categoryCounts = products.reduce((acc, p) => {
+        if (p.isNew) acc["New"] = (acc["New"] || 0) + 1;
+        if (p.rating >= 4.5) acc["Trending"] = (acc["Trending"] || 0) + 1;
+        if (p.badge === "Bestseller") acc["Hot Deals"] = (acc["Hot Deals"] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const uniqueCategories = Object.entries(categoryCounts).map(([name, count]) => ({ name, count }));
+      const prices = products.map((p) => p.price).filter((p): p is number => p !== undefined);
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+      const rangeStep = prices.length > 0 ? Math.ceil((maxPrice - minPrice) / 4) : 1000;
+      const dynamicPriceRanges = new Set<string>();
+      if (prices.length > 0) {
+        for (let i = 0; i < 4; i++) {
+          const rangeMin = minPrice + i * rangeStep;
+          const rangeMax = Math.min(rangeMin + rangeStep, maxPrice);
+          if (rangeMin <= maxPrice) dynamicPriceRanges.add(`₹${rangeMin} - ₹${rangeMax}`);
         }
+      } else {
+        dynamicPriceRanges.add("₹0 - ₹1000");
+      }
+      const uniquePriceRanges = Array.from(dynamicPriceRanges);
+      const brandCounts = products.reduce((acc, p) => {
+        if (p.brand) acc[p.brand] = (acc[p.brand] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const uniqueBrands = Object.entries(brandCounts).map(([name, count]) => ({ name, count }));
+
+      setSizeOptions(uniqueSizes);
+      setColorOptions(uniqueColors);
+      setCategoryOptions(uniqueCategories);
+      setPriceRangeOptions(uniquePriceRanges);
+      setBrandOptions(uniqueBrands);
+    };
+
+    if (products.length > 0) updateFilterOptions();
+  }, [products]);
+
+useEffect(() => {
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const queryString = buildAPIQueryString();
+      const apiUrl = `${API_BASE}/api/product/list${queryString ? `?${queryString}` : ""}`;
+
+      const response = await fetch(apiUrl, { headers: authHeaders() });
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 
 const data = {
           success: true,
@@ -1280,288 +1372,168 @@ const data = {
           ],
         };
 
-        if (data.success && Array.isArray(data.products)) {
-          const transformedProducts: Product[] = data.products.map((product: any, index: number) => ({
-            id: product.id || index + 1,
-            name: product.name || "Product",
-            description: product.description || "",
-            price: product.price || 0,
-            discountedPrice: product.discountedPrice,
-            discountPercent: product.discountPercent,
-            ageGroupStart: product.ageGroupStart,
-            ageGroupEnd: product.ageGroupEnd,
-            image: Array.isArray(product.image) ? product.image : ["/images/placeholder.png"],
-            category: product.category || "Men",
-            subCategory: product.subcategory || product.subCategory || "Topwear",
-            sizes: Array.isArray(product.sizes) ? product.sizes : ["S", "M", "L", "XL"],
-            color: Array.isArray(product.color) ? product.color.join(",") : product.color || "Unknown",
-            stock: product.stock || 10,
-            rating: product.rating || 5.0,
-            reviews: product.reviews || 10,
-            isNew: false,
-            badge: product.bestseller ? "Bestseller" : undefined,
-            tags: product.tags || [],
-            isActive: product.isActive !== undefined ? product.isActive : true,
-            brand: product.brand || "Unknown",
-            bestseller: product.bestseller || false,
-          }));
+      if (data.success && Array.isArray(data.products)) {
+        const transformedProducts: Product[] = data.products.map((product: any, index: number) => ({
+          id: product.id || index + 1,
+          name: product.name || "Product",
+          description: product.description || "",
+          price: product.price || 0,
+          discountedPrice: product.discountedPrice,
+          discountPercent: product.discountPercent,
+          ageGroupStart: product.ageGroupStart,
+          ageGroupEnd: product.ageGroupEnd,
+          image: Array.isArray(product.image) ? product.image : ["/images/placeholder.png"],
+          category: product.category || "Men",
+          subCategory: product.subcategory || product.subCategory || "Topwear",
+          sizes: Array.isArray(product.sizes) ? product.sizes : ["S", "M", "L", "XL"],
+          color: Array.isArray(product.color) ? product.color : ["Unknown"],
+          stock: product.stock || 10,
+          rating: product.rating || 5.0,
+          reviews: product.reviews || 10,
+          isNew: product.isNew || false,
+          badge: product.bestseller ? "Bestseller" : undefined,
+          tags: product.tags || [],
+          isActive: product.isActive !== undefined ? product.isActive : true,
+          brand: product.brand || "Unknown",
+          bestseller: product.bestseller || false,
+          grouping: product.grouping || undefined, // Ensure grouping is included
+        }));
 
-          const activeCat = activeCategory;
-          const subCat = subCategory;
-          const offerDetails = getOfferDetails();
-          const offerType = offerDetails?.offerType || [];
+        const activeCat = activeCategory;
+        const subCat = subCategory;
+        const offerDetails = getOfferDetails();
+        const offerType = offerDetails?.offerType || [];
 
-          console.log("ActiveCategory:", activeCat);
-          console.log("SubCategory:", subCat);
-          console.log("OfferTag:", offerTag);
-          console.log("OfferType:", JSON.stringify(offerType, null, 2));
-          console.log("Products count before filter:", transformedProducts.length);
+        const filtered = transformedProducts.filter((product) => {
+          const matchCategory = activeCat && activeCat !== "All" ? product.category.toLowerCase() === activeCat.toLowerCase() : true;
+          const matchSubCategory = subCat ? product.subCategory.toLowerCase() === subCat.toLowerCase() : true;
+          let matchTags = true;
+          let matchOfferType = true;
 
-          const filtered = transformedProducts.filter((product) => {
-            const matchCategory = activeCat && activeCat !== "All" ? product.category.toLowerCase() === activeCat.toLowerCase() : true;
-            const matchSubCategory = subCat ? product.subCategory.toLowerCase() === subCat.toLowerCase() : true;
-
-            let matchTags = true;
-            let matchOfferType = true;
-
-            if (offerTag && offerType.length > 0 && offerType[0]) {
-              const offerTypeTags = offerType[0]?.tags || [];
-              matchTags =
-                product.tags.some((tag) =>
-                  [...(offerTag ? [offerTag] : []), ...offerTypeTags].some((t) => t && tag.toLowerCase() === t.toLowerCase())
-                ) ||
-                (offerType[0]?.subCategoriesName &&
-                  product.subCategory.toLowerCase() === offerType[0].subCategoriesName.toLowerCase());
-
-              const { price_below, price_above, min_discount, max_discount, ageGroupStart, ageGroupEnd } = offerType[0];
-
-              if (price_below !== undefined && price_above !== undefined && price_above > price_below) {
-                console.warn("Invalid price range: price_above > price_below, bypassing price filter.");
-                matchOfferType = true;
-              } else {
-                const priceCheck =
-                  (price_below === undefined || (product.discountedPrice !== undefined && product.discountedPrice <= price_below)) &&
-                  (price_above === undefined || (product.discountedPrice !== undefined && product.discountedPrice >= price_above));
-                matchOfferType = priceCheck;
-              }
-
-              if (min_discount !== undefined && max_discount !== undefined && product.discountPercent !== undefined) {
-                matchOfferType =
-                  matchOfferType &&
-                  product.discountPercent >= min_discount &&
-                  product.discountPercent <= max_discount;
-              }
-
-              if (
-                ageGroupStart !== undefined &&
-                ageGroupEnd !== undefined &&
-                product.ageGroupStart !== undefined &&
-                product.ageGroupEnd !== undefined
-              ) {
-                matchOfferType =
-                  matchOfferType &&
-                  product.ageGroupStart <= ageGroupEnd &&
-                  product.ageGroupEnd >= ageGroupStart;
-              }
-
-              console.log(`Product ${product.id} - OfferType check:`, {
-                price_below,
-                price_above,
-                min_discount,
-                max_discount,
-                ageGroupStart,
-                ageGroupEnd,
-                productDiscountedPrice: product.discountedPrice,
-                productDiscountPercent: product.discountPercent,
-                productAgeGroupStart: product.ageGroupStart,
-                productAgeGroupEnd: product.ageGroupEnd,
-              });
+          if (offerTag && offerType.length > 0 && offerType[0]) {
+            const offerTypeTags = offerType[0]?.tags || [];
+            matchTags = product.tags.some((tag) =>
+              [...(offerTag ? [offerTag] : []), ...offerTypeTags].some((t) => t && tag.toLowerCase() === t.toLowerCase())
+            ) || (offerType[0]?.subCategoriesName && product.subCategory.toLowerCase() === offerType[0].subCategoriesName.toLowerCase());
+            const { price_below, price_above, min_discount, max_discount, ageGroupStart, ageGroupEnd } = offerType[0];
+            if (price_below !== undefined && price_above !== undefined && price_above > price_below) {
+              console.warn("Invalid price range: price_above > price_below, bypassing price filter.");
+              matchOfferType = true;
+            } else {
+              const priceCheck = (price_below === undefined || (product.discountedPrice !== undefined && product.discountedPrice <= price_below)) &&
+                (price_above === undefined || (product.discountedPrice !== undefined && product.discountedPrice >= price_above));
+              matchOfferType = priceCheck;
             }
-
-            console.log(
-              `Product ${product.id} - matchCategory: ${matchCategory}, matchSubCategory: ${matchSubCategory}, matchTags: ${matchTags}, matchOfferType: ${matchOfferType}`
-            );
-
-            return matchCategory && matchSubCategory && matchTags && matchOfferType && product.isActive && product.stock > 0;
-          });
-
-          let prioritized: Product[] = [];
-          let others: Product[] = [];
-
-          if (offerTag) {
-            const primaryTag = offerType[0]?.tags?.[0]?.toLowerCase();
-            prioritized = filtered.filter((product) =>
-              primaryTag ? product.tags.some((tag) => tag.toLowerCase() === primaryTag) : false
-            );
-
-            others = filtered.filter((product) => {
-              const matchesOtherTags =
-                offerType[0]?.tags?.slice(1).some((tag) => product.tags.includes(tag)) || false;
-              const matchesSubCat = offerType[0]?.subCategoriesName
-                ? product.subCategory.toLowerCase() === offerType[0].subCategoriesName.toLowerCase()
-                : false;
-              const matchesGrouping = product.grouping?.toLowerCase() === "topwear";
-              return matchesOtherTags || matchesSubCat || matchesGrouping;
-            });
-          } else {
-            prioritized = filtered.filter((product) => product.badge === "Bestseller");
-            others = filtered.filter((product) => product.badge !== "Bestseller");
+            if (min_discount !== undefined && max_discount !== undefined && product.discountPercent !== undefined) {
+              matchOfferType = matchOfferType && product.discountPercent >= min_discount && product.discountPercent <= max_discount;
+            }
+            if (ageGroupStart !== undefined && ageGroupEnd !== undefined && product.ageGroupStart !== undefined && product.ageGroupEnd !== undefined) {
+              matchOfferType = matchOfferType && product.ageGroupStart <= ageGroupEnd && product.ageGroupEnd >= ageGroupStart;
+            }
           }
 
-          console.log("Prioritized products:", prioritized);
-          console.log("Other products:", others);
+          return matchCategory && matchSubCategory && matchTags && matchOfferType && product.isActive && product.stock > 0;
+        });
 
-          const finalProducts = [
-            ...prioritized,
-            ...others.filter((p) => !prioritized.some((pp) => pp.id === p.id)),
-          ];
-          setProducts(finalProducts);
+        let prioritized: Product[] = [];
+        let others: Product[] = [];
+        if (offerTag) {
+          const primaryTag = offerType[0]?.tags?.[0]?.toLowerCase();
+          prioritized = filtered.filter((product) => primaryTag && product.tags.some((tag) => tag.toLowerCase() === primaryTag));
+          others = filtered.filter((product) => {
+            const matchesOtherTags = offerType[0]?.tags?.slice(1).some((tag) => product.tags.includes(tag)) || false;
+            const matchesSubCat = offerType[0]?.subCategoriesName ? product.subCategory.toLowerCase() === offerType[0].subCategoriesName.toLowerCase() : false;
+            const matchesGrouping = product.grouping?.toLowerCase() === "topwear"; // Safe usage with optional chaining
+            return matchesOtherTags || matchesSubCat || matchesGrouping;
+          });
         } else {
-          throw new Error("Invalid API response format");
+          prioritized = filtered.filter((product) => product.badge === "Bestseller");
+          others = filtered.filter((product) => product.badge !== "Bestseller");
         }
-      } catch (err) {
-        console.error("[v0] Error fetching products:", err);
-        setError(err instanceof Error ? err.message : "Failed to load products");
-      } finally {
-        setLoading(false);
+        const finalProducts = [...prioritized, ...others.filter((p) => !prioritized.some((pp) => pp.id === p.id))];
+        setProducts(finalProducts);
+        setFilteredProducts(finalProducts);
+      } else {
+        throw new Error("Invalid API response format");
       }
-    };
+    } catch (err) {
+      console.error("[v0] Error fetching products:", err);
+      setError(err instanceof Error ? err.message : "Failed to load products");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchProducts();
-  }, [
-    searchParams,
-    activeCategory,
-    minPrice,
-    maxPrice,
-    selectedSizes,
-    selectedBrands,
-    selectedCategories,
-    sortBy,
-    currentPage,
-    initialOffer,
-  ]);
+  fetchProducts();
+}, [activeCategory, subCategory, offerTag, initialOffer, currentPage, sortBy]);
 
   useEffect(() => {
     if (!isAuthenticated()) return;
-
     const fetchWishlistStatus = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/user/wishlist`, {
-          headers: authHeaders(),
-        });
+        const res = await fetch(`${API_BASE}/api/user/wishlist`, { headers: authHeaders() });
         if (!res.ok) return;
         const data = await res.json();
         if (data.success && Array.isArray(data.data?.wishlist)) {
-          const wishlistProductIds = new Set<number>(
-            (data.data.wishlist as WishlistEntry[]).map(
-              (item) => item.productId
-            )
-          );
+          const wishlistProductIds = new Set<number>(data.data.wishlist.map((item: WishlistEntry) => item.productId));
           setApiWishlistItems(wishlistProductIds);
         }
       } catch (err) {
         console.error("[v0] Error fetching wishlist:", err);
       }
     };
-
     const fetchCartCount = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/cart`, {
-          headers: authHeaders(),
-        });
+        const res = await fetch(`${API_BASE}/api/cart`, { headers: authHeaders() });
         if (!res.ok) return;
         const data = await res.json();
-        if (data.success && Array.isArray(data.data?.items)) {
-          setCartCount(data.data.items.length);
-        } else if (data.success && typeof data.data?.totalItems === "number") {
-          setCartCount(data.data.totalItems);
+        if (data.success && (Array.isArray(data.data?.items) || typeof data.data?.totalItems === "number")) {
+          setCartCount(Array.isArray(data.data.items) ? data.data.items.length : data.data.totalItems);
         }
       } catch (err) {
         console.error("[v0] Error fetching cart count:", err);
       }
     };
-
     fetchWishlistStatus();
     fetchCartCount();
   }, []);
 
-  const colorOptions = [
-    { name: "Red", hex: "#ef4444" },
-    { name: "Orange", hex: "#f97316" },
-    { name: "Green", hex: "#22c55e" },
-    { name: "Cyan", hex: "#06b6d4" },
-    { name: "Blue", hex: "#3b82f6" },
-    { name: "Pink", hex: "#ec4899" },
-    { name: "Purple", hex: "#a855f7" },
-    { name: "Teal", hex: "#14b8a6" },
-    { name: "Magenta", hex: "#d946ef" },
-    { name: "Black", hex: "#000000" },
-  ];
-
-  const categoryOptions = [
-    { name: "New", count: 5 },
-    { name: "Trending", count: 8 },
-    { name: "Hot Deals", count: 3 },
-  ];
-
-  const priceRangeOptions = ["₹0 - ₹15", "₹16 - ₹30", "₹31 - ₹45", "₹46 - ₹60"];
-
-  const brandOptions = [
-    { name: "Antise", count: 12 },
-    { name: "Apple", count: 8 },
-    { name: "Boat", count: 15 },
-    { name: "Bergamot", count: 6 },
-    { name: "Lemon", count: 4 },
-  ];
-
   const handleSizeFilter = (size: string) => {
-    const newSizes = selectedSizes.includes(size)
-      ? selectedSizes.filter((s) => s !== size)
-      : [...selectedSizes, size];
-    setSelectedSizes(newSizes);
-    updateURLParams({ sizes: newSizes });
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
+    );
   };
 
   const handleColorFilter = (color: string) => {
-    const newColors = selectedColors.includes(color)
-      ? selectedColors.filter((c) => c !== color)
-      : [...selectedColors, color];
-    setSelectedColors(newColors);
-    updateURLParams({ colors: newColors });
+    setSelectedColors((prev) =>
+      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
+    );
   };
 
   const handleCategoryFilter = (category: string) => {
-    const newCategories = selectedCategories.includes(category)
-      ? selectedCategories.filter((c) => c !== category)
-      : [...selectedCategories, category];
-    setSelectedCategories(newCategories);
-    updateURLParams({ category: newCategories });
+    setSelectedCategories((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+    );
   };
 
   const handleBrandFilter = (brand: string) => {
-    const newBrands = selectedBrands.includes(brand)
-      ? selectedBrands.filter((b) => b !== brand)
-      : [...selectedBrands, brand];
-    setSelectedBrands(newBrands);
-    updateURLParams({ brands: newBrands });
+    setSelectedBrands((prev) =>
+      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
+    );
   };
 
   const handlePriceRangeFilter = (range: string) => {
-    const newRanges = priceRanges.includes(range)
-      ? priceRanges.filter((r) => r !== range)
-      : [...priceRanges, range];
-    setPriceRanges(newRanges);
-    updateURLParams({ priceRanges: newRanges });
+    setPriceRanges((prev) =>
+      prev.includes(range) ? prev.filter((r) => r !== range) : [...prev, range]
+    );
   };
 
-  const handleMinPriceChange = (value: string) => {
-    setMinPrice(value);
-    updateURLParams({ priceMin: value || null });
+  const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMinPrice(e.target.value);
   };
 
-  const handleMaxPriceChange = (value: string) => {
-    setMaxPrice(value);
-    updateURLParams({ priceMax: value || null });
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMaxPrice(e.target.value);
   };
 
   const handleSortChange = (value: string) => {
@@ -1574,78 +1546,32 @@ const data = {
       showToast("Product is out of stock", false);
       return;
     }
-
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
       showToast("Please login to add items to cart", false);
       router.push("/login");
       return;
     }
-
     setAddingToCart(product.id);
     setLoadingMessage("Adding to cart...");
     setGlobalLoading(true);
-    console.log(
-      "[v0] Adding to cart - Product ID:",
-      product.id,
-      "Stock:",
-      product.stock
-    );
-
     try {
-      const requestBody = {
-        productId: product.id,
-        size: product.sizes[0] || "M",
-        quantity: 1,
-      };
-
+      const requestBody = { productId: product.id, size: product.sizes[0] || "M", quantity: 1 };
       const response = await fetch(`${API_BASE}/api/cart/items`, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify(requestBody),
       });
-
-      console.log("[v0] Cart response status:", response.status);
-      console.log(
-        "[v0] Cart response headers:",
-        Object.fromEntries(response.headers.entries())
-      );
-
       const responseText = await response.text();
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("[v0] Failed to parse response as JSON:", parseError);
-        throw new Error(`Server returned invalid JSON: ${responseText}`);
-      }
-
-      console.log("[v0] Cart response data:", data);
-
-      if (!response.ok) {
-        throw new Error(
-          data.error ||
-            data.message ||
-            `HTTP ${response.status}: ${response.statusText}`
-        );
-      }
-
-      if (!data.success) {
-        throw new Error(data.message || data.error || "Failed to add to cart");
-      }
-
+      const data = JSON.parse(responseText);
+      if (!response.ok) throw new Error(data.error || data.message || `HTTP ${response.status}: ${response.statusText}`);
+      if (!data.success) throw new Error(data.message || data.error || "Failed to add to cart");
       setAddedToCart(product.id);
       showToast("Added to cart successfully!");
       setTimeout(() => setAddedToCart(null), 2000);
-
       refreshCartCount();
     } catch (error) {
-      console.error("[v0] Add to cart error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to add to cart";
-      showToast(errorMessage, false);
+      showToast(error instanceof Error ? error.message : "Failed to add to cart", false);
     } finally {
       setAddingToCart(null);
       setGlobalLoading(false);
@@ -1656,190 +1582,71 @@ const data = {
     const isAuth = isAuthenticated();
     const isInWishlist = wishlistItems.has(product.id);
     setAddingToWishlist(product.id);
-
     try {
       if (isAuth) {
-        setLoadingMessage(
-          isInWishlist ? "Removing from wishlist..." : "Adding to wishlist..."
-        );
+        setLoadingMessage(isInWishlist ? "Removing from wishlist..." : "Adding to wishlist...");
         setGlobalLoading(true);
-
-        if (isInWishlist) {
-          const response = await fetch(
-            `${API_BASE}/api/user/wishlist/${product.id}`,
-            {
-              method: "DELETE",
-              headers: authHeaders(),
-            }
-          );
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(
-              errorData.message || "Failed to remove from wishlist"
-            );
-          }
-
-          setApiWishlistItems((prev) => {
-            const next = new Set(prev);
-            next.delete(product.id);
-            return next;
-          });
-          showToast("Removed from wishlist!");
-          refreshWishlistCount();
-        } else {
-          const response = await fetch(`${API_BASE}/api/user/wishlist`, {
-            method: "POST",
-            headers: authHeaders(),
-            body: JSON.stringify({ productId: product.id }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to add to wishlist");
-          }
-
-          setApiWishlistItems((prev) => new Set([...prev, product.id]));
-          showToast("Added to wishlist!");
-          refreshWishlistCount();
+        const response = await fetch(
+          `${API_BASE}/api/user/wishlist/${product.id}`,
+          { method: isInWishlist ? "DELETE" : "POST", headers: authHeaders(), body: !isInWishlist ? JSON.stringify({ productId: product.id }) : undefined }
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || (isInWishlist ? "Failed to remove from wishlist" : "Failed to add to wishlist"));
         }
+        setApiWishlistItems((prev) => {
+          const next = new Set(prev);
+          isInWishlist ? next.delete(product.id) : next.add(product.id);
+          return next;
+        });
+        showToast(isInWishlist ? "Removed from wishlist!" : "Added to wishlist!");
+        refreshWishlistCount();
       } else {
         if (isInWishlist) {
           dispatch(removeFromWishlist(product.id));
           showToast("Removed from wishlist!");
         } else {
-          dispatch(
-            addToWishlist({
-              ...product,
-              bestseller: product.badge === "bestseller" || false,
-              createdAt: new Date().toISOString(),
-            })
-          );
+          dispatch(addToWishlist({ ...product, bestseller: product.badge === "Bestseller" || false, createdAt: new Date().toISOString() }));
           showToast("Added to wishlist!");
         }
       }
     } catch (error) {
-      console.error("[v0] Wishlist toggle error:", error);
-      showToast(
-        error instanceof Error ? error.message : "Wishlist operation failed",
-        false
-      );
+      showToast(error instanceof Error ? error.message : "Wishlist operation failed", false);
     } finally {
-      if (isAuth) {
-        setGlobalLoading(false);
-      }
+      if (isAuth) setGlobalLoading(false);
       setAddingToWishlist(null);
     }
   };
 
-  const filteredBrands = brandOptions.filter((brand) =>
+  const filteredBrands = useMemo(() => brandOptions.filter((brand) =>
     brand.name.toLowerCase().includes(brandSearch.toLowerCase())
-  );
-
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...products];
-
-    if (selectedSizes.length > 0) {
-      filtered = filtered.filter((product) =>
-        product.sizes.some((size) => selectedSizes.includes(size))
-      );
-    }
-
-    if (selectedColors.length > 0) {
-      filtered = filtered.filter(
-        (product) => product.color && selectedColors.includes(product.color)
-      );
-    }
-
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter((product) => {
-        if (selectedCategories.includes("New") && product.isNew) return true;
-        if (
-          selectedCategories.includes("Trending") &&
-          product.rating &&
-          product.rating >= 4.5
-        )
-          return true;
-        if (
-          selectedCategories.includes("Hot Deals") &&
-          product.badge === "Bestseller"
-        )
-          return true;
-        return false;
-      });
-    }
-
-    if (priceRanges.length > 0) {
-      filtered = filtered.filter((product) => {
-        return priceRanges.some((range) => {
-          const [min, max] = range
-            .replace("₹", "")
-            .split(" - ")
-            .map((p) => Number.parseInt(p));
-          return product.price >= min && product.price <= max;
-        });
-      });
-    }
-
-    const minPriceNum = minPrice ? Number.parseInt(minPrice) : 0;
-    const maxPriceNum = maxPrice
-      ? Number.parseInt(maxPrice)
-      : Number.POSITIVE_INFINITY;
-    if (minPrice || maxPrice) {
-      filtered = filtered.filter(
-        (product) =>
-          product.price >= minPriceNum && product.price <= maxPriceNum
-      );
-    }
-
-    switch (sortBy) {
-      case "Sort: Price Low to High":
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case "Sort: Price High to Low":
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case "Sort: Most Popular":
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "Sort: Newest":
-      default:
-        break;
-    }
-
-    return filtered;
-  }, [
-    products,
-    selectedSizes,
-    selectedColors,
-    selectedCategories,
-    selectedBrands,
-    priceRanges,
-    minPrice,
-    maxPrice,
-    sortBy,
-  ]);
+  ), [brandOptions, brandSearch]);
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredAndSortedProducts.slice(startIndex, endIndex);
-  }, [filteredAndSortedProducts, currentPage, itemsPerPage]);
+    return filteredProducts
+      .sort((a, b) => {
+        switch (sortBy) {
+          case "Sort: Price Low to High":
+            return (a.price || 0) - (b.price || 0);
+          case "Sort: Price High to Low":
+            return (b.price || 0) - (a.price || 0);
+          case "Sort: Most Popular":
+            return (b.rating || 0) - (a.rating || 0);
+          case "Sort: Newest":
+          default:
+            return 0;
+        }
+      })
+      .slice(startIndex, endIndex);
+  }, [filteredProducts, currentPage, itemsPerPage, sortBy]);
 
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [
-    selectedSizes,
-    selectedColors,
-    selectedCategories,
-    selectedBrands,
-    priceRanges,
-    minPrice,
-    maxPrice,
-    sortBy,
-  ]);
+  }, [filteredProducts]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -1847,12 +1654,9 @@ const data = {
   };
 
   const handleFilterSectionToggle = (section: string) => {
-    setExpandedFilterSection(
-      expandedFilterSection === section ? null : section
-    );
+    setExpandedFilterSection(expandedFilterSection === section ? null : section);
   };
 
-  // Determine breadcrumb text
   const getBreadcrumbText = () => {
     if (offerTag) {
       const offerDetails = getOfferDetails();
@@ -1884,14 +1688,9 @@ const data = {
     <div className="min-h-screen bg-white">
       <div className="px-3 md:px-4 py-2 md:py-3 border-b border-gray-200">
         <div className="flex items-center text-xs md:text-sm text-gray-600 space-x-1 md:space-x-2">
-          <Link href="/" className="hover:text-black truncate">
-            Home
-          </Link>
+          <Link href="/" className="hover:text-black truncate">Home</Link>
           <span>›</span>
-          <Link
-            href={`/productlist?category=${activeCategory.toLowerCase()}`}
-            className="hover:text-black truncate"
-          >
+          <Link href={`/productlist?category=${activeCategory.toLowerCase()}`} className="hover:text-black truncate">
             {activeCategory === "All" ? "Products" : activeCategory}
           </Link>
           {offerTag && (
@@ -1908,7 +1707,7 @@ const data = {
             {activeCategory === "All" ? "All Products" : activeCategory}
           </h1>
           <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-            {filteredAndSortedProducts.length} Items
+            {filteredProducts.length} Items
           </span>
         </div>
         <div className="flex items-center space-x-2">
@@ -1939,7 +1738,7 @@ const data = {
           <div>
             <h3 className="font-medium mb-3">Size</h3>
             <div className="flex flex-wrap gap-2">
-              {["S", "M", "L", "XL"].map((size) => (
+              {sizeOptions.map((size) => (
                 <button
                   key={size}
                   onClick={() => handleSizeFilter(size)}
@@ -1997,9 +1796,7 @@ const data = {
                     className="rounded border-gray-300"
                   />
                   <span className="text-sm">{category.name}</span>
-                  <span className="text-xs text-gray-500">
-                    ({category.count})
-                  </span>
+                  <span className="text-xs text-gray-500">({category.count})</span>
                 </label>
               ))}
             </div>
@@ -2012,20 +1809,20 @@ const data = {
               <ChevronDown className="w-4 h-4" />
             </h3>
             <div className="space-y-3">
-              <div className="flex space-x-2 flex-col">
+              <div className="space-y-2">
                 <input
                   type="text"
                   placeholder="Min"
                   value={minPrice}
-                  onChange={(e) => handleMinPriceChange(e.target.value)}
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                  onChange={handleMinPriceChange}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                 />
                 <input
                   type="text"
                   placeholder="Max"
                   value={maxPrice}
-                  onChange={(e) => handleMaxPriceChange(e.target.value)}
-                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                  onChange={handleMaxPriceChange}
+                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                 />
               </div>
               <div className="space-y-2">
@@ -2077,33 +1874,38 @@ const data = {
                       className="rounded border-gray-300"
                     />
                     <span className="text-sm">{brand.name}</span>
-                    <span className="text-xs text-gray-500">
-                      ({brand.count})
-                    </span>
+                    <span className="text-xs text-gray-500">({brand.count})</span>
                   </label>
                 ))}
               </div>
             </div>
+          </div>
+          <div className="flex space-x-2 mt-4">
+            <button
+              onClick={applyFilters}
+              className="w-full px-3 py-1 bg-black text-white rounded text-sm hover:bg-gray-800"
+            >
+              Apply Filter
+            </button>
+            <button
+              onClick={resetFilters}
+              className="w-full px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50"
+            >
+              Reset
+            </button>
           </div>
         </div>
 
         {showMobileFilters && (
           <div className="fixed inset-0 bg-white z-50 md:hidden">
             <div className="flex flex-col h-full">
-              {/* Header */}
               <div className="flex items-center p-4 border-b border-gray-200">
-                <button
-                  onClick={() => setShowMobileFilters(false)}
-                  className="mr-3"
-                >
+                <button onClick={() => setShowMobileFilters(false)} className="mr-3">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <h2 className="text-lg font-semibold">Filters</h2>
               </div>
-
-              {/* Filter Content */}
               <div className="flex-1 overflow-y-auto">
-                {/* Product Search */}
                 <div className="border-b border-gray-100">
                   <button
                     onClick={() => handleFilterSectionToggle("product")}
@@ -2126,8 +1928,6 @@ const data = {
                     </div>
                   )}
                 </div>
-
-                {/* Brand Filter */}
                 <div className="border-b border-gray-100">
                   <button
                     onClick={() => handleFilterSectionToggle("brand")}
@@ -2148,16 +1948,12 @@ const data = {
                             onChange={() => handleBrandFilter(brand.name)}
                             className="w-4 h-4 rounded border-gray-300"
                           />
-                          <span className="text-sm text-gray-700">
-                            {brand.name}
-                          </span>
+                          <span className="text-sm text-gray-700">{brand.name}</span>
                         </label>
                       ))}
                     </div>
                   )}
                 </div>
-
-                {/* Size Filter */}
                 <div className="border-b border-gray-100">
                   <button
                     onClick={() => handleFilterSectionToggle("size")}
@@ -2168,7 +1964,7 @@ const data = {
                   {expandedFilterSection === "size" && (
                     <div className="px-4 pb-4">
                       <div className="flex flex-wrap gap-2">
-                        {["S", "M", "L", "XL"].map((size) => (
+                        {sizeOptions.map((size) => (
                           <button
                             key={size}
                             onClick={() => handleSizeFilter(size)}
@@ -2185,8 +1981,6 @@ const data = {
                     </div>
                   )}
                 </div>
-
-                {/* Color Filter */}
                 <div className="border-b border-gray-100">
                   <button
                     onClick={() => handleFilterSectionToggle("color")}
@@ -2214,8 +2008,6 @@ const data = {
                     </div>
                   )}
                 </div>
-
-                {/* Category Filter */}
                 <div className="border-b border-gray-100">
                   <button
                     onClick={() => handleFilterSectionToggle("category")}
@@ -2236,16 +2028,12 @@ const data = {
                             onChange={() => handleCategoryFilter(category.name)}
                             className="w-4 h-4 rounded border-gray-300"
                           />
-                          <span className="text-sm text-gray-700">
-                            {category.name}
-                          </span>
+                          <span className="text-sm text-gray-700">{category.name}</span>
                         </label>
                       ))}
                     </div>
                   )}
                 </div>
-
-                {/* Price Filter */}
                 <div className="border-b border-gray-100">
                   <button
                     onClick={() => handleFilterSectionToggle("price")}
@@ -2255,20 +2043,20 @@ const data = {
                   </button>
                   {expandedFilterSection === "price" && (
                     <div className="px-4 pb-4 space-y-4">
-                      <div className="flex space-x-2">
+                      <div className="space-y-2">
                         <input
                           type="text"
                           placeholder="Minimum"
                           value={minPrice}
-                          onChange={(e) => handleMinPriceChange(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                          onChange={handleMinPriceChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                         <input
                           type="text"
                           placeholder="Maximum"
                           value={maxPrice}
-                          onChange={(e) => handleMaxPriceChange(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                          onChange={handleMaxPriceChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                       </div>
                       <div className="space-y-3">
@@ -2283,9 +2071,7 @@ const data = {
                               onChange={() => handlePriceRangeFilter(range)}
                               className="w-4 h-4 rounded border-gray-300"
                             />
-                            <span className="text-sm text-gray-700">
-                              {range}
-                            </span>
+                            <span className="text-sm text-gray-700">{range}</span>
                           </label>
                         ))}
                       </div>
@@ -2293,12 +2079,10 @@ const data = {
                   )}
                 </div>
               </div>
-
-              {/* Bottom Section with Product Count and Done Button */}
               <div className="border-t border-gray-200 p-4 bg-white">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">
-                    {filteredAndSortedProducts.length} Product Found
+                    {filteredProducts.length} Product Found
                   </span>
                   <button
                     onClick={() => setShowMobileFilters(false)}
@@ -2306,6 +2090,21 @@ const data = {
                   >
                     <span>Done</span>
                     <Check className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex space-x-2 mt-4">
+                  <button
+                    onClick={applyFilters}
+                    className="w-full px-6 py-2 bg-black text-white rounded-lg font-medium flex items-center space-x-2"
+                  >
+                    <span>Apply Filter</span>
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={resetFilters}
+                    className="w-full px-6 py-2 border border-gray-300 rounded-lg font-medium"
+                  >
+                    Reset
                   </button>
                 </div>
               </div>
@@ -2329,7 +2128,7 @@ const data = {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {filteredAndSortedProducts.length} items
+                {filteredProducts.length} items
               </span>
               {totalPages > 1 && (
                 <span className="text-sm text-gray-500">
@@ -2360,7 +2159,6 @@ const data = {
                       {product.badge}
                     </div>
                   )}
-
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -2375,12 +2173,9 @@ const data = {
                   >
                     <Heart
                       className="w-4 h-4 md:w-5 md:h-5"
-                      fill={
-                        wishlistItems.has(product.id) ? "currentColor" : "none"
-                      }
+                      fill={wishlistItems.has(product.id) ? "currentColor" : "none"}
                     />
                   </button>
-
                   <div className="aspect-[4/5] bg-gray-100 rounded overflow-hidden">
                     <Image
                       src={product.image[0] || "/placeholder.svg"}
@@ -2391,18 +2186,15 @@ const data = {
                     />
                   </div>
                 </div>
-
                 <div className="space-y-1 md:space-y-2">
-                  <h3 className="font-medium text-sm md:text-base line-clamp-2">
-                    {product.name}
-                  </h3>
+<h3 className="font-medium text-sm md:text-base line-clamp-2">
+  {product.name.length > 21 ? `${product.name.substring(0, 18)}...` : product.name}
+</h3>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-1">
                       <div className="flex text-yellow-400">
                         {[...Array(5)].map((_, i) => (
-                          <span key={i} className="text-xs">
-                            ★
-                          </span>
+                          <span key={i} className="text-xs">★</span>
                         ))}
                       </div>
                       <span className="text-xs text-gray-500 hidden md:inline">
@@ -2411,25 +2203,21 @@ const data = {
                     </div>
                     <span
                       className={`text-xs px-1.5 py-0.5 rounded ${
-                        product.stock > 0
-                          ? "text-green-600 bg-green-50"
-                          : "text-red-600 bg-red-50"
+                        product.stock > 0 ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
                       }`}
                     >
                       {product.stock > 0 ? "In Stock" : "Out of Stock"}
                     </span>
                   </div>
-
-                  {/* <div className="flex items-center space-x-1 md:space-x-2">
-                    <span className="font-semibold text-base md:text-lg">₹{product.price}</span>
-                    {product.originalPrice && (
+                  <div className="flex items-center space-x-1 md:space-x-2">
+                    <span className="font-semibold text-base md:text-lg">₹{product.discountedPrice || product.price}</span>
+                    {product.discountedPrice && (
                       <>
-                        <span className="text-sm text-gray-500 line-through">₹{product.originalPrice}</span>
-                        <span className="text-sm text-red-500 font-medium">{product.discount}% OFF</span>
+                        <span className="text-sm text-gray-500 line-through">₹{product.price}</span>
+                        <span className="text-sm text-red-500 font-medium">{product.discountPercent}% OFF</span>
                       </>
                     )}
-                  </div> */}
-
+                  </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -2471,29 +2259,19 @@ const data = {
                   <ChevronLeft className="w-4 h-4" />
                   <span className="hidden md:inline">Previous</span>
                 </button>
-
                 <div className="flex items-center space-x-1">
-                  {/* Show page numbers */}
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
+                    if (totalPages <= 5) pageNum = i + 1;
+                    else if (currentPage <= 3) pageNum = i + 1;
+                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                    else pageNum = currentPage - 2 + i;
                     return (
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
                         className={`px-3 py-2 text-sm rounded transition-colors ${
-                          currentPage === pageNum
-                            ? "bg-black text-white"
-                            : "border border-gray-300 hover:bg-gray-50"
+                          currentPage === pageNum ? "bg-black text-white" : "border border-gray-300 hover:bg-gray-50"
                         }`}
                       >
                         {pageNum}
@@ -2501,7 +2279,6 @@ const data = {
                     );
                   })}
                 </div>
-
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
@@ -2511,30 +2288,22 @@ const data = {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-
               <div className="text-center mt-4 text-sm text-gray-600">
                 Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                {Math.min(
-                  currentPage * itemsPerPage,
-                  filteredAndSortedProducts.length
-                )}{" "}
-                of {filteredAndSortedProducts.length} products
+                {Math.min(currentPage * itemsPerPage, filteredProducts.length)}{" "}
+                of {filteredProducts.length} products
               </div>
             </div>
           )}
 
-          {filteredAndSortedProducts.length === 0 && (
+          {filteredProducts.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">
-                No products found matching your filters.
-              </p>
-              <p className="text-gray-400 text-sm mt-2">
-                Try adjusting your filter criteria.
-              </p>
+              <p className="text-gray-500 text-lg">No products found matching your filters.</p>
+              <p className="text-gray-400 text-sm mt-2">Try adjusting your filter criteria.</p>
             </div>
           )}
         </div>
       </div>
     </div>
   );
-}
+};
