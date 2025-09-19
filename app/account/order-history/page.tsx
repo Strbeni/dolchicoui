@@ -806,7 +806,7 @@ ${productsText}Please assist me with the ${refundProducts.length > 0 && replacem
 Thank you!`;
 
         // WhatsApp customer care number - replace with actual number
-        const whatsappNumber = "+919874706143"; // Replace with actual customer care number
+        const whatsappNumber = "+917317690770"; // Replace with actual customer care number
         const whatsappUrl = `https://wa.me/${whatsappNumber.replace('+', '')}?text=${encodeURIComponent(message)}`;
 
         // Open WhatsApp

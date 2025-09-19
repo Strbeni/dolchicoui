@@ -1285,10 +1285,10 @@ export default function ProductDetailPage() {
 
               {/* Size Selection */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                {/* <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-medium">Size: {selectedSize}</p>
                   <button className="text-sm text-blue-600 hover:underline">View Size Chart</button>
-                </div>
+                </div> */}
                 <div className="grid grid-cols-6 gap-2">
                   {product.sizes?.map((size) => (
                     <button

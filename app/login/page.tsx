@@ -45,10 +45,10 @@ const CustomCheckbox = ({ checked, onCheckedChange, id, className = "" }: Custom
 // Country codes data
 const countryCodes = [
   { code: "+91", country: "IN", flag: "🇮🇳", name: "India" },
-  { code: "+1", country: "US", flag: "🇺🇸", name: "United States" },
-  { code: "+44", country: "UK", flag: "🇬🇧", name: "United Kingdom" },
-  { code: "+86", country: "CN", flag: "🇨🇳", name: "China" },
-  { code: "+81", country: "JP", flag: "🇯🇵", name: "Japan" },
+  // { code: "+1", country: "US", flag: "🇺🇸", name: "United States" },
+  // { code: "+44", country: "UK", flag: "🇬🇧", name: "United Kingdom" },
+  // { code: "+86", country: "CN", flag: "🇨🇳", name: "China" },
+  // { code: "+81", country: "JP", flag: "🇯🇵", name: "Japan" },
 ]
 
 // Properly typed interfaces

@@ -1,6 +1,7 @@
 // components/footer.tsx
 import React from "react";
 import Link from "next/link";
+import { MapPin, Mail } from 'lucide-react';
 import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaTiktok } from "react-icons/fa";
 
 const Footer = () => {
@@ -48,19 +49,19 @@ const Footer = () => {
           <h3 className="font-semibold mb-4 text-lg">Contact Us</h3>
           <div className="space-y-3 text-gray-300">
             <div className="flex items-start">
-              <span className="mr-2">📍</span>
+              <span className="mr-2"><MapPin className="w-4 h-4 md:w-5 md:h-5 text-gray-600" /></span>
               <div>
-                SAYA South X,
+                SAYA South X, Greater Noida West
                 <br />
-                Greater Noida West, Uttar Pradesh - 201306
+                Uttar Pradesh, India - 201306
               </div>
             </div>
             <div className="flex items-center">
               <span className="mr-2">📞</span>
-              <span>+1 (123) 456-7890</span>
+              <span>+91 7317 690 770</span>
             </div>
             <div className="flex items-center">
-              <span className="mr-2">✉️</span>
+              <span className="mr-2"><Mail className="w-4 h-4 md:w-5 md:h-5 text-gray-600" /></span>
               <span>sales@dolchico.com</span>
             </div>
           </div>

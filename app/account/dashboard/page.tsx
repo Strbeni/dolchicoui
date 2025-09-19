@@ -99,7 +99,7 @@ export default function DashboardPage() {
                                 <Star className="w-6 h-6 text-orange-600" />
                             </div>
                             <div>
-                                <p className="text-sm text-gray-600">Pending Reviews</p>
+                                <p className="text-sm text-gray-600">Total Product Reviews</p>
                                 <p className="text-2xl font-bold text-gray-900">{dashboardStats.pendingReviews}</p>
                             </div>
                         </div>
