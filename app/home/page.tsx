@@ -69,7 +69,7 @@ const apiData = {
       ],
       "offers": [
         {
-          "name": "50-60% Discount",
+          "name": "10-60% Discount",
           "icon": "https://example.com/icons/discount.png",
           "grouping": "Offers",
           "offerType": [
@@ -78,6 +78,8 @@ const apiData = {
               "price_above": 200,
               "min_discount": 10,
               "max_discount": 60,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Navratri", "BestSeller", "HotDeal"],
               "subCategoriesName": "T-Shirt"
             }
@@ -93,6 +95,8 @@ const apiData = {
               "price_above": 200,
               "min_discount": 40,
               "max_discount": 50,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Trending", "NewArrival"],
               "subCategoriesName": "Jacket"
             }
@@ -108,6 +112,8 @@ const apiData = {
               "price_above": 300,
               "min_discount": 30,
               "max_discount": 40,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Limited", "Fun"],
               "subCategoriesName": "Sweater"
             }
@@ -170,6 +176,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 10,
               "max_discount": 60,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Navratri", "Garbha", "KidsSpecial"],
               "subCategoriesName": "Kurta"
             }
@@ -185,6 +193,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 45,
               "max_discount": 55,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["NewArrival", "Trending"],
               "subCategoriesName": "Saree"
             }
@@ -200,6 +210,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 35,
               "max_discount": 45,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["HotDeal", "BestSeller"],
               "subCategoriesName": "Dress"
             }
@@ -262,6 +274,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 10,
               "max_discount": 60,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["KidsSpecial", "Fun", "Navratri"],
               "subCategoriesName": "Boys"
             }
@@ -277,6 +291,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 40,
               "max_discount": 50,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["BestSeller", "Limited"],
               "subCategoriesName": "Teen Boys"
             }
@@ -292,6 +308,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 30,
               "max_discount": 40,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Garbha", "NewArrival"],
               "subCategoriesName": "Kids Party Wear"
             }
@@ -354,6 +372,8 @@ const apiData = {
               "price_above": 65465600,
               "min_discount": 10,
               "max_discount": 60,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["HotDeal", "Trending", "BestSeller"],
               "subCategoriesName": "Watches"
             }
@@ -369,6 +389,8 @@ const apiData = {
               "price_above": 6044440,
               "min_discount": 40,
               "max_discount": 50,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["NewArrival", "Fun"],
               "subCategoriesName": "Jewelry"
             }
@@ -384,6 +406,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 35,
               "max_discount": 45,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Limited", "Navratri"],
               "subCategoriesName": "Sunglasses"
             }
@@ -446,6 +470,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 10,
               "max_discount": 60,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Garbha", "BestSeller", "KidsSpecial"],
               "subCategoriesName": "Curtain"
             }
@@ -461,6 +487,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 40,
               "max_discount": 50,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Trending", "HotDeal"],
               "subCategoriesName": "Wall Art"
             }
@@ -476,6 +504,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 30,
               "max_discount": 40,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["NewArrival", "Fun"],
               "subCategoriesName": "Cushions"
             }
@@ -538,6 +568,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 10,
               "max_discount": 60,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Navratri", "BestSeller", "Limited"],
               "subCategoriesName": "Sneakers"
             }
@@ -553,6 +585,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 45,
               "max_discount": 55,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["HotDeal", "Fun"],
               "subCategoriesName": "Sports Shoes"
             }
@@ -568,6 +602,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 35,
               "max_discount": 45,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Garbha", "NewArrival"],
               "subCategoriesName": "Boots"
             }
@@ -630,6 +666,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 10,
               "max_discount": 60,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Navratri", "KidsSpecial", "Trending"],
               "subCategoriesName": "Makeup"
             }
@@ -645,6 +683,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 40,
               "max_discount": 50,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["BestSeller", "HotDeal"],
               "subCategoriesName": "Skincare"
             }
@@ -660,6 +700,8 @@ const apiData = {
               "price_above": 600,
               "min_discount": 35,
               "max_discount": 45,
+              "ageGroupStart": 15,
+              "ageGroupEnd": 25,
               "tags": ["Limited", "Fun"],
               "subCategoriesName": "Fragrances"
             }
@@ -692,7 +734,9 @@ const apiData2 = {
       "date": "1756660142393",
       "createdAt": "2025-08-31T17:09:02.395Z",
       "updatedAt": "2025-08-31T17:09:02.395Z",
-      "tags": ["T-Shirt", "Casual", "Everyday Wear", "Classic", "Navratri"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["T-Shirt", "Casual", "Everyday Wear", "Classic", "Navratri"],
       "brand": "UrbanThread",
       "color": "White"
     },
@@ -716,7 +760,9 @@ const apiData2 = {
       "date": "1756660143100",
       "createdAt": "2025-08-31T17:09:03.101Z",
       "updatedAt": "2025-08-31T17:09:03.101Z",
-      "tags": ["Graphic Tee", "Casual", "Streetwear", "Minimalist"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Graphic Tee", "Casual", "Streetwear", "Minimalist"],
       "brand": "TrendVibe",
       "color": "Black"
     },
@@ -740,7 +786,9 @@ const apiData2 = {
       "date": "1756660143508",
       "createdAt": "2025-08-31T17:09:03.509Z",
       "updatedAt": "2025-08-31T17:09:03.509Z",
-      "tags": ["Formal Shirt", "Office Wear", "Slim Fit", "Professional"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Formal Shirt", "Office Wear", "Slim Fit", "Professional"],
       "brand": "ClassyFit",
       "color": "White"
     },
@@ -764,7 +812,9 @@ const apiData2 = {
       "date": "1756660143918",
       "createdAt": "2025-08-31T17:09:03.919Z",
       "updatedAt": "2025-08-31T17:09:03.919Z",
-      "tags": ["Polo Shirt", "Smart Casual", "Breathable", "Classic"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Polo Shirt", "Smart Casual", "Breathable", "Classic"],
       "brand": "SportyChic",
       "color": "Navy Blue"
     },
@@ -788,7 +838,9 @@ const apiData2 = {
       "date": "1756660144234",
       "createdAt": "2025-08-31T17:09:04.235Z",
       "updatedAt": "2025-08-31T17:09:04.235Z",
-      "tags": ["Flannel Shirt", "Plaid", "Casual", "Layering"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Flannel Shirt", "Plaid", "Casual", "Layering"],
       "brand": "RusticWear",
       "color": "Red/Black"
     },
@@ -812,7 +864,9 @@ const apiData2 = {
       "date": "1756660144635",
       "createdAt": "2025-08-31T17:09:04.636Z",
       "updatedAt": "2025-08-31T17:09:04.636Z",
-      "tags": ["Sweatshirt", "Graphic Print", "Casual", "Cozy"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Sweatshirt", "Graphic Print", "Casual", "Cozy"],
       "brand": "CoolVibe",
       "color": "Grey"
     },
@@ -836,7 +890,9 @@ const apiData2 = {
       "date": "1756660145042",
       "createdAt": "2025-08-31T17:09:05.043Z",
       "updatedAt": "2025-08-31T17:09:05.043Z",
-      "tags": ["Sweater", "Textured Knit", "Smart Casual", "Sophisticated"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Sweater", "Textured Knit", "Smart Casual", "Sophisticated"],
       "brand": "ElegantKnit",
       "color": "Charcoal"
     },
@@ -860,7 +916,9 @@ const apiData2 = {
       "date": "1756660145448",
       "createdAt": "2025-08-31T17:09:05.449Z",
       "updatedAt": "2025-08-31T17:09:05.449Z",
-      "tags": ["Henley Shirt", "Long Sleeve", "Casual", "Layering"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Henley Shirt", "Long Sleeve", "Casual", "Layering"],
       "brand": "UrbanThread",
       "color": "Olive Green"
     },
@@ -884,7 +942,9 @@ const apiData2 = {
       "date": "1756660145785",
       "createdAt": "2025-08-31T17:09:05.786Z",
       "updatedAt": "2025-08-31T17:09:05.786Z",
-      "tags": ["Chinos", "Slim Fit", "Smart Casual", "Versatile"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Chinos", "Slim Fit", "Smart Casual", "Versatile"],
       "brand": "ClassyFit",
       "color": "Khaki"
     },
@@ -908,7 +968,9 @@ const apiData2 = {
       "date": "1756660146250",
       "createdAt": "2025-08-31T17:09:06.251Z",
       "updatedAt": "2025-08-31T17:09:06.251Z",
-      "tags": ["Joggers", "Athleisure", "Performance", "Casual"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Joggers", "Athleisure", "Performance", "Casual"],
       "brand": "ActivePulse",
       "color": "Black"
     },
@@ -932,7 +994,9 @@ const apiData2 = {
       "date": "1756660146566",
       "createdAt": "2025-08-31T17:09:06.567Z",
       "updatedAt": "2025-08-31T17:09:06.567Z",
-      "tags": ["Cargo Shorts", "Outdoor", "Casual", "Functional"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Cargo Shorts", "Outdoor", "Casual", "Functional"],
       "brand": "AdventureGear",
       "color": "Olive Green"
     },
@@ -956,7 +1020,9 @@ const apiData2 = {
       "date": "1756660146885",
       "createdAt": "2025-08-31T17:09:06.885Z",
       "updatedAt": "2025-08-31T17:09:06.885Z",
-      "tags": ["Jeans", "Denim", "Classic", "Casual"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Jeans", "Denim", "Classic", "Casual"],
       "brand": "DenimCraft",
       "color": "Blue"
     },
@@ -980,7 +1046,9 @@ const apiData2 = {
       "date": "1756660147210",
       "createdAt": "2025-08-31T17:09:07.211Z",
       "updatedAt": "2025-08-31T17:09:07.211Z",
-      "tags": ["Denim Jacket", "Casual", "Layering", "Classic"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Denim Jacket", "Casual", "Layering", "Classic"],
       "brand": "DenimCraft",
       "color": "Blue"
     },
@@ -1004,7 +1072,9 @@ const apiData2 = {
       "date": "1756660147562",
       "createdAt": "2025-08-31T17:09:07.563Z",
       "updatedAt": "2025-08-31T17:09:07.563Z",
-      "tags": ["Leather Jacket", "Biker", "Statement Piece", "Bold"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Leather Jacket", "Biker", "Statement Piece", "Bold"],
       "brand": "RogueWear",
       "color": "Black"
     },
@@ -1028,7 +1098,9 @@ const apiData2 = {
       "date": "1756660147888",
       "createdAt": "2025-08-31T17:09:07.889Z",
       "updatedAt": "2025-08-31T17:09:07.889Z",
-      "tags": ["Bomber Jacket", "Casual", "Transitional", "Lightweight"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Bomber Jacket", "Casual", "Transitional", "Lightweight"],
       "brand": "UrbanThread",
       "color": "Navy Blue"
     },
@@ -1052,7 +1124,9 @@ const apiData2 = {
       "date": "1756660148214",
       "createdAt": "2025-08-31T17:09:08.215Z",
       "updatedAt": "2025-08-31T17:09:08.215Z",
-      "tags": ["Sweater", "Ribbed Knit", "Cozy", "Chic"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Sweater", "Ribbed Knit", "Cozy", "Chic"],
       "brand": "ElegantKnit",
       "color": "Beige"
     },
@@ -1076,7 +1150,9 @@ const apiData2 = {
       "date": "1756660148638",
       "createdAt": "2025-08-31T17:09:08.639Z",
       "updatedAt": "2025-08-31T17:09:08.639Z",
-      "tags": ["Cami Top", "Satin", "Luxurious", "Versatile"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Cami Top", "Satin", "Luxurious", "Versatile"],
       "brand": "SilkVogue",
       "color": "Champagne"
     },
@@ -1100,7 +1176,9 @@ const apiData2 = {
       "date": "1756660149060",
       "createdAt": "2025-08-31T17:09:09.060Z",
       "updatedAt": "2025-08-31T17:09:09.060Z",
-      "tags": ["Off-Shoulder", "Blouse", "Feminine", "Trendy"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Off-Shoulder", "Blouse", "Feminine", "Trendy"],
       "brand": "ChicAura",
       "color": "White"
     },
@@ -1124,7 +1202,9 @@ const apiData2 = {
       "date": "1756660149373",
       "createdAt": "2025-08-31T17:09:09.374Z",
       "updatedAt": "2025-08-31T17:09:09.374Z",
-      "tags": ["Graphic Tee", "Oversized", "Casual", "Vintage"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Graphic Tee", "Oversized", "Casual", "Vintage"],
       "brand": "TrendVibe",
       "color": "Black"
     },
@@ -1148,7 +1228,9 @@ const apiData2 = {
       "date": "1756660149689",
       "createdAt": "2025-08-31T17:09:09.690Z",
       "updatedAt": "2025-08-31T17:09:09.690Z",
-      "tags": ["V-Neck Tee", "Casual", "Everyday Wear", "Soft"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["V-Neck Tee", "Casual", "Everyday Wear", "Soft"],
       "brand": "UrbanThread",
       "color": "White"
     },
@@ -1172,7 +1254,9 @@ const apiData2 = {
       "date": "1756660150041",
       "createdAt": "2025-08-31T17:09:10.042Z",
       "updatedAt": "2025-08-31T17:09:10.042Z",
-      "tags": ["Skinny Jeans", "High-Rise", "Stretch", "Casual"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Skinny Jeans", "High-Rise", "Stretch", "Casual"],
       "brand": "DenimCraft",
       "color": "Dark Blue"
     },
@@ -1196,7 +1280,9 @@ const apiData2 = {
       "date": "1756660150393",
       "createdAt": "2025-08-31T17:09:10.394Z",
       "updatedAt": "2025-08-31T17:09:10.394Z",
-      "tags": ["Midi Skirt", "Pleated", "Elegant", "Versatile"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Midi Skirt", "Pleated", "Elegant", "Versatile"],
       "brand": "ChicAura",
       "color": "Navy Blue"
     },
@@ -1220,7 +1306,9 @@ const apiData2 = {
       "date": "1756660150744",
       "createdAt": "2025-08-31T17:09:10.745Z",
       "updatedAt": "2025-08-31T17:09:10.745Z",
-      "tags": ["Leggings", "Athleisure", "High-Waisted", "Performance"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Leggings", "Athleisure", "High-Waisted", "Performance"],
       "brand": "ActivePulse",
       "color": "Black"
     },
@@ -1244,7 +1332,9 @@ const apiData2 = {
       "date": "1756660151097",
       "createdAt": "2025-08-31T17:09:11.097Z",
       "updatedAt": "2025-08-31T17:09:11.097Z",
-      "tags": ["Wide-Leg Trousers", "Chic", "Flowy", "Smart Casual"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Wide-Leg Trousers", "Chic", "Flowy", "Smart Casual"],
       "brand": "ChicAura",
       "color": "Black"
     },
@@ -1268,7 +1358,9 @@ const apiData2 = {
       "date": "1756660151448",
       "createdAt": "2025-08-31T17:09:11.449Z",
       "updatedAt": "2025-08-31T17:09:11.449Z",
-      "tags": ["Maxi Dress", "Floral", "Summer", "Elegant"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Maxi Dress", "Floral", "Summer", "Elegant"],
       "brand": "BloomVogue",
       "color": "Multicolor"
     },
@@ -1292,7 +1384,9 @@ const apiData2 = {
       "date": "1756660151761",
       "createdAt": "2025-08-31T17:09:11.762Z",
       "updatedAt": "2025-08-31T17:09:11.762Z",
-      "tags": ["Bodycon Dress", "Party Wear", "Classic", "Bold"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Bodycon Dress", "Party Wear", "Classic", "Bold"],
       "brand": "ChicAura",
       "color": "Black"
     },
@@ -1316,7 +1410,9 @@ const apiData2 = {
       "date": "1756660152073",
       "createdAt": "2025-08-31T17:09:12.074Z",
       "updatedAt": "2025-08-31T17:09:12.074Z",
-      "tags": ["Jumpsuit", "Versatile", "Casual", "Evening Wear"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Jumpsuit", "Versatile", "Casual", "Evening Wear"],
       "brand": "TrendVibe",
       "color": "Navy Blue"
     },
@@ -1340,7 +1436,9 @@ const apiData2 = {
       "date": "1756660152414",
       "createdAt": "2025-08-31T17:09:12.415Z",
       "updatedAt": "2025-08-31T17:09:12.415Z",
-      "tags": ["Trench Coat", "Double-Breasted", "Sophisticated", "Water-Resistant"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Trench Coat", "Double-Breasted", "Sophisticated", "Water-Resistant"],
       "brand": "ClassyFit",
       "color": "Beige"
     },
@@ -1364,7 +1462,9 @@ const apiData2 = {
       "date": "1756660152826",
       "createdAt": "2025-08-31T17:09:12.827Z",
       "updatedAt": "2025-08-31T17:09:12.827Z",
-      "tags": ["Denim Jacket", "Cropped", "Trendy", "Layering"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Denim Jacket", "Cropped", "Trendy", "Layering"],
       "brand": "DenimCraft",
       "color": "Blue"
     },
@@ -1388,7 +1488,9 @@ const apiData2 = {
       "date": "1756660153850",
       "createdAt": "2025-08-31T17:09:13.850Z",
       "updatedAt": "2025-08-31T17:09:13.850Z",
-      "tags": ["Hoodie", "Oversized", "Cozy", "Casual"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Hoodie", "Oversized", "Cozy", "Casual"],
       "brand": "CoolVibe",
       "color": "Grey"
     },
@@ -1412,7 +1514,9 @@ const apiData2 = {
       "date": "1756660154259",
       "createdAt": "2025-08-31T17:09:14.260Z",
       "updatedAt": "2025-08-31T17:09:14.260Z",
-      "tags": ["Beanie", "Winter", "Casual", "Warm"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Beanie", "Winter", "Casual", "Warm"],
       "brand": "UrbanThread",
       "color": "Black"
     },
@@ -1436,7 +1540,9 @@ const apiData2 = {
       "date": "1756660154669",
       "createdAt": "2025-08-31T17:09:14.670Z",
       "updatedAt": "2025-08-31T17:09:14.670Z",
-      "tags": ["Sneakers", "Low-Top", "Casual", "Versatile"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Sneakers", "Low-Top", "Casual", "Versatile"],
       "brand": "StepVibe",
       "color": "White"
     },
@@ -1460,7 +1566,9 @@ const apiData2 = {
       "date": "1756660155076",
       "createdAt": "2025-08-31T17:09:15.077Z",
       "updatedAt": "2025-08-31T17:09:15.077Z",
-      "tags": ["Tote Bag", "Canvas", "Everyday Use", "Functional"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Tote Bag", "Canvas", "Everyday Use", "Functional"],
       "brand": "EcoCarry",
       "color": "Natural"
     },
@@ -1484,7 +1592,9 @@ const apiData2 = {
       "date": "1756660155389",
       "createdAt": "2025-08-31T17:09:15.389Z",
       "updatedAt": "2025-08-31T17:09:15.389Z",
-      "tags": ["Sunglasses", "Aviator", "Classic", "Polarized"],
+      "ageGroupStart": 15,
+              "ageGroupEnd": 25,
+              "tags": ["Sunglasses", "Aviator", "Classic", "Polarized"],
       "brand": "SunVibe",
       "color": "Silver/Black"
     }
