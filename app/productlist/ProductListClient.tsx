@@ -166,9 +166,12 @@ export default function ProductListClient({
   };
 
   // Get wishlist items based on authentication status
-  const wishlistItems = isAuthenticated()
-    ? apiWishlistItems
-    : new Set(useAppSelector(selectWishlistItems).map((item) => item.id));
+const wishlistItemsFromStore = useAppSelector(selectWishlistItems).map((item) => item.id);
+
+const wishlistItems = isAuthenticated()
+  ? apiWishlistItems
+  : new Set(wishlistItemsFromStore);
+
 
   // Function to update URL with current filters
   const updateURLParams = (
