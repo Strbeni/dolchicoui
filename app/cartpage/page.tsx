@@ -1183,67 +1183,12 @@ export default function ShoppingCartComplete() {
             </div>
           </div>
 
-          {/* Mobile Recommendations Section */}
-          {recommendedProducts.length > 0 && (
-            <div className="px-4 py-6 bg-gray-50">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Save up to ₹120 with this cloths. Shop now!</h2>
-                <button className="text-orange-500 text-sm">View All</button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {recommendedProducts.slice(0, 4).map((product) => (
-                  <div key={product.id} className="bg-white rounded-lg p-3 shadow-sm">
-                    <div className="relative mb-2">
-                      <img
-                        src={product.image || '/api/placeholder/150/180'}
-                        alt={product.name}
-                        className="w-full h-36 object-cover rounded cursor-pointer"
-                        onClick={() => handleProductClick(product.id)}
-                      />
-                      <button
-                        onClick={() => handleWishlistToggle(product)}
-                        disabled={addingToWishlist === product.id}
-                        className={`absolute top-1 right-1 p-1 rounded-full bg-white shadow ${wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400'
-                          }`}
-                      >
-                        <Heart
-                          className="w-3 h-3"
-                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'}
-                        />
-                      </button>
-                      {product.isNew && (
-                        <div className="absolute top-1 left-1 bg-orange-500 text-white text-xs px-1 py-0.5 rounded">
-                          New
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <h3
-                        className="font-medium text-xs line-clamp-2 cursor-pointer hover:text-orange-500"
-                        onClick={() => handleProductClick(product.id)}
-                      >
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center space-x-1">
-                        <span className="font-bold text-sm">₹{product.price.toLocaleString()}</span>
-                        {product.originalPrice && (
-                          <span className="text-xs text-gray-400 line-through">₹{product.originalPrice.toLocaleString()}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Mobile Frequently Bought Together Section */}
           {recommendedProducts.length > 0 && (
             <div className="px-4 py-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Frequently bought together with Long Sleeve Oversize</h2>
+                <h2 className="text-lg font-semibold">Frequently Bought Together</h2>
                 <button className="text-orange-500 text-sm">View All</button>
               </div>
 
@@ -1610,67 +1555,12 @@ export default function ShoppingCartComplete() {
             </div>
           </div>
 
-          {/* Recommendations Section */}
-          {recommendedProducts.length > 0 && (
-            <div className="mt-12">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">Save up to ₹120 with this cloths. Shop now!</h2>
-                <button className="text-orange-500 text-sm hover:text-orange-600">View All</button>
-              </div>
-
-              <div className="grid grid-cols-4 gap-4">
-                {recommendedProducts.map((product) => (
-                  <div key={product.id} className="bg-white rounded-lg p-4 border hover:shadow-md transition-shadow">
-                    <div className="relative mb-3">
-                      <img
-                        src={product.image || '/api/placeholder/200/240'}
-                        alt={product.name}
-                        className="w-full h-48 object-cover rounded cursor-pointer hover:opacity-80"
-                        onClick={() => handleProductClick(product.id)}
-                      />
-                      <button
-                        onClick={() => handleWishlistToggle(product)}
-                        disabled={addingToWishlist === product.id}
-                        className={`absolute top-2 right-2 p-1.5 rounded-full bg-white shadow ${wishlistItems.has(product.id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
-                          }`}
-                      >
-                        <Heart
-                          className="w-4 h-4"
-                          fill={wishlistItems.has(product.id) ? 'currentColor' : 'none'}
-                        />
-                      </button>
-                      {product.isNew && (
-                        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded">
-                          New
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <h3
-                        className="font-medium text-sm cursor-pointer hover:text-orange-500"
-                        onClick={() => handleProductClick(product.id)}
-                      >
-                        {product.name}
-                      </h3>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-lg">₹{product.price.toLocaleString()}</span>
-                        {product.originalPrice && (
-                          <span className="text-sm text-gray-400 line-through">₹{product.originalPrice.toLocaleString()}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Frequently Bought Together Section */}
           {recommendedProducts.length > 0 && (
             <div className="mt-12">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">Frequently bought together with Long Sleeve Oversize</h2>
+                <h2 className="text-xl font-semibold">Frequently Bought Together</h2>
                 <button className="text-orange-500 text-sm hover:text-orange-600">View All</button>
               </div>
 

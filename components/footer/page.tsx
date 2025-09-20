@@ -1,6 +1,7 @@
 // components/footer.tsx
 import React from "react";
 import Link from "next/link";
+import { MapPin, Mail } from 'lucide-react';
 import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaTiktok } from "react-icons/fa";
 
 const Footer = () => {
@@ -35,11 +36,13 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold mb-4 text-lg">Shop</h3>
           <ul className="space-y-2 text-gray-300">
-            <li>Mens Collection</li>
-            <li>Womens Collection</li>
-            <li>Kids Collection</li>
-            <li>Accessories</li>
-            <li>Home Living</li>
+            <li>          <Link href="/productlist?category=Men" className="hover:text-black">
+            Mens Collection
+          </Link></li>
+            <li><Link href="/productlist?category=Women" className="hover:text-black">Womens Collection</Link></li>
+            <li><Link href="/productlist?category=Kid" className="hover:text-black">Kids Collection</Link></li>
+            <li><Link href="/productlist?category=Accessories" className="hover:text-black">Accessories</Link></li>
+            <li><Link href="/productlist?category=HomeLiving" className="hover:text-black">Home Living</Link></li>
           </ul>
         </div>
 
@@ -48,20 +51,20 @@ const Footer = () => {
           <h3 className="font-semibold mb-4 text-lg">Contact Us</h3>
           <div className="space-y-3 text-gray-300">
             <div className="flex items-start">
-              <span className="mr-2">📍</span>
+              <span className="mr-2"><MapPin className="w-4 h-4 md:w-5 md:h-5 text-gray-600" /></span>
               <div>
-                SAYA South X,
+                SAYA South X, Greater Noida West
                 <br />
-                Greater Noida West, Uttar Pradesh - 201306
+                Uttar Pradesh, India - 201306
               </div>
             </div>
             <div className="flex items-center">
               <span className="mr-2">📞</span>
-              <span>+1 (123) 456-7890</span>
+              <span>+91 7317 690 770</span>
             </div>
             <div className="flex items-center">
-              <span className="mr-2">✉️</span>
-              <span >sales@dolchico.com</span>
+              <span className="mr-2"><Mail className="w-4 h-4 md:w-5 md:h-5 text-gray-600" /></span>
+              <span>sales@dolchico.com</span>
             </div>
           </div>
         </div>
@@ -132,7 +135,7 @@ const Footer = () => {
           </a>
 
           <a
-            href="https://www.linkedin.com/company/dolchiteam"
+            href="https://www.linkedin.com/company/dolchi"
             target="_blank"
             rel="noopener noreferrer"
             className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 cursor-pointer"

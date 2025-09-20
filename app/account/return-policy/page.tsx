@@ -184,8 +184,8 @@ export default function ReturnPolicyPage() {
                         <div className="space-y-3 text-blue-800">
                             <p>If you have any questions about returns or need assistance:</p>
                             <ul className="list-disc list-inside space-y-2 ml-4">
-                                <li>Email us at: <strong>returns@dolchico.com</strong></li>
-                                <li>Call our customer service: <strong>1800-123-4567</strong></li>
+                                <li>Email us at: <strong>sales@dolchico.com</strong></li>
+                                <li>Call our customer service: <strong>+91 7317 690 770</strong></li>
                                 <li>Live chat available on our website (9 AM - 9 PM)</li>
                             </ul>
                             <p className="mt-4">Our customer service team is available Monday to Saturday, 9 AM to 9 PM to assist you.</p>

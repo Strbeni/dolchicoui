@@ -241,7 +241,7 @@ Best regards`;
 
     const handleWhatsAppClick = () => {
         // Replace with your actual WhatsApp number
-        const phoneNumber = '+1234567890';
+        const phoneNumber = '+917317690770';
         const message = 'Hello, I need help with a refund/replacement for my order.';
         const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
@@ -383,8 +383,8 @@ Best regards`;
                     </div>
                     <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">Call us directly</h3>
                     <div className="space-y-1">
-                        <p className="text-xs md:text-sm text-gray-600">Customers: +1 50 537 53 082</p>
-                        <p className="text-xs md:text-sm text-gray-600">Franchise: +1 50 537 53 000</p>
+                        <p className="text-xs md:text-sm text-gray-600">Customers: +91 731 769 0770</p>
+                        <p className="text-xs md:text-sm text-gray-600">Franchise: +91 731 769 0770</p>
                     </div>
                 </div>
 
@@ -395,8 +395,8 @@ Best regards`;
                     </div>
                     <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">Send a message</h3>
                     <div className="space-y-1">
-                        <p className="text-xs md:text-sm text-gray-600">Customers: info@cartzilla.com</p>
-                        <p className="text-xs md:text-sm text-gray-600">Franchise: franchise@cartzilla.com</p>
+                        <p className="text-xs md:text-sm text-gray-600">Customers: sales@dolchico.com</p>
+                        <p className="text-xs md:text-sm text-gray-600">Franchise: sales@dolchico.com</p>
                     </div>
                 </div>
 
@@ -407,8 +407,8 @@ Best regards`;
                     </div>
                     <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">Store location</h3>
                     <div className="space-y-1">
-                        <p className="text-xs md:text-sm text-gray-600">New York 11741, USA</p>
-                        <p className="text-xs md:text-sm text-gray-600">396 Lillian Bolavandy, Holbrook</p>
+                        <p className="text-xs md:text-sm text-gray-600">SAYA South X, Greater Noida West</p>
+                        <p className="text-xs md:text-sm text-gray-600">Uttar Pradesh, India - 201306</p>
                     </div>
                 </div>
 
