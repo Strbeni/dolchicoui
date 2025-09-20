@@ -7,7 +7,7 @@ import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaTiktok } from "rea
 const Footer = () => {
   return (
     <footer className="bg-[#101820] text-white text-sm pt-12 pb-6 px-6 sm:px-10 lg:px-20">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:mb-4 gap-8">
         {/* Brand and Description */}
         <div>
           <div className="text-3xl font-bold mb-4 text-orange-400">DOLCHI</div>

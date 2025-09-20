@@ -445,8 +445,8 @@ function WishlistPage() {
                         </h1>
                         {isAuth && summary && (
                             <p className="text-gray-500 text-sm md:text-base mt-1">
-                                {summary.totalItems} items · Value IDR{' '}
-                                {summary.totalValue.toLocaleString()}
+                                {summary.totalItems} items · Value <span className="text-base font-semibold text-gray-900">₹ {' '}
+                                {summary.totalValue.toLocaleString()}</span>
                             </p>
                         )}
                         {!isAuth && (

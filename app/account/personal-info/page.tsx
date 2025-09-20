@@ -671,24 +671,24 @@ if (updateUser.fulfilled.match(result)) {
 
             <Tabs defaultValue="account" className="w-full">
                 <TabsContent value="account">
-                    <div className="p-6 md:p-0">
+                    <div className="p-4 sm:p-6 md:p-0 max-w-full overflow-x-hidden account-mobile-fix">
                         {/* Basic Info */}
                         <div className="mb-8">
-                            <div className="flex items-center justify-between mb-6">
+                            <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-4 xs:gap-0 mb-6">
                                 <h2 className="text-xl font-semibold text-gray-900">Basic Info</h2>
                                 {!isEditing && (
                                     <Button
                                         type="button"
                                         onClick={handleEdit}
                                         variant="outline"
-                                        className="px-4 py-2"
+                                        className="px-4 py-2 w-full xs:w-auto flex-shrink-0"
                                     >
                                         Edit
                                     </Button>
                                 )}
                             </div>
 
-                                <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSave}>
+                                <form className="grid grid-cols-1 md:grid-cols-2 gap-6 account-form-mobile" onSubmit={handleSave}>
                                     <div className="space-y-2">
                                         <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                                             First Name
@@ -697,8 +697,7 @@ if (updateUser.fulfilled.match(result)) {
                                             id="firstName"
                                             value={firstName}
                                             onChange={(e) => setFirstName(e.target.value)}
-                                            disabled={!isEditing}
-                                            placeholder="Enter your first name"
+                                            disabled={!isEditing}                          placeholder="Enter your first name"
                                             className="mt-1 w-full"
                                         />
                                     </div>
@@ -771,11 +770,11 @@ if (updateUser.fulfilled.match(result)) {
                                     </div>
 
                                     {isEditing && (
-                                        <div className="col-span-1 md:col-span-2 flex justify-start gap-4 mt-6">
+                                        <div className="col-span-1 md:col-span-2 flex flex-col sm:flex-row justify-center sm:justify-start gap-4 mt-6">
                                             <Button
                                                 type="submit"
                                                 disabled={loading || userLoading}
-                                                className="bg-[#F3612A] hover:bg-[#E55120] text-white px-6 py-2"
+                                                className="bg-[#F3612A] hover:bg-[#E55120] text-white px-6 py-2 w-full sm:w-auto"
                                             >
                                                 {(loading || userLoading) ? 'Saving...' : 'Save Changes'}
                                             </Button>
@@ -783,7 +782,7 @@ if (updateUser.fulfilled.match(result)) {
                                                 type="button"
                                                 onClick={handleCancel}
                                                 variant="outline"
-                                                className="px-6 py-2"
+                                                className="px-6 py-2 w-full sm:w-auto"
                                             >
                                                 Cancel
                                             </Button>
@@ -796,7 +795,7 @@ if (updateUser.fulfilled.match(result)) {
 
                             {/* Contact Info */}
                             <div className="mb-8">
-                                <div className="flex items-center justify-between mb-6">
+                                <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-4 xs:gap-0 mb-6">
                                     <h2 className="text-xl font-semibold text-gray-900">Contact</h2>
                                     {!isEditingContact && (
                                         <Button
@@ -807,7 +806,7 @@ if (updateUser.fulfilled.match(result)) {
                                                 setIsEditingContact(true);
                                             }}
                                             variant="outline"
-                                            className="px-4 py-2"
+                                            className="px-4 py-2 w-full xs:w-auto flex-shrink-0"
                                         >
                                             Edit
                                         </Button>
@@ -849,7 +848,7 @@ if (updateUser.fulfilled.match(result)) {
                                                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                                                     <h4 className="text-sm font-medium text-gray-700 mb-3">Verification Code</h4>
                                                     <p className="text-xs text-gray-500 mb-3">Enter OTP sent to {tempEmailContact}</p>
-                                                    <div className="flex gap-2 mb-4">
+                                                    <div className="flex gap-2 mb-4 account-otp-container-mobile">
                                                         {[0, 1, 2, 3, 4, 5].map((i) => (
                                                             <Input
                                                                 key={i}
@@ -882,7 +881,7 @@ if (updateUser.fulfilled.match(result)) {
                                                                     }
                                                                 }}
                                                                 id={`email-contact-otp-${i}`}
-                                                                className="w-12 h-12 text-center border-[#F3612A] focus:ring-[#F3612A] focus:border-[#F3612A]"
+                                                                className="w-12 h-12 text-center border-[#F3612A] focus:ring-[#F3612A] focus:border-[#F3612A] account-otp-input-mobile"
                                                             />
                                                         ))}
                                                     </div>
@@ -938,7 +937,7 @@ if (updateUser.fulfilled.match(result)) {
                                                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                                                     <h4 className="text-sm font-medium text-gray-700 mb-3">Verification Code</h4>
                                                     <p className="text-xs text-gray-500 mb-3">Enter OTP sent to {tempPhone}</p>
-                                                    <div className="flex gap-2 mb-4">
+                                                    <div className="flex gap-2 mb-4 account-otp-container-mobile">
                                                         {[0, 1, 2, 3, 4, 5].map((i) => (
                                                             <Input
                                                                 key={i}
@@ -971,7 +970,7 @@ if (updateUser.fulfilled.match(result)) {
                                                                     }
                                                                 }}
                                                                 id={`phone-contact-otp-${i}`}
-                                                                className="w-12 h-12 text-center border-[#F3612A] focus:ring-[#F3612A] focus:border-[#F3612A]"
+                                                                className="w-12 h-12 text-center border-[#F3612A] focus:ring-[#F3612A] focus:border-[#F3612A] account-otp-input-mobile"
                                                             />
                                                         ))}
                                                     </div>
@@ -994,8 +993,8 @@ if (updateUser.fulfilled.match(result)) {
                                             )}
                                         </div>
 
-                                        <div className="flex justify-start gap-4 pt-4">
-                                            <Button type="button" onClick={handleCancelContact} variant="outline" className="px-6 py-2">
+                                        <div className="flex justify-center sm:justify-start gap-4 pt-4">
+                                            <Button type="button" onClick={handleCancelContact} variant="outline" className="px-6 py-2 w-full sm:w-auto">
                                                 Cancel
                                             </Button>
                                         </div>
@@ -1023,14 +1022,14 @@ if (updateUser.fulfilled.match(result)) {
 
                             {/* Password Section */}
                             <div className="mb-8">
-                                <div className="flex items-center justify-between mb-6">
+                                <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-4 xs:gap-0 mb-6">
                                     <h2 className="text-xl font-semibold text-gray-900">Password</h2>
                                     {!showPasswordReset && (
                                         <Button
                                             type="button"
                                             onClick={handleRequestPasswordReset}
                                             variant="outline"
-                                            className="px-4 py-2"
+                                            className="px-4 py-2 w-full xs:w-auto flex-shrink-0"
                                             disabled={passwordResetLoading}
                                         >
                                             {passwordResetLoading ? (
@@ -1062,7 +1061,7 @@ if (updateUser.fulfilled.match(result)) {
                                         <form className="grid grid-cols-1 gap-6" onSubmit={handleResetPassword}>
                                             <div>
                                                 <Label>OTP sent to {email}</Label>
-                                                <div className="flex gap-2 mt-2">
+                                                <div className="flex gap-2 mt-2 account-otp-container-mobile">
                                                     {[0, 1, 2, 3, 4, 5].map((i) => (
                                                         <Input
                                                             key={i}
@@ -1095,7 +1094,7 @@ if (updateUser.fulfilled.match(result)) {
                                                                 }
                                                             }}
                                                             id={`password-otp-${i}`}
-                                                            className="w-12 h-12 text-center border-[#F3612A] focus:ring-[#F3612A] focus:border-[#F3612A]"
+                                                            className="w-12 h-12 text-center border-[#F3612A] focus:ring-[#F3612A] focus:border-[#F3612A] account-otp-input-mobile"
                                                         />
                                                     ))}
                                                 </div>
@@ -1113,11 +1112,11 @@ if (updateUser.fulfilled.match(result)) {
                                                     className="mt-1"
                                                 />
                                             </div>
-                                            <div className="flex justify-start gap-4 mt-4">
+                                            <div className="flex flex-col sm:flex-row justify-center sm:justify-start gap-4 mt-4">
                                                 <Button
                                                     type="submit"
                                                     disabled={passwordResetVerifyLoading}
-                                                    className="bg-[#F3612A] hover:bg-[#E55120] text-white px-6 py-2 disabled:bg-gray-300 disabled:hover:bg-gray-300"
+                                                    className="bg-[#F3612A] hover:bg-[#E55120] text-white px-6 py-2 disabled:bg-gray-300 disabled:hover:bg-gray-300 w-full sm:w-auto"
                                                 >
                                                     {passwordResetVerifyLoading ? (
                                                         <>
@@ -1132,7 +1131,7 @@ if (updateUser.fulfilled.match(result)) {
                                                     type="button"
                                                     onClick={handleCancelPasswordReset}
                                                     variant="outline"
-                                                    className="px-6 py-2"
+                                                    className="px-6 py-2 w-full sm:w-auto"
                                                 >
                                                     Cancel
                                                 </Button>
@@ -1154,11 +1153,11 @@ if (updateUser.fulfilled.match(result)) {
                                     </p>
                                 </div>
 
-                                <div className="flex justify-start">
+                                <div className="flex justify-center sm:justify-start">
                                     <Button
                                         variant="destructive"
                                         onClick={handleDeleteAccountClick}
-                                        className="bg-[#F3612A] hover:bg-red-600 text-white px-6 py-2"
+                                        className="bg-[#F3612A] hover:bg-red-600 text-white px-6 py-2 w-full sm:w-auto"
                                     >
                                         Delete Account
                                     </Button>
@@ -1169,8 +1168,8 @@ if (updateUser.fulfilled.match(result)) {
                 </Tabs>
 
                 {showDeleteOtp && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <Card className="bg-white rounded-lg p-6 min-w-[400px] shadow-lg">
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <Card className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-[400px] mx-4 shadow-lg">
                             <CardContent>
                                 <h2 className="text-xl font-semibold mb-4">Verify Identity</h2>
                                 <p className="text-sm text-gray-600 mb-6">
@@ -1179,7 +1178,7 @@ if (updateUser.fulfilled.match(result)) {
                                 <form onSubmit={handleDeleteOtpVerification} className="space-y-4">
                                     <div>
                                         <Label>Email OTP</Label>
-                                        <div className="flex gap-2 mt-2">
+                                        <div className="flex gap-2 mt-2 account-otp-container-mobile">
                                             {[0, 1, 2, 3, 4, 5].map((i) => (
                                                 <Input
                                                     key={i}
@@ -1212,21 +1211,22 @@ if (updateUser.fulfilled.match(result)) {
                                                         }
                                                     }}
                                                     id={`delete-otp-${i}`}
-                                                    className="w-12 h-12 text-center border-[#F3612A] focus:ring-[#F3612A] focus:border-[#F3612A]"
+                                                    className="w-12 h-12 text-center border-[#F3612A] focus:ring-[#F3612A] focus:border-[#F3612A] account-otp-input-mobile"
                                                 />
                                             ))}
                                         </div>
                                         <p className="text-xs text-gray-500 mt-1">OTP sent to {email}</p>
                                     </div>
-                                    <div className="flex justify-end gap-4 mt-6">
+                                    <div className="flex flex-col sm:flex-row justify-center sm:justify-end gap-4 mt-6">
                                         <Button
                                             type="button"
                                             variant="outline"
                                             onClick={handleCancelDeleteOtp}
+                                            className="w-full sm:w-auto"
                                         >
                                             Cancel
                                         </Button>
-                                        <Button type="submit" disabled={deleteAccountLoading} className="bg-[#F3612A] hover:bg-[#E55120] text-white px-6 py-2 disabled:bg-gray-300 disabled:hover:bg-gray-300">
+                                        <Button type="submit" disabled={deleteAccountLoading} className="bg-[#F3612A] hover:bg-[#E55120] text-white px-6 py-2 disabled:bg-gray-300 disabled:hover:bg-gray-300 w-full sm:w-auto">
                                             {deleteAccountLoading ? (
                                                 <>
                                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -1244,23 +1244,24 @@ if (updateUser.fulfilled.match(result)) {
                 )}
 
                 {isDeleteModalOpen && (
-                    <div className="fixed inset-0 bg-[rgb(0,0,0,0.5)] flex items-center justify-center z-50">
-                        <Card className="bg-white rounded-lg p-4 min-w-[350px] shadow-lg max-w-[95vw]">
+                    <div className="fixed inset-0 bg-[rgb(0,0,0,0.5)] flex items-center justify-center z-50 p-4">
+                        <Card className="bg-white rounded-lg p-4 w-full max-w-[350px] mx-4 shadow-lg">
                             <CardContent>
                                 <h2 className="text-xl font-semibold mb-4">Are you sure?</h2>
                                 <p className="text-sm text-gray-600 mb-6">
                                     This action cannot be undone. This will permanently delete your account and all
                                     your data.
                                 </p>
-                                <div className="flex justify-end gap-4">
+                                <div className="flex flex-col sm:flex-row justify-center sm:justify-end gap-4">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => setIsDeleteModalOpen(false)}
+                                        className="w-full sm:w-auto"
                                     >
                                         Cancel
                                     </Button>
-                                    <Button type="button" variant="destructive" onClick={handleDeleteAccount}>
+                                    <Button type="button" variant="destructive" onClick={handleDeleteAccount} className="w-full sm:w-auto">
                                         Delete
                                     </Button>
                                 </div>
