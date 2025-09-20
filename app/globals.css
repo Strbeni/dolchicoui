@@ -157,6 +157,60 @@ a {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Custom breakpoint for extra small screens */
+@media (min-width: 425px) {
+  .xs\:flex-row {
+    flex-direction: row;
+  }
+  .xs\:items-center {
+    align-items: center;
+  }
+  .xs\:justify-between {
+    justify-content: space-between;
+  }
+  .xs\:w-auto {
+    width: auto;
+  }
+  .xs\:gap-0 {
+    gap: 0;
+  }
+}
+
+/* Mobile-specific account page fixes */
+@media (max-width: 424px) {
+  .account-mobile-fix {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  .account-header-mobile {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .account-edit-btn-mobile {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .account-form-mobile {
+    grid-template-columns: 1fr;
+  }
+  
+  .account-otp-container-mobile {
+    gap: 0.25rem;
+  }
+  
+  .account-otp-input-mobile {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 0.875rem;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
