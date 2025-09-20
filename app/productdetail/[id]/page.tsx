@@ -472,7 +472,7 @@ export default function ProductDetailPage() {
 
         if (data.status === 200 && data.data && data.data.available_courier_companies && data.data.available_courier_companies.length > 0) {
           // Get the estimated delivery days from the first courier company
-          const estimatedDays = data.data.available_courier_companies[0].estimated_delivery_days
+          const estimatedDays = data.data.available_courier_companies[0].etd
           setDeliveryEta(estimatedDays)
           setDeliveryInfo(data.data)
         } else {
@@ -1407,7 +1407,7 @@ export default function ProductDetailPage() {
                   
                   {deliveryEta ? (
                     <p className="text-sm text-green-600 font-medium">
-                      This product will arrive in {deliveryEta} days
+                      Delivery Available. Expected arrival date - {deliveryEta} 
                     </p>
                   ) : (
                     <p className="text-xs text-gray-600">
